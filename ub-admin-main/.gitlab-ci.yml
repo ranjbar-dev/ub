@@ -1,0 +1,63 @@
+stages:
+  - prod-build
+  - prod-deploy
+  - prod-notification
+# - deploy
+
+
+prod-build:
+  stage: prod-build
+  script:
+    - docker build -t prod_admin_image$CI_COMMIT_SHA -f DockerfileProd .
+  tags:
+    - prod-admin
+  only:
+    - master
+
+prod-deploy:
+  stage: prod-deploy
+  script:
+    - docker run -it -d --name prod-admin prod_admin_image$CI_COMMIT_SHA
+    - docker cp prod-admin:/usr/src/app/build /home/gitlab-runner/prod-admin/
+    - docker rm -f prod-admin
+  tags:
+    - prod-admin
+  only:
+    - master
+
+prod-notification-pass:
+  stage: prod-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001317096458
+      -F text='🟢 UBAdmin Production Deployed Successfully !'
+  tags:
+    - prod-admin
+  only:
+    - master
+  when: on_success
+
+prod-notification-fail:
+  stage: prod-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001317096458
+      -F text='🔴 UBAdmin Production Deploy Failed !'
+  tags:
+    - prod-admin
+  only:
+    - master
+  when: on_failure
+
+#deploy:
+#  before_script:
+#  stage: deploy
+#  tags:
+#    - shell
+#  script:
+#    - ssh -p 7268 -T exchange@116.203.76.196 "cd /home/exchange/new-ub-admin/ && git checkout master && git pull origin master && exit"
+#  only:
+#    - master
+#  when: manual

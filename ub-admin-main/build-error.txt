@@ -1,0 +1,16 @@
+Creating an optimized production build...
+Failed to compile.
+
+TS2322: Type '{ '@font-face'?: JSSFontface | JSSFontface[] | undefined; alignContent?: string | undefined; alignItems?: string | undefined; alignSelf?: string | undefined; ... 772 more ...; vectorEffect?: VectorEffectProperty | undefined; }' is not assignable to type 'Properties<string | number, string & {}>'.
+  Types of property 'alignmentBaseline' are incompatible.
+    Type 'AlignmentBaselineProperty | undefined' is not assignable to type 'AlignmentBaseline | undefined'.
+      Type '"hanging"' is not assignable to type 'AlignmentBaseline | undefined'.
+  [0m [90m 170 |[39m 							[33m<[39m[33mdiv[39m
+   [90m 171 |[39m 								key[33m=[39m{item[33m.[39mcolId}
+  [31m[1m>[22m[39m[90m 172 |[39m 								style[33m=[39m{{
+   [90m     |[39m 								[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+   [90m 173 |[39m 									width[33m:[39m
+   [90m 174 |[39m 										item[33m.[39mactualWidth [33m-[39m
+   [90m 175 |[39m 										(item[33m.[39mcolId [33m===[39m [32m'loading'[39m [33m||[39m item[33m.[39mcolId [33m===[39m [32m'actions'[39m[0m
+
+

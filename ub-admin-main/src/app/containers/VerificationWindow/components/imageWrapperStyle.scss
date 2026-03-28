@@ -1,0 +1,104 @@
+.mainWrapper {
+    position: relative;
+    .cropperWrapper {
+        height: 405px;
+        display: flex;
+        align-items: center;
+    }
+    .imageButtonsWrapper {
+        display: flex;
+        position: absolute;
+        z-index: 1;
+        bottom: 40px;
+        left: 10px;
+        padding: 3px 8px 2px 8px;
+        background: rgba(255, 255, 255, 0.36);
+        border-radius: 40px;
+    }
+    .actionButtonsWrapper {
+        margin-bottom: 5px;
+        display: flex;
+        justify-content: center;
+        margin-top: -1px;
+        button {
+            margin-right: 12px;
+            padding: 2px 15px;
+            min-width: 100px;
+        }
+    }
+    .btn {
+        cursor: pointer;
+    }
+}
+
+.leftInfo {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    place-content: space-evenly;
+    padding-left: 12px;
+    border: 1px solid #eeeeee;
+    border-radius: 5px;
+    min-height: 427px;
+    .title {
+        font-size: 11px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        min-width: 105px;
+        //font-family: 'Open Sans';
+    }
+    .value {
+        font-size: 12px;
+        //font-family: 'Open Sans';
+    }
+}
+
+.permissionsWrapper {
+    width: 95%;
+    height: 90%;
+    margin-left: 1.5%;
+    margin-top: 1%;
+    border: 1px solid #eeeeee;
+    border-radius: 7px;
+    padding: 24px 48px;
+    .permissionsTitle {
+        font-size: 20px !important;
+        font-weight: 600 !important;
+        min-width: 400px;
+        margin-left: -12px;
+        padding-left: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #818181;
+        color: #716f6f !important;
+    }
+    .divider {
+        min-width: 400px;
+        height: 1px;
+        background: #818181;
+        margin-left: -12px;
+        box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.52);
+    }
+    .perm {
+        margin-top: 12px;
+        border-bottom: 1px solid #d4d4d4;
+        max-width: 200px;
+        &.last {
+            margin-bottom: 24px;
+        }
+    }
+    .MuiTypography-root {
+        font-size: 11px;
+        font-weight: bold;
+    }
+    .MuiFormControlLabel-root {
+        min-width: 115px;
+        max-width: 115px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .MuiFormControlLabel-label {
+        flex: 1;
+        text-align: left;
+    }
+}
