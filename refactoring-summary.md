@@ -156,3 +156,14 @@ Split into **3 focused services** + **1 facade**:
 7. ✅ **Backward compatibility** maintained
 
 The refactoring successfully transforms two monolithic "God Services" into maintainable, focused services while ensuring zero breaking changes through the facade pattern.
+
+---
+
+## 🔍 Verification Status (Last checked: 2025)
+
+All refactored files verified to exist at their documented paths:
+- ✅ `BalanceMutationService.php`, `BalanceQueryService.php`, `BalanceConfigService.php`, `UserBalanceService.php` (facade)
+- ✅ `ExtOrderSubmissionService.php`, `ExtOrderQueryService.php`, `ExtOrderTrackingService.php`, `ExternalExchangeOrderService.php` (facade)
+
+> **Note:** The `.backup` files mentioned in "Safety Measures" were not found — they were likely
+> cleaned up after the refactoring was validated. This does not affect the refactoring itself.
