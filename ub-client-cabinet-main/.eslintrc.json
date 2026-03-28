@@ -1,0 +1,104 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jest": true,
+    "node": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "project": "./tsconfig.json"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "react",
+    "react-hooks",
+    "redux-saga"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "prettier"
+  ],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "rules": {
+    "no-empty-function": "off",
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-empty-interface": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
+    "@typescript-eslint/no-shadow": "off",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/ban-types": "warn",
+    "@typescript-eslint/ban-ts-comment": "warn",
+    "no-console": "off",
+    "no-empty": "off",
+    "no-case-declarations": "off",
+    "no-empty-pattern": "warn",
+    "no-var": "warn",
+    "no-useless-escape": "warn",
+    "prefer-rest-params": "warn",
+    "prefer-const": "warn",
+    "no-shadow": "off",
+    "react/prop-types": "off",
+    "react/display-name": "off",
+    "react/jsx-key": "warn",
+    "react/no-unescaped-entities": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "@typescript-eslint/no-this-alias": "warn",
+    "@typescript-eslint/prefer-namespace-keyword": "warn",
+    "require-yield": "warn",
+    "redux-saga/no-unhandled-errors": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "semi": "off",
+    "@typescript-eslint/semi": ["error", "always"],
+    "quotes": "off",
+    "@typescript-eslint/quotes": ["error", "single", { "avoidEscape": true, "allowTemplateLiterals": true }],
+    "indent": "off"
+  },
+  "overrides": [
+    {
+      "files": ["*.js", "*.jsx"],
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/tests/**"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-empty-function": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/",
+    "build/",
+    "craConfig/",
+    "internals/",
+    "server/",
+    "public/",
+    "app/datafeeds/",
+    "app/components/Customized/",
+    "*.js"
+  ]
+}

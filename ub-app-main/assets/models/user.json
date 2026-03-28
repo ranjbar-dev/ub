@@ -1,0 +1,16 @@
+ {
+    "email": "",
+    "ubId": "",
+    "phone": "",
+    "kycLevel": "",
+    "kycStatus": "",
+    "kycLevelMessage": "",
+    "securityLevel": "",
+    "securityLevelMessage": "",
+    "profileStatus": "",
+    "google2faEnabled": false,
+    "has2fa": false,
+    "isAccountVerified": false,
+    "channelName": "",
+    "themeId": 0
+  }

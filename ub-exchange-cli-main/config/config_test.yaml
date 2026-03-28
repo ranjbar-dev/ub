@@ -1,0 +1,25 @@
+exchange:
+  environment: "test"
+  active_external_exchange: "binance"
+  domain: "exchange.local:8000"
+
+db:
+  name: "mysql"
+  dsn: "exchange_user:exchange_pass@tcp(db:3306)/exchange_go_test?parseTime=true"
+
+redis:
+  dsn: "redis:6379"
+  password: ""
+  db: 0
+
+mqtt:
+  clientid: "mqtt_abbas"
+  username: "mqtt_abbas"
+  password: "mqtt_abbas"
+
+
+jwt:
+  private_key: "../config/jwt/private.pem"
+  public_key: "../config/jwt/public.pem"
+  passphrase: "123456789"
+  ttl: 600 # minutes

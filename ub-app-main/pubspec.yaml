@@ -1,0 +1,109 @@
+name: unitedbit
+version: 1.1.7+10
+publish_to: none
+description: Unitedbit client cabinet app.
+environment:
+  sdk: ">=2.11.0 <3.0.0"
+
+dependencies:
+  url_strategy: 0.2.0
+  pointycastle: ^3.3.5
+  encrypt: ^5.0.1
+  asn1lib: ^1.0.2
+  decimal: ^1.3.0
+  rive: ^0.7.33
+  flutter_secure_storage: ^4.2.1
+  android_intent_plus: ^3.0.2
+  local_auth: ^1.1.8
+  cached_network_image: ^3.1.0
+  webview_flutter: ^2.3.0
+  animations: ^2.0.2
+  carousel_slider: ^4.0.0
+  universal_html: ^2.0.8
+  fluttertoast: ^8.0.8
+  connectivity: ^3.0.6
+  animator: ^3.1.0
+  pull_to_refresh: ^2.0.0
+  flutter_staggered_animations: ^1.0.0
+  qr_code_tools: ^0.0.7
+  supercharged: ^2.1.1
+  flutter_datetime_picker: ^1.5.1
+  permission_handler: ^8.2.6
+  ai_barcode: ^3.0.1
+  shimmer: 2.0.0
+  intl: ^0.17.0
+  url_launcher: ^6.0.12
+  percent_indicator: 3.4.0
+  file_picker: 4.2.0
+  dotted_border: ^2.0.0+1
+  provider: 6.0.1
+  vibration: 1.7.3
+  flutter_switch: 0.3.2
+  transparent_image: 2.0.0
+  basic_utils: ^3.8.1
+  uuid: ^3.0.5
+  rxdart: ^0.27.2
+  mqtt_client: ^9.6.1
+  pretty_dio_logger: ^1.1.1
+  logger: 1.1.0
+  dio: 4.0.1
+  flutter_svg: ^0.23.0+1
+  get_storage: 2.0.3
+  get: 4.3.4
+  flutter_appavailability: ^0.0.21
+  cupertino_icons: ^1.0.4
+
+  flutter:
+    sdk: flutter
+
+dependency_overrides:
+  meta: "1.7.0"
+  url_launcher_web: 2.0.6
+
+dev_dependencies:
+  # flutter pub run flutter_launcher_icons:main
+  flutter_launcher_icons: ^0.9.2
+  flutter_native_splash: ^1.3.1
+  mockito: ^5.0.16
+  build_runner: 2.1.4
+  flutter_gen: 4.1.2
+  flutter_test:
+    sdk: flutter
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path_android: "assets/appIcon/icon.png"
+  image_path_ios: "assets/appIcon/icon.png"
+  # adaptive_icon_background: '#ffffff'
+  remove_alpha_ios: true
+
+flutter_gen:
+  output: lib/generated/
+  integrations:
+    flutter_svg: true
+    flare_flutter: true
+  colors:
+    inputs:
+      - assets/color/colors.xml
+  lineLength: 80
+
+flutter:
+  assets:
+    - assets/rive/
+    - assets/images/
+    # - packages/fast_rsa/web/assets/worker.js
+    # - packages/fast_rsa/web/assets/wasm_exec.js
+    # - packages/fast_rsa/web/assets/rsa.wasm
+  fonts:
+    - family: OpenSans
+      fonts:
+        - asset: assets/fonts/OpenSans-Light.ttf
+          weight: 400
+        - asset: assets/fonts/OpenSans-Regular.ttf
+        - asset: assets/fonts/OpenSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/OpenSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/OpenSans-Italic.ttf
+          style: italic
+  uses-material-design: true

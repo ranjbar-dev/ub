@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+node_modules_fresh/
+node_modules_new/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production build
+/build
+/dist
+
+# Misc
+.DS_Store
+*.pem
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+
+# Build artifacts
+stats.json
+*.tgz
+
+# IDE
+.idea/

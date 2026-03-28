@@ -1,0 +1,80 @@
+part of 'app_pages.dart';
+// DO NOT EDIT. This is code generated via package:get_cli/get_cli.dart
+
+abstract class Routes {
+  static const HOME = _Paths.HOME;
+  static const LOGIN = _Paths.LOGIN;
+  static const LANDING = _Paths.LANDING;
+  static const SIGNUP = _Paths.SIGNUP;
+  static const FORGOT = _Paths.FORGOT;
+  static const ACCOUNT = _Paths.ACCOUNT;
+  static const TRADE = _Paths.TRADE;
+  static const OPEN_ORDERS = _Paths.OPEN_ORDERS;
+  static const ORDERS = _Paths.ORDERS;
+  static const ORDER_HISTORY = _Paths.ORDER_HISTORY;
+  static const FUNDS = _Paths.FUNDS;
+  static const BALANCE = _Paths.BALANCE;
+  static const DEPOSITS = _Paths.DEPOSITS;
+  static const DEPOST_DETAILS = _Paths.DEPOST_DETAILS;
+  static const WITHDRAWALS = _Paths.WITHDRAWALS;
+  static const TRANSACTION_HISTORY = _Paths.TRANSACTION_HISTORY;
+  static const MARKET = _Paths.MARKET;
+  static const CHANGE_PASSWORD = _Paths.CHANGE_PASSWORD;
+  static const WITHDRAW_ADDRESS_MANAGEMENT = _Paths.WITHDRAW_ADDRESS_MANAGEMENT;
+  static const TWO_FACTOR_AUTHENTICATION = _Paths.TWO_FACTOR_AUTHENTICATION;
+  static const IDENTITY_VERIFICATION = _Paths.IDENTITY_VERIFICATION;
+  static const IDENTITY_DOCUMENTS = _Paths.IDENTITY_DOCUMENTS;
+  static const PHONE_VERIFICATION = _Paths.PHONE_VERIFICATION;
+  static const ADD_NEW_ADDRESS = _Paths.ADD_NEW_ADDRESS;
+  static const QR_SCAN = _Paths.QR_SCAN;
+  static const CHARTS_PAGE = _Paths.CHARTS_PAGE;
+  static const EDIT_FAVORITES = _Paths.EDIT_FAVORITES;
+  static const AFTER_SPLASH = _Paths.AFTER_SPLASH;
+  static const WEB_VIEW = _Paths.WEB_VIEW;
+  static const WEB_VIEW_PAGE = _Paths.WEB_VIEW_PAGE;
+  static const CHECK_YOUR_EMAIL = _Paths.CHECK_YOUR_EMAIL;
+  static const SEPARATE_MESSAGE_PAGE = _Paths.SEPARATE_MESSAGE_PAGE;
+  static const EXCHANGE = _Paths.EXCHANGE;
+  static const EXCHANGE_SEARCH = _Paths.EXCHANGE_SEARCH;
+  static const AUTO_EXCHANGE = _Paths.AUTO_EXCHANGE;
+  static const AUTO_EXCHANGE_POPUP = _Paths.AUTO_EXCHANGE_POPUP;
+}
+
+abstract class _Paths {
+  static const HOME = '/home';
+  static const LOGIN = '/login';
+  static const LANDING = '/landing';
+  static const SIGNUP = '/signup';
+  static const FORGOT = '/forgot';
+  static const ACCOUNT = '/account';
+  static const TRADE = '/trade';
+  static const OPEN_ORDERS = '/open-orders';
+  static const ORDERS = '/orders';
+  static const ORDER_HISTORY = '/order-history';
+  static const FUNDS = '/funds';
+  static const BALANCE = '/balance';
+  static const DEPOSITS = '/deposits';
+  static const DEPOST_DETAILS = '/depost-details';
+  static const WITHDRAWALS = '/withdrawals';
+  static const TRANSACTION_HISTORY = '/transaction-history';
+  static const MARKET = '/market';
+  static const CHANGE_PASSWORD = '/change-password';
+  static const WITHDRAW_ADDRESS_MANAGEMENT = '/withdraw-address-management';
+  static const TWO_FACTOR_AUTHENTICATION = '/two-factor-authentication';
+  static const IDENTITY_VERIFICATION = '/identity-verification';
+  static const IDENTITY_DOCUMENTS = '/identity-documents';
+  static const PHONE_VERIFICATION = '/phone-verification';
+  static const ADD_NEW_ADDRESS = '/add-new-address';
+  static const QR_SCAN = '/qr-scan';
+  static const CHARTS_PAGE = '/charts-page';
+  static const EDIT_FAVORITES = '/edit-favorites';
+  static const AFTER_SPLASH = '/after-splash';
+  static const WEB_VIEW = '/web-view';
+  static const WEB_VIEW_PAGE = '/web-view-page';
+  static const CHECK_YOUR_EMAIL = '/check-your-email';
+  static const SEPARATE_MESSAGE_PAGE = '/separate-message-page';
+  static const EXCHANGE = '/exchange';
+  static const EXCHANGE_SEARCH = '/exchange-search';
+  static const AUTO_EXCHANGE = '/auto-exchange';
+  static const AUTO_EXCHANGE_POPUP = '/auto-exchange-popup';
+}

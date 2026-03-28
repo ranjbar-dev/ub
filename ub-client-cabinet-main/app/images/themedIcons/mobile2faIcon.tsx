@@ -1,0 +1,457 @@
+import React from 'react';
+
+export default function Mobile2faIcon() {
+  const blueFill = 'var(--textBlue)';
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="129"
+      height="235"
+      viewBox="0 0 129 235"
+    >
+      <g
+        id="Group_8108"
+        data-name="Group 8108"
+        transform="translate(-867.404 -777.123)"
+      >
+        <path
+          id="Path_7502"
+          data-name="Path 7502"
+          d="M764.759,791.4"
+          transform="translate(189.141 37.839)"
+          fill="none"
+          stroke="#818181"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1"
+        />
+        <g
+          id="Group_8193"
+          data-name="Group 8193"
+          transform="translate(-219.439 -73.526)"
+        >
+          <g
+            id="Group_8191"
+            data-name="Group 8191"
+            transform="translate(1086.904 851.623)"
+          >
+            <rect
+              id="Rectangle_4355"
+              data-name="Rectangle 4355"
+              width="128"
+              height="234"
+              rx="8"
+              transform="translate(0.439 -0.475)"
+              strokeWidth="1"
+              stroke="#818181"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <rect
+              id="Rectangle_4356"
+              data-name="Rectangle 4356"
+              width="116.763"
+              height="224.874"
+              rx="8"
+              transform="translate(5.838 4.326)"
+              strokeWidth="1"
+              stroke="#818181"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <line
+              id="Line_425"
+              data-name="Line 425"
+              x2="37.047"
+              transform="translate(45.696 220.27)"
+              fill="none"
+              stroke="#818181"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+          <g
+            id="Group_7568"
+            data-name="Group 7568"
+            transform="translate(1133.574 933.154) rotate(-9)"
+          >
+            <path
+              id="Path_7175"
+              data-name="Path 7175"
+              d="M30.3,12.573l1.936.318a1.412,1.412,0,1,0,.459-2.787L14.712,7.14a7.358,7.358,0,1,0-.46,2.787l11.193,1.847"
+              transform="translate(0 0)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <ellipse
+              id="Ellipse_216"
+              data-name="Ellipse 216"
+              cx="3.705"
+              cy="3.705"
+              rx="3.705"
+              ry="3.705"
+              transform="translate(3.877 3.691)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <path
+              id="Path_7176"
+              data-name="Path 7176"
+              d="M5.233.8,4.862,3.05a.819.819,0,0,1-.941.675h0a.819.819,0,0,1-.675-.942h0a.6.6,0,0,0-.5-.692l-.43-.07a.6.6,0,0,0-.692.5h0a.819.819,0,0,1-.941.675h0a.821.821,0,0,1-.675-.942L.382,0"
+              transform="translate(25.064 11.773)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+          <path
+            id="Path_7177"
+            data-name="Path 7177"
+            d="M43.527,11.223A13.06,13.06,0,0,1,34.782,5.21,11.393,11.393,0,0,0,18.14,2.464,13.055,13.055,0,0,1,7.927,5.352l-.965-.159A3.805,3.805,0,0,0,2.589,8.327L.552,20.682a41.285,41.285,0,0,0,16.51,40.15A41.286,41.286,0,0,0,45.589,28.11l2.038-12.355a3.8,3.8,0,0,0-3.134-4.372Z"
+            transform="translate(1125.178 912.667) rotate(-9)"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <g
+            id="Group_7569"
+            data-name="Group 7569"
+            transform="translate(1111.843 994.32) rotate(-9)"
+          >
+            <line
+              id="Line_227"
+              data-name="Line 227"
+              x1="1.348"
+              y2="8.175"
+              transform="translate(3.414 0)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_228"
+              data-name="Line 228"
+              x2="8.176"
+              y2="1.348"
+              transform="translate(0 3.414)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_229"
+              data-name="Line 229"
+              x2="4.828"
+              y2="6.734"
+              transform="translate(1.674 0.721)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_230"
+              data-name="Line 230"
+              y1="4.827"
+              x2="6.734"
+              transform="translate(0.721 1.674)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+          <g
+            id="Group_7570"
+            data-name="Group 7570"
+            transform="translate(1125.843 994.319) rotate(-9)"
+          >
+            <line
+              id="Line_231"
+              data-name="Line 231"
+              x1="1.348"
+              y2="8.175"
+              transform="translate(3.414 0)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_232"
+              data-name="Line 232"
+              x2="8.176"
+              y2="1.348"
+              transform="translate(0 3.414)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_233"
+              data-name="Line 233"
+              x2="4.828"
+              y2="6.734"
+              transform="translate(1.674 0.721)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_234"
+              data-name="Line 234"
+              y1="4.827"
+              x2="6.734"
+              transform="translate(0.721 1.674)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+          <g
+            id="Group_7571"
+            data-name="Group 7571"
+            transform="translate(1139.843 994.319) rotate(-9)"
+          >
+            <line
+              id="Line_235"
+              data-name="Line 235"
+              x1="1.348"
+              y2="8.175"
+              transform="translate(3.414 0)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_236"
+              data-name="Line 236"
+              x2="8.176"
+              y2="1.348"
+              transform="translate(0 3.414)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_237"
+              data-name="Line 237"
+              x2="4.828"
+              y2="6.734"
+              transform="translate(1.674 0.721)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_238"
+              data-name="Line 238"
+              y1="4.827"
+              x2="6.734"
+              transform="translate(0.721 1.674)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+          <g
+            id="Group_7572"
+            data-name="Group 7572"
+            transform="translate(1153.843 994.32) rotate(-9)"
+          >
+            <line
+              id="Line_239"
+              data-name="Line 239"
+              x1="1.348"
+              y2="8.175"
+              transform="translate(3.414 0)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_240"
+              data-name="Line 240"
+              x2="8.176"
+              y2="1.348"
+              transform="translate(0 3.414)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_241"
+              data-name="Line 241"
+              x2="4.828"
+              y2="6.734"
+              transform="translate(1.674 0.721)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_242"
+              data-name="Line 242"
+              y1="4.827"
+              x2="6.734"
+              transform="translate(0.721 1.674)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+          <g
+            id="Group_7573"
+            data-name="Group 7573"
+            transform="translate(1167.843 994.319) rotate(-9)"
+          >
+            <line
+              id="Line_243"
+              data-name="Line 243"
+              x1="1.348"
+              y2="8.175"
+              transform="translate(3.414 0)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_244"
+              data-name="Line 244"
+              x2="8.176"
+              y2="1.348"
+              transform="translate(0 3.414)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_245"
+              data-name="Line 245"
+              x2="4.828"
+              y2="6.734"
+              transform="translate(1.674 0.721)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_246"
+              data-name="Line 246"
+              y1="4.827"
+              x2="6.734"
+              transform="translate(0.721 1.674)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+          <g
+            id="Group_7583"
+            data-name="Group 7583"
+            transform="translate(1181.843 994.32) rotate(-9)"
+          >
+            <line
+              id="Line_243-2"
+              data-name="Line 243"
+              x1="1.348"
+              y2="8.175"
+              transform="translate(3.414 0)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_244-2"
+              data-name="Line 244"
+              x2="8.176"
+              y2="1.348"
+              transform="translate(0 3.414)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_245-2"
+              data-name="Line 245"
+              x2="4.828"
+              y2="6.734"
+              transform="translate(1.674 0.721)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+            <line
+              id="Line_246-2"
+              data-name="Line 246"
+              y1="4.827"
+              x2="6.734"
+              transform="translate(0.721 1.674)"
+              fill="none"
+              stroke={blueFill}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1"
+            />
+          </g>
+        </g>
+      </g>
+    </svg>
+  );
+}

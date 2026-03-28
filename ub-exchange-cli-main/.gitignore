@@ -1,0 +1,19 @@
+var/logs/*
+!var/logs/.gitkeep
+.idea/
+
+/.env
+/ws
+/httpd
+/engine
+/cli
+/assets/*
+
+/vendor
+
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib

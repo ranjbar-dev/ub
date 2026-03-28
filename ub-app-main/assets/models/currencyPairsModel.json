@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "code": "USDT",
+    "name": "Tether",
+    "subUnit": 6,
+    "pairs": [
+      {
+        "pairId": 1,
+        "pairName": "BTC-USDT",
+        "dependentCode": "BTC",
+        "dependentName": "Bitcoin",
+        "subUnit": 8,
+        "basisSubUnit": 6,
+        "basisCode": "USDT",
+        "dependentId": 2,
+        "isFavorite": false,
+        "isMain": true,
+        "price": "49114.900000",
+        "formattedVolume": " ",
+        "formattedPrice": " ",
+        "formattedEquivalentPrice": " ",
+        "equivalentPrice": "49114.90",
+        "percent": "5.314",
+        "image": "https://app.unitedbit.com/assets/images/currencies/icons/32/color/btc.png",
+        "makerFee": 0.01,
+        "takerFee": 0.01,
+        "showDigits": 6
+      }
+    ]
+  }
+]

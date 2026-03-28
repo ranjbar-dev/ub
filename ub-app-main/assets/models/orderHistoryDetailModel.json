@@ -1,0 +1,11 @@
+{
+  "createdAt": "2021-04-20 09:17:10",
+  "updatedAt": "2021-04-20 09:17:10",
+  "pair": " BTC-USDT",
+  "type": "buy",
+  "subUnit": "6",
+  "price": "55273.89 USDT",
+  "executed": "0.00018092 BTC",
+  "fee": "0.00000181 BTC",
+  "amount": "10.0001521788 USDT"
+}

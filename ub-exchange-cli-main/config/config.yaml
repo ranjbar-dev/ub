@@ -1,0 +1,51 @@
+exchange:
+  environment: "dev"
+  active_external_exchange: "binance"
+  domain: "exchange.local:8000"
+  imagepath: "exchange.local:8000"
+  supportemail: "support@unitedbit.com"
+
+db:
+  name: "mysql"
+  dsn: "exchange_user:exchange_pass@tcp(db:3306)/exchange_db?parseTime=true"
+
+redis:
+  dsn: "redis:6379"
+  password: ""
+  db: 0
+
+rabbitmq:
+  dsn: "amqp://rabbitmquser:some_password@rabbitmq:5672/"
+  queue_name: "email_queue_1"
+
+sentry:
+  dsn: "https://37f20dc244a440bfad044de2611ff496@o288380.ingest.sentry.io/5657372"
+  debug: false
+
+mqtt:
+  dsn: "emqtt:1883"
+  clientid: "mqtt_abbas"
+  username: "mqtt_abbas"
+  password: "mqtt_abbas"
+
+recaptcha:
+  secretkey: "secret_key"
+  sitekey: "site_key"
+  androidsecretkey: "android_secret_key"
+  androidsitekey: "android_site_key"
+
+
+jwt:
+  private_key: "config/jwt/private.pem"
+  public_key: "config/jwt/public.pem"
+  passphrase: "123456789"
+  ttl: 2592000 # based on minutes, now 30 days
+
+wallet:
+  host: "host"
+  username: "wallet_username"
+  password: "wallet_password"
+
+
+candle:
+  grpcaddr: "candle-app:50051"

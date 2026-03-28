@@ -1,0 +1,21 @@
+{
+  "basisCode": "USDT",
+  "basisSubUnit": 6,
+  "dependentCode": "BTC",
+  "dependentId": 2,
+  "dependentName": "Bitcoin",
+  "equivalentPrice": "39076.72",
+  "image": "https://app.unitedbit.com/assets/images/currencies/icons/32/color/btc.png",
+  "isFavorite": false,
+  "isMain": true,
+  "lastUpdate": "2021-06-03 10:01:27",
+  "makerFee": 0.01,
+  "pairId": 1,
+  "pairName": "BTC-USDT",
+  "percent": "4.857",
+  "price": "39076.720000",
+  "showDigits": 6,
+  "subUnit": 8,
+  "takerFee": 0.01,
+  "trendData": [{ "price": "181.31", "time": "2021-05-30 06:59:59" }]
+}

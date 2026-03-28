@@ -1,0 +1,48 @@
+import React from 'react';
+
+export default function CopyIcon() {
+  const fill = 'var(--blackText)';
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <defs>
+        <clipPath id="clipPath">
+          <rect
+            id="Rectangle_4200"
+            data-name="Rectangle 4200"
+            width="24"
+            height="24"
+            transform="translate(167.247 228.275)"
+            fill={fill}
+          />
+        </clipPath>
+      </defs>
+      <g
+        id="Group_7889"
+        data-name="Group 7889"
+        transform="translate(-167.247 -228.275)"
+        clipPath="url(#clipPath)"
+      >
+        <g id="Group_7888" data-name="Group 7888">
+          <path
+            id="Path_7321"
+            data-name="Path 7321"
+            d="M186.247,235.775h-2.5v-2.5a1.5,1.5,0,0,0-1.5-1.5h-10a1.5,1.5,0,0,0-1.5,1.5v10a1.5,1.5,0,0,0,1.5,1.5h2.5v2.5a1.5,1.5,0,0,0,1.5,1.5h10a1.5,1.5,0,0,0,1.5-1.5v-10A1.5,1.5,0,0,0,186.247,235.775Zm-14,8a.5.5,0,0,1-.5-.5v-10a.5.5,0,0,1,.5-.5h10a.5.5,0,0,1,.5.5v2.5h-6.5a1.5,1.5,0,0,0-1.5,1.5v6.5Zm14.5,3.5a.5.5,0,0,1-.5.5h-10a.5.5,0,0,1-.5-.5v-10a.5.5,0,0,1,.5-.5h10a.5.5,0,0,1,.5.5Z"
+            fill={fill}
+          />
+          <path
+            id="Path_7322"
+            data-name="Path 7322"
+            d="M184.076,239.775h-5.659a.5.5,0,0,0,0,1h5.659a.5.5,0,0,0,0-1Z"
+            fill={fill}
+          />
+          <path
+            id="Path_7323"
+            data-name="Path 7323"
+            d="M184.076,243.775h-5.659a.5.5,0,0,0,0,1h5.659a.5.5,0,0,0,0-1Z"
+            fill={fill}
+          />
+        </g>
+      </g>
+    </svg>
+  );
+}

@@ -1,0 +1,45 @@
+ {
+     "address": "street",
+     "adminComment": "",
+     "country": 669,
+     "countryName": "IRN",
+     "dateOfBirth": "1989-01-01",
+     "firstName": "mohsen",
+     "gender": "male",
+     "id": 149,
+     "lastName": "parvar",
+     "postalCode": "111111",
+     "regionAndCity": "nemidunam city",
+     "status": "processing",
+     "updatedAt": "2021-03-28 17:40:12",
+             "userProfileImages": [{
+               "createdAt": "2021-01-09 11:56:47",
+               "id": 365,
+               "idCardCode": "",
+               "image": "",
+               "imageId": 365,
+               "isBack": false,
+               "mainImageId": 12,
+               "rejectionReason": "",
+               "status": "confirmed",
+               "subType": "identity_card",
+               "type": "identity"
+             }],
+             "userProfileImagesMetaData": {
+                 "types": [
+                    {
+                         "name": "address",
+                         "subTypes": [{"name": "bank_statement"}, {"name": "utility_bill"}, {"name": "other"}]
+                    },
+                    {
+                         "name": "identity",
+                         "subTypes": [
+                          {"name": "identity_card", "hasBack": true},
+                          {"name": "driver_license", "hasBack": true},
+                          {"name": "passport", "hasBack": false}
+                         ]
+                    }
+                 ]
+            }
+        }
+    

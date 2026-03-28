@@ -1,0 +1,12 @@
+{
+    "ohlcStartTime":"2021-02-13 21:00:00",
+    "ohlcCloseTime":"2021-02-13 21:59:59",
+    "openPrice":46934.07,
+    "closePrice":47267.11,
+    "highPrice":47320,
+    "lowPrice":46700.38,
+    "baseVolume":1773.162459,
+    "quoteVolume":83204674.07134873,
+    "takerBuyBaseVolume":995.994429,
+    "takerBuyQuoteVolume":46753665.0752903
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <style>
+    .loader,
+    .loader:after {
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+    }
+
+    .loader {
+      margin: 60px auto;
+      font-size: 10px;
+      position: relative;
+      text-indent: -9999em;
+      border-top: 5px solid rgba(255, 255, 255, 0.2);
+      border-right: 5px solid rgba(255, 255, 255, 0.2);
+      border-bottom: 5px solid rgba(255, 255, 255, 0.2);
+      border-left: 5px solid #ffffff;
+      -webkit-transform: translateZ(0);
+      -ms-transform: translateZ(0);
+      transform: translateZ(0);
+      -webkit-animation: load8 1.1s infinite linear;
+      animation: load8 1.1s infinite linear;
+    }
+
+    @-webkit-keyframes load8 {
+      0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+      }
+
+      100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes load8 {
+      0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+      }
+
+      100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+
+
+  <script src="https://unpkg.com/platform@1.3.5/platform.js"></script>
+  <script type="text/javascript">
+    let isSafari = /^((?!chrome|android).)*safari/i.test(platform.ua);
+    if (isSafari) {
+      HTMLCanvasElement.prototype.getContext = function (orig) {
+        return function (type) {
+          return type !== "webgl2" ? orig.apply(this, arguments) : null
+        }
+      }(HTMLCanvasElement.prototype.getContext)
+    }
+  </script>
+  <base href="/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unitedbit</title>
+  <!-- <picture id="splash">
+    <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x" media="(prefers-color-scheme: light) or (prefers-color-scheme: no-preference)">
+    <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x" media="(prefers-color-scheme: dark)">
+    <img class="center" src="splash/img/light-1x.png" />
+    <div class="loader-2 center" style="position: absolute; top:calc(50% + 60px);" >
+      <div class="loader">Loading...</div>
+    </div>
+
+  </picture> -->
+  <script defer src="main.dart.js" type="application/javascript"></script>
+
+  <link rel="stylesheet" type="text/css" href="splash/style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+</body>
+
+</html>

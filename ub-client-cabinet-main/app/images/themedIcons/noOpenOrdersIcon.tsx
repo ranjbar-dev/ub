@@ -1,0 +1,275 @@
+import React from 'react';
+
+export default function NoOpenOrdersIcon() {
+  const fillBlue = 'var(--textBlue)';
+  return (
+    <svg width="197.404" height="175.455" viewBox="0 0 197.404 175.455">
+      <g
+        id="Group_8057"
+        data-name="Group 8057"
+        transform="translate(-644.324 -599.007)"
+      >
+        <path
+          id="Path_7440"
+          data-name="Path 7440"
+          d="M679.747,683.828V625.105a11.181,11.181,0,0,1,11.182-11.182h11.254"
+          transform="translate(8.446 3.487)"
+          fill="none"
+          stroke="#818181"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1"
+        />
+        <path
+          id="Path_7441"
+          data-name="Path 7441"
+          d="M789.98,684.5v57.728A11.183,11.183,0,0,1,778.8,753.408"
+          transform="translate(32.4 20.554)"
+          fill="none"
+          stroke="#818181"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1"
+        />
+        <path
+          id="Path_7442"
+          data-name="Path 7442"
+          d="M769.733,613.924h11.256a11.182,11.182,0,0,1,11.183,11.182v55.571"
+          transform="translate(30.208 3.487)"
+          fill="none"
+          stroke="#818181"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1"
+        />
+        <path
+          id="Path_7443"
+          data-name="Path 7443"
+          d="M761.3,610.924a9.458,9.458,0,0,1-8.575-5.022,11.421,11.421,0,0,0-20.512,0,9.458,9.458,0,0,1-8.575,5.022h-16.45a9.376,9.376,0,0,0-9.376,9.376v8.385a5.073,5.073,0,0,0,5.073,5.074h79.166a5.073,5.073,0,0,0,5.073-5.074V620.3a9.376,9.376,0,0,0-9.377-9.376Z"
+          transform="translate(12.816 0)"
+          fill="none"
+          stroke="#818181"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1"
+        />
+        <circle
+          id="Ellipse_266"
+          data-name="Ellipse 266"
+          cx="6.091"
+          cy="6.091"
+          r="6.091"
+          transform="translate(749.195 608.198)"
+          strokeWidth="1"
+          stroke="#818181"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        <g
+          id="Group_8053"
+          data-name="Group 8053"
+          transform="translate(702.448 627.739)"
+        >
+          <path
+            id="Path_7444"
+            data-name="Path 7444"
+            d="M691.226,693.843V627.832a5.591,5.591,0,0,1,5.591-5.591h2.592"
+            transform="translate(-691.226 -622.241)"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <path
+            id="Path_7445"
+            data-name="Path 7445"
+            d="M795.231,672.99V715.4a9.676,9.676,0,0,1-2.674,6.677L774.605,740.9a9.674,9.674,0,0,1-7,3H698.14"
+            transform="translate(-689.554 -609.968)"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <path
+            id="Path_7446"
+            data-name="Path 7446"
+            d="M769.734,622.241h2.59a5.592,5.592,0,0,1,5.592,5.591v36.084"
+            transform="translate(-672.239 -622.241)"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <path
+            id="Path_7447"
+            data-name="Path 7447"
+            d="M754.182,734.787l.011-21.406a6.61,6.61,0,0,1,6.612-6.607h20.873"
+            transform="translate(-676.001 -601.797)"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+        </g>
+        <g
+          id="Group_8054"
+          data-name="Group 8054"
+          transform="translate(776.821 647.557)"
+        >
+          <path
+            id="Path_7448"
+            data-name="Path 7448"
+            d="M807.986,692.276l-4.636,4.481a4.048,4.048,0,0,1-5.724-.1L754.64,652.185l1.105-6.2,3.491.427-.2-3.716,6.063-.622,42.986,44.474A4.048,4.048,0,0,1,807.986,692.276Z"
+            transform="translate(-750.263 -637.261)"
+            fill="none"
+            stroke={fillBlue}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <path
+            id="Path_7449"
+            data-name="Path 7449"
+            d="M755.492,653.123,751.115,638.2l14.833,4.817"
+            transform="translate(-751.115 -638.199)"
+            fill="none"
+            stroke={fillBlue}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <line
+            id="Line_369"
+            data-name="Line 369"
+            y1="10.106"
+            x2="10.456"
+            transform="translate(42.415 44.097)"
+            fill="none"
+            stroke={fillBlue}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <line
+            id="Line_370"
+            data-name="Line 370"
+            x2="29.97"
+            y2="30.519"
+            transform="translate(14.833 15.983)"
+            fill="none"
+            stroke={fillBlue}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+        </g>
+        <line
+          id="Line_371"
+          data-name="Line 371"
+          x2="56.63"
+          transform="translate(714.379 650.787)"
+          fill="none"
+          stroke={fillBlue}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1"
+        />
+        <line
+          id="Line_372"
+          data-name="Line 372"
+          x1="196.404"
+          transform="translate(644.824 773.962)"
+          fill="none"
+          stroke="#818181"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1"
+        />
+        <g
+          id="Group_8055"
+          data-name="Group 8055"
+          transform="translate(655.053 730.102)"
+        >
+          <path
+            id="Path_7450"
+            data-name="Path 7450"
+            d="M701.025,747.035h-32.21c-2.691,0-5-2.223-5.484-5.285l-4.9-30.9h53.013l-4.935,30.908C706.019,744.816,703.714,747.035,701.025,747.035Z"
+            transform="translate(-651.763 -703.175)"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <rect
+            id="Rectangle_4264"
+            data-name="Rectangle 4264"
+            width="66.347"
+            height="7.674"
+            rx="2.664"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <line
+            id="Line_373"
+            data-name="Line 373"
+            x2="13.056"
+            transform="translate(31.739 38.308)"
+            fill="none"
+            stroke="#818181"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+        </g>
+        <g
+          id="Group_8056"
+          data-name="Group 8056"
+          transform="translate(658.627 672.393)"
+        >
+          <path
+            id="Path_7451"
+            data-name="Path 7451"
+            d="M687.622,659.478c0,10.351-26.842,44.176-16.892,56.429h16.43C702.043,704.622,687.622,649.129,687.622,659.478Z"
+            transform="translate(-652.896 -658.198)"
+            fill="none"
+            stroke="#06ba61"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <path
+            id="Path_7452"
+            data-name="Path 7452"
+            d="M690.242,689.626c6.167-13.875,15.045-28.413,13.213-23.554-3.227,8.563,6.137,38.9-5.065,48.162H683.53"
+            transform="translate(-649.266 -656.526)"
+            fill="none"
+            stroke="#06ba61"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+          <path
+            id="Path_7453"
+            data-name="Path 7453"
+            d="M675.992,689.609c-6.167-13.875-23.179-27.986-19.552-23.612,9.573,11.544.2,38.959,11.4,48.221H682.7"
+            transform="translate(-655.939 -656.509)"
+            fill="none"
+            stroke="#06ba61"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          />
+        </g>
+      </g>
+    </svg>
+  );
+}

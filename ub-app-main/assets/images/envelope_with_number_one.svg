@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="126" height="80" viewBox="0 0 126 80">
+    <g fill="none" fill-rule="evenodd">
+        <g>
+            <g>
+                <path fill="#23232B" stroke="#34343D" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M31.465 12H117c4.418 0 8 3.582 8 8v51c0 4.418-3.582 8-8 8H20c-4.418 0-8-3.582-8-8V12h19.465z" transform="translate(-118 -414) translate(118 414)"/>
+                <path stroke="#34343D" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M122 14.83L72.796 54.32c-2.52 2.023-6.099 2.057-8.657.082L19.556 20h0" transform="translate(-118 -414) translate(118 414)"/>
+                <path fill="#F49806" d="M27 13.5C27 20.957 20.955 27 13.5 27 6.043 27 0 20.957 0 13.5S6.043 0 13.5 0C20.955 0 27 6.043 27 13.5z" transform="translate(-118 -414) translate(118 414)"/>
+                <path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 19L14 7 11 9.164M11 20L17 20" transform="translate(-118 -414) translate(118 414)"/>
+                <path stroke="#34343D" stroke-linecap="round" stroke-width="3" d="M15.5 75.5L52 46" transform="translate(-118 -414) translate(118 414)"/>
+                <path stroke="#34343D" stroke-linecap="round" stroke-width="3" d="M86.5 77L122.5 46" transform="translate(-118 -414) translate(118 414) matrix(-1 0 0 1 208.5 0)"/>
+            </g>
+        </g>
+    </g>
+</svg>

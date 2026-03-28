@@ -1,0 +1,10 @@
+FROM golang:1.24
+ENV GO111MODULE=on
+WORKDIR /app
+#COPY . .
+
+#RUN go mod init gitlab.com/majid1370/rabbitmq-consumer
+
+#RUN  go build -mod=vendor
+
+#ENTRYPOINT ["/app/rabbitmq-consumer"]

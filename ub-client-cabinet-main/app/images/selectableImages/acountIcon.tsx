@@ -1,0 +1,50 @@
+import React from 'react';
+
+export default function AcountIcon(props: { isSelected: boolean }) {
+  const isSelected = props.isSelected;
+  const fillColor =
+    isSelected === false ? 'var(--blackText)' : 'var(--appHeaderSelectedColor)';
+  return (
+    <>
+      <svg width="24" height="24" viewBox="0 0 24 24">
+        <defs>
+          <clipPath id="clip-path5">
+            <rect
+              id="Rectangle_4007"
+              data-name="Rectangle 4007"
+              width="24"
+              height="24"
+              transform="translate(1483.07 539.197)"
+              fill={fillColor}
+            />
+          </clipPath>
+        </defs>
+        <g
+          id="Group_7469"
+          data-name="Group 7469"
+          transform="translate(-1483.07 -539.197)"
+          clipPath="url(#clip-path5)"
+        >
+          <g id="Group_7468" data-name="Group 7468">
+            <g id="Group_7466" data-name="Group 7466">
+              <path
+                id="Path_7083"
+                data-name="Path 7083"
+                d="M1503.07,559.722a.5.5,0,0,1-.5-.5,3.482,3.482,0,0,0-3.457-3.5h-8.087a3.483,3.483,0,0,0-3.456,3.5.5.5,0,0,1-1,0,4.483,4.483,0,0,1,4.456-4.5h8.087a4.483,4.483,0,0,1,4.457,4.5A.5.5,0,0,1,1503.07,559.722Z"
+                fill={fillColor}
+              />
+            </g>
+            <g id="Group_7467" data-name="Group 7467">
+              <path
+                id="Path_7084"
+                data-name="Path 7084"
+                d="M1494.809,552.673a5,5,0,1,1,5-5A5.006,5.006,0,0,1,1494.809,552.673Zm0-9a4,4,0,1,0,4,4A4,4,0,0,0,1494.809,543.673Z"
+                fill={fillColor}
+              />
+            </g>
+          </g>
+        </g>
+      </svg>
+    </>
+  );
+}

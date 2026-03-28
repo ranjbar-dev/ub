@@ -1,0 +1,6 @@
+{
+	"address": "string",
+	"code": "string",
+	"label": "string",
+	"network": "string"
+}

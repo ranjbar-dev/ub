@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="124.205" height="108.828" viewBox="0 0 124.205 108.828">
+  <g id="Group_8113" data-name="Group 8113" transform="translate(0.5 0.5)">
+    <g id="Group_8111" data-name="Group 8111" transform="translate(89.15 65.11)">
+      <path id="Path_7503" data-name="Path 7503" d="M685.393,659.931v-3.385a8.292,8.292,0,0,1,3.5-6.767h0a8.286,8.286,0,0,0,3.5-6.765V642.7a7,7,0,0,0-7-7h0a7,7,0,0,0-7,7" transform="translate(-678.392 -635.695)" fill="none" stroke="#e64141" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      <line id="Line_395" data-name="Line 395" y2="2.569" transform="translate(7.001 28.758)" fill="none" stroke="#e64141" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+    </g>
+    <g id="Group_8112" data-name="Group 8112" transform="translate(26.678 18.469)">
+      <rect id="Rectangle_4308" data-name="Rectangle 4308" width="39.552" height="36.042" rx="6" transform="translate(0 19.926)" stroke-width="1" stroke="#396de0" stroke-linecap="round" stroke-linejoin="round" fill="transparent"/>
+      <path id="Rectangle_4309" data-name="Rectangle 4309" d="M7.57,0H19.705a7.57,7.57,0,0,1,7.57,7.57V19.926a0,0,0,0,1,0,0H0a0,0,0,0,1,0,0V7.57A7.57,7.57,0,0,1,7.57,0Z" transform="translate(6.138)" fill="transparent" stroke="#396de0" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+      <rect id="Rectangle_4310" data-name="Rectangle 4310" width="5.921" height="5.921" rx="2.43" transform="translate(16.815 34.987)" stroke-width="1" stroke="#396de0" stroke-linecap="round" stroke-linejoin="round" fill="transparent"/>
+    </g>
+    <path id="Path_7504" data-name="Path 7504" d="M700.293,693.48A46.462,46.462,0,1,1,728.375,650.8" transform="translate(-635.468 -604.346)" fill="none" stroke="#818181" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+    <circle id="Ellipse_269" data-name="Ellipse 269" cx="27.054" cy="27.054" r="27.054" transform="translate(69.097 53.719)" stroke-width="1" stroke="#818181" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>

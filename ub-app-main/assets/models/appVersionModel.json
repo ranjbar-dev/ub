@@ -1,0 +1,9 @@
+{
+"version": "0.0.2",
+"forceUpdate": true,
+"keyFeatures": ["Home page for app has been added", "Some bug fixed"],
+"bugFixes": ["Home page for app has been added", "Some bug fixed"],
+"releaseDate": "2021-06-09",
+"url":"https://play.google.com/store/apps/details?id=org.mozilla.firefox"
+}
+

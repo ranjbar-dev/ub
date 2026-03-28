@@ -1,0 +1,40 @@
+version: '3'
+services:
+  mongodb:
+    container_name: communicator-db
+    image: mongo
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=ubMessages
+      - MONGO_INITDB_ROOT_USERNAME=myukelele
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./../communicator-db:/data/db
+      - ./.docker/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - default
+
+  go:
+    container_name: communicator-app
+    build:
+      context: ./
+      dockerfile: ./.docker/go/Dockerfile.dev
+    restart: always
+    working_dir: /app
+    command: tail -F docker-compose.yml
+#    environment:
+#      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+    volumes:
+      - .:/app
+    networks:
+      - default
+      - ub-server_rabbit
+
+networks:
+  ub-server_rabbit:
+    external: true
+
+
+

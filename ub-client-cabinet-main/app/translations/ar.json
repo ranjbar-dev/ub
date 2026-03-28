@@ -1,0 +1,11 @@
+{
+    "components.Footer.author.message": "Made with love by mohsen .",
+    "components.Header.features": "eeeee",
+    "components.Header.home": "unitedBit",
+
+    "app.containers.Login.header": "eee",
+    "containers.LocaleToggle.de": "de",
+    "containers.LocaleToggle.en": "en",
+    "containers.LocaleToggle.ar": "ar",
+    "containers.NotFoundPage.header": "eeeee"
+}

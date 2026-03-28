@@ -1,0 +1,11 @@
+{
+"amount": "1.11",
+"exchange_type": "limit",
+"pair_currency_id": 1,
+"price": "1200",
+"stop_point_price": "",
+"type": "buy",
+"user_agent_info":{"browser": "Chrome",
+"device": "web",
+"os": "Win32"}
+}

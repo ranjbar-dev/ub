@@ -1,0 +1,9 @@
+{
+"backgroundImage": "https://app.unitedbit.com/assets/images/currencies/tether_background.png",
+"code": "AAVE",
+"id": 22,
+"image": "https://app.unitedbit.com/assets/images/currencies/icons/32/color/aave.png",
+"mainNetwork": "ETH",
+"name": "Aave",
+"otherBlockChainNetworks": {}
+}

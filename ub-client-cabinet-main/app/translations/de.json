@@ -1,0 +1,9 @@
+{
+
+    "containers.HomePage.start_project.header": "Beginnen Sie Ihr nächstes React Projekt in Sekunden",
+
+    "containers.LocaleToggle.de": "",
+    "containers.LocaleToggle.en": "",
+    "containers.LocaleToggle.fa": "fa",
+    "containers.NotFoundPage.header": "Seite nicht gefunden."
+}

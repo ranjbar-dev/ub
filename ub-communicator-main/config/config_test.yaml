@@ -1,0 +1,44 @@
+communicator:
+  environment: "test"
+  allowed_ips:
+    - "127.0.0.1"
+mail:
+  name: "TEST"
+  from_address: "test@example.com"
+
+sms:
+  account_sid: "test_sid"
+  auth_token: "test_token"
+  from: "+15555555555"
+
+mongodb:
+  dsn: "mongodb://localhost:27017/ubMessagesTest"
+  name: "ubMessagesTest"
+
+rabbitmq:
+  dsn: "amqp://guest:guest@localhost:5672/"
+  queue_name: "test_queue"
+
+mailer_broker: "smtp"
+
+sendgrid:
+  api_key: "test_key"
+
+mailjet:
+  api_public_key: "test_public"
+  api_private_key: "test_private"
+
+mailgun:
+  api_key: "test_key"
+  domain: "test.example.com"
+  api_base: "https://api.mailgun.net/v3"
+
+smtp:
+  host: "localhost"
+  port: 1025
+  username: "test"
+  password: "test"
+
+sentry:
+  dsn: ""
+  debug: false

@@ -1,0 +1,16 @@
+.idea/
+/main
+.env
+config/config.local.yaml
+/var/logs/*
+!/var/logs/.gitkeep
+
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Vendored dependencies
+/vendor/

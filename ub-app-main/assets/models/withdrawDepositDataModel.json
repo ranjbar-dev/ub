@@ -1,0 +1,55 @@
+{
+	"balance":{
+	"address": "Xh52mnzzbMezoPxh4U2CfyBgK4vrULQP5k",
+	"availableAmount": "0.00000000",
+	"backgroundImage": "/assets/images/currencies/tether_background.png",
+	"btcAvailableEquivalentAmount": "0",
+	"btcInOrderEquivalentAmount": "0",
+	"btcTotalEquivalentAmount": "0",
+	"code": "DASH",
+	"equivalentAvailableAmount": "0",
+	"equivalentInOrderAmount": "0",
+	"equivalentTotalAmount": "0",
+	"fee": "0.0001",
+	"image": "/assets/images/currencies/icons/32/color/dash.png",
+	"inOrderAmount": "0.00000000",
+	"minimumWithdraw": "0.00002",
+	"name": "Dash",
+	"price": "210.8",
+	"subUnit": 8,
+	"totalAmount": "0.00000000"
+	},
+	"completedNetworkName": "Dash(DASH)",
+	"currencyExtraInfo": {
+	"circulation": "17000000",
+	"description": "bitcoin is the most famous crypto currency ",
+	"image": "https://app.unitedbit.com/assets/images/currencies/tether_background.png",
+	"issueDate": "2019-08-06 13:29:40",
+	"name": "Dash",
+	"totalAmount": "21000000"
+},
+"isDepositPermissionGranted": true,
+"isWithdrawPermissionGranted": true,
+"mainNetwork": "DASH",
+"otherNetworksConfigsAndAddresses": [{
+	"address": "TNoh8nDnvR4vBPZtBgwZmUNQarBKzTaLi1",
+	"code": "TRX",
+	"completedNetworkName": "Tron(TRX) trc20",
+	"supportsDeposit": true,
+	"supportsWithdraw": true
+
+}],
+"networksConfigsAndAddresses":[
+	{
+	"code": "USDT",
+	"supportsWithdraw": true,
+	"supportsDeposit": true,
+	"completedNetworkName": "Ethereum(ETH) erc20",
+	"address": "0x983E8412F46F4a2B7303E34D060227FC16c1b09f"
+     }
+		
+],
+"supportsDeposit": true,
+"supportsWithdraw": true,
+"walletAddress": "Xh52mnzzbMezoPxh4U2CfyBgK4vrULQP5k"
+}

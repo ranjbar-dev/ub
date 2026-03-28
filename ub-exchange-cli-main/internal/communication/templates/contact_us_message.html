@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;">
+
+<head style="font-family: 'Open Sans' , sans-serif;font-size: 12px;">
+    <meta charset="UTF-8" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;">
+    <title style="font-family: 'Open Sans' , sans-serif;font-size: 12px;"></title>
+
+</head>
+
+<body style="font-family: 'Open Sans' , sans-serif;font-size: 12px;margin: 0;">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700" rel="stylesheet" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;">
+<style style="font-family: 'Open Sans' , sans-serif;font-size: 12px;">
+    body {
+    margin: 0;
+    }
+
+    * {
+    font-family: 'Open Sans' , sans-serif;
+    font-size: 12px;
+    }
+
+    :root {
+    --blue: #396de0;
+    --darkBlue: #2951a8;
+    --softGrey: #d8d8d8;
+    --textGrey: #818181;
+    --textSoftGrey: #c1c1c1;
+    }
+
+    .wrapper {
+    width: 100%;
+    height: 100%;
+    background: rgb(250, 250, 250);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+
+    .mainContainer {
+    padding: 24px;
+    margin: 12px 24px;
+    width: 680px;
+    /*height: fit-content;*/
+    background: white;
+    border-radius: 30px;
+    position: relative;
+    }
+
+    .title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #396de0;
+    }
+
+    .divider {
+    width: 100%;
+    height: 1px;
+    background: #d8d8d8;
+    margin: 24px 0;
+    }
+
+    .mh5 {
+    margin-bottom: 5px;
+    }
+
+    .mh8 {
+    margin-bottom: 8px;
+    }
+
+    .mh12 {
+    margin-bottom: 12px;
+    }
+
+    .mh24 {
+    margin-bottom: 24px;
+    }
+
+    .mh40 {
+    margin-bottom: 40px;
+    }
+
+    .mh48 {
+    margin-bottom: 48px;
+    }
+
+    .image,
+    .confirmButton {
+    display: flex;
+    }
+
+    .image {
+    min-height: 157px;
+    }
+
+    .confirmButton>a {
+    background-color: #396de0;
+    color: white;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+    border-radius: 7px;
+    padding: 12px 24px;
+    outline: none;
+    transition: background-color 0.3s;
+    text-decoration-line: none;
+    }
+
+    .confirmButton>a:hover {
+    background-color: #2951a8;
+    }
+
+    a.link {
+    color: #396de0;
+    font-weight: 500;
+    line-break: anywhere;
+    }
+
+    .text {
+    color: #818181;
+    }
+
+    .bold {
+    font-weight: 600;
+    }
+
+    .blue {
+    color: #396de0;
+    }
+
+    .yellow {
+    color: #f49806;
+    }
+
+    .small {
+    font-size: 10px;
+    }
+
+    .softGrey {
+    color: #c1c1c1;
+    }
+
+    .logo {
+    min-height: 30px;
+    }
+
+    .flexCenter {
+    display: flex;
+    justify-content: center;
+    }
+
+    .mobileImg {
+    display: none;
+    }
+
+    .watermark {
+    position: absolute;
+    bottom: -5px;
+    right: 0;
+    pointer-events: none;
+    }
+
+    @media screen and (max-width: 700px) {
+    .deskImg {
+    display: none;
+    }
+    .mobileImg {
+    display: block;
+    }
+    .mainContainer {
+    width: 80%;
+    height: fit-content;
+    }
+    }
+</style>
+
+<div  class="wrapper" style="font-family: 'Open Sans' , sans-serif;font-size: 13px;width: 100%;height: 100%;background: rgb(250, 250, 250);display:inline-grid;">
+
+<div class="logo mh24"  style="font-family: 'Open Sans' , sans-serif;font-size: 13px;margin: auto; margin-bottom: 24px;min-height: 30px;text-align:center;">
+<img src="https://app.unitedbit.com/assets/images/email-images/logo.png"  alt=""  style="font-family: 'Open Sans' , sans-serif;font-size: 13px;" />
+</div>
+
+<div class="mainContainer mh24" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;margin-bottom: 24px;padding: 24px;margin: 12px 24px;width: 680px;background: white;border-radius: 30px;position: relative;">
+<div class="watermark" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;position: absolute;bottom: -5px;right: 0;pointer-events: none;">
+<img src="https://app.unitedbit.com/assets/images/email-images/watermark.png" alt="" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;">
+</div>
+<div class="title" style="font-family: 'Open Sans' , sans-serif;font-size: 13px;font-weight: 700;color: #396de0;">New contact us message</div>
+<div class="divider" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;width: 100%;height: 1px;background: #d8d8d8;margin: 24px 0;"></div>
+<div class="mh24" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;margin-bottom: 24px;">
+<span class="bold text" style="font-family: 'Open Sans' , sans-serif;font-size: 12px;color: #818181;font-weight: 600;">Message details: </span>
+</div>
+
+<div>
+Name: {{ .Name }} <br>
+email: {{  .Email }} <br>
+subject: {{ .Subject }} <br>
+message: <br> {{ .Body }} <br>
+</div>
+
+<div class="team mh5" style="font-family: 'Open Sans' , sans-serif;font-size: 13px;margin-bottom: 5px;">
+<span class="bold text small"  style="font-family: 'Open Sans' , sans-serif;font-size: 10px;color: #818181;font-weight: 600;">Unitedbit Team</span>
+</div>
+<div class="greytext" style="font-family: 'Open Sans' , sans-serif;font-size: 13px;">
+<span class="bold small softGrey"  style="font-family: 'Open Sans' , sans-serif;font-size: 10px;font-weight: 600;color: #c1c1c1;">This is an automated massage, please do not reply.</span>
+</div>
+<div class="trademark" style="font-family: 'Open Sans' , sans-serif;font-size: 13px;text-align:center;">
+<div class="flexCenter"  style="font-family: 'Open Sans' , sans-serif;font-size: 13px;display: flex;justify-content: center;">
+<span class="small bold softGrey"  style="font-family: 'Open Sans' , sans-serif;font-size: 10px;font-weight: 600;color: #c1c1c1;width:100%;text-align:center;">© 2019 - 2020 Unitedbit.com All Right Reserved</span>
+</div>
+<div style="font-family: 'Open Sans' , sans-serif;font-size: 13px;">
+<span class="small bold softGrey"  style="font-family: 'Open Sans' , sans-serif;font-size: 10px;font-weight: 600;color: #c1c1c1;">URL: www.unitedbit.com &nbsp; Email: support@unitedbit.com</span>
+</div>
+</div>
+
+</div>
+</body>
+
+</html>

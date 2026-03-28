@@ -1,0 +1,19 @@
+{
+	"mainType": "mainType",
+	"type": "type",
+	"id": 0,
+	"pair": "pair",
+	"side": "side",
+	"price": "120000",
+	"subUnit": 0,
+	"averagePrice": "15000",
+	"amount": "1200",
+	"executed": "1203",
+	"total": "16988",
+	"createdAt": "12-11-22",
+	"triggerCondition": ">=1500",
+	"status": "status",
+	"details":0,
+	"createdAtToFilter": "12-11-22",
+	"isDetailsOpen": true
+}

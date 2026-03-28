@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="black2c">#2c2c33</color>
+    <color name="black1c">#1C1C21</color>
+    <color name="green">#06ba61</color>
+    <color name="orange">#f49806</color>
+    <color name="greyd8">#d8d8d8</color>
+    <color name="grey16">#16161a</color>
+    <color name="grey19">#19191D</color>
+    <color name="grey22">#222324</color>
+    <color name="grey23">#23232b</color>
+    <color name="grey36">#363636</color>
+    <color name="grey42">#424242</color>
+    <color name="greya6">#A6B8CB</color>
+    <color name="greybf">#bfbfbf</color>
+    <color name="grey80">#808080</color>
+    <color name="grey97">#979797</color>
+    <color name="grey36">#363636</color>
+    <color name="red">#e64141</color>
+    <color name="crimson_red" >#CF2A2A</color>
+    <color name="yellow_ocher" type="material material-accent">#1C1C21</color>
+    <color name="primary_blue"  type="material" >#396de0</color>
+    <color name="text_blue" >#00a7ff</color>
+<!-- shades -->
+    <color name="light_black" >#16161a</color>
+
+    <!-- Input -->
+    <color name="input_border">#222324</color>
+    <color name="input_background">#1c1c21</color>
+    <color name="input_placeholder_text">#808080</color>
+    <!-- Button -->
+    <color name="round_button_background">#23232b</color>
+     <!-- Text -->
+	<color name="light_text">#d8d8d8</color>
+
+</resources>

@@ -1,0 +1,116 @@
+stages:
+  - dev-build
+  - dev-deploy
+  - dev-notification
+  - prod-build
+  - prod-deploy
+  - prod-notification
+
+
+variables:
+  GIT_STRATEGY: clone
+
+dev-build:
+  stage: dev-build
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - docker build -t flutter_web_dev_image$CI_COMMIT_SHA -f Dockerfiledev . --rm=false
+  tags:
+    - dev
+  only:
+    - develop
+
+dev-deploy:
+  stage: dev-deploy
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - docker rm -f flutter_web_dev
+    - docker run -it -d --name flutter_web_dev flutter_web_dev_image$CI_COMMIT_SHA
+    - docker cp flutter_web_dev:/app/build/web/ /home/gitlab-runner/dev-m/
+    - docker rm -f flutter_web_dev
+
+  tags:
+    - dev
+  only:
+    - develop
+
+
+dev-notification-pass:
+  stage: dev-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001317096458
+      -F text='🟢 Unitedbit-app Dev Deployed Successfully !'
+  tags:
+    - dev
+  only:
+    - develop
+  when: on_success
+
+dev-notification-fail:
+  stage: dev-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001317096458
+      -F text='🔴 Unitedbit-app Dev Deploy Failed !'
+  tags:
+    - dev
+  only:
+    - develop
+  when: on_failure
+
+prod-build:
+  stage: prod-build
+  variables:
+    GIT_STRATEGY: clone
+  script:    
+    - docker build -t flutter_web_prod_image$CI_COMMIT_SHA -f Dockerfileprod . --rm=false
+  tags:
+    - mobile-web
+  only:
+    - master
+
+prod-deploy:
+  stage: prod-deploy
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - docker rm -f flutter_web_prod
+    - docker run -it -d --name flutter_web_prod flutter_web_prod_image$CI_COMMIT_SHA
+    - docker cp flutter_web_prod:/app/build/web/ /home/gitlab-runner/prod-m/
+    - docker rm -f flutter_web_prod
+
+  tags:
+    - mobile-web
+  only:
+    - master
+
+prod-notification-pass:
+  stage: prod-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001317096458
+      -F text='🟢 Unitedbit-app Production Deployed Successfully !'
+  tags:
+    - mobile-web
+  only:
+    - master
+  when: on_success
+
+prod-notification-fail:
+  stage: prod-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001317096458
+      -F text='🔴 Unitedbit-app Production Deploy Failed !'
+  tags:
+    - mobile-web
+  only:
+    - master
+  when: on_failure

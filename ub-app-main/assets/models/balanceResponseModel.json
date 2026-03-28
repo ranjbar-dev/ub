@@ -1,0 +1,32 @@
+{
+	"availableSum": "579.160662716",
+"balances": [
+	{
+		"address": "TNoh8nDnvR4vBPZtBgwZmUNQarBKzTaLi1",
+		"autoExchangeCode": null,
+		"availableAmount": "9900.000000",
+		"backgroundImage": "https://app.unitedbit.com/assets/images/currencies/tether_background.png",
+		"btcAvailableEquivalentAmount": "0.010296",
+		"btcInOrderEquivalentAmount": "0",
+		"btcTotalEquivalentAmount": "0.010296",
+		"code": "TRX",
+		"equivalentAvailableAmount": "497.772",
+		"equivalentInOrderAmount": "0",
+		"equivalentTotalAmount": "497.772",
+		"fee": "0",
+		"image": "https://app.unitedbit.com/assets/images/currencies/icons/32/color/trx.png",
+		"inOrderAmount": "0.000000",
+		"minimumWithdraw": "10",
+		"name": "Tron",
+		"price": "0.05028",
+		"subUnit": 6,
+		"totalAmount": "9900.000000"
+	}
+],
+"btcAvailableSum": "0.011969849304114",
+"btcInOrderSum": "0.00095147980966053",
+"btcTotalSum": "0.012921329113775",
+"inOrderSum": "46.264421247",
+"minimumOfSmallBalances": "0",
+"totalSum": "625.425083963"
+}

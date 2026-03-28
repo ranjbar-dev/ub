@@ -1,0 +1,20 @@
+0 1 * * *  /app/cli set-user-level >>/dev/null 2>>/app/var/logs/exchange-go.log
+#0 3 * * *  /app/cli initialize-balance >> /app/var/logs/exchange-go.log 2>&1
+0 5 * * *  /app/cli generate-address >>/dev/null 2>>/app/var/logs/exchange-go.log
+*/15 * * * * /app/cli retrieve-open-orders >>/dev/null 2>>/app/var/logs/exchange-go.log
+* * * * * /app/cli submit-bot-orders >>/dev/null 2>>/app/var/logs/exchange-go.log
+#*/20 * * * * /app/cli retrieve-external-orders >>/dev/null 2>>/app/var/logs/exchange-go.log
+0 2 * * *    /app/cli generate-kline-sync >>/dev/null 2>>/app/var/logs/exchange-go.log
+* * * * * /app/cli sync-kline >>/dev/null 2>>/app/var/logs/exchange-go.log
+*/30 * * * * /app/cli update-orders-from-external >>/dev/null 2>>/app/var/logs/exchange-go.log
+*/10 * * * * /app/cli check-withdrawals >>/dev/null 2>>/app/var/logs/exchange-go.log
+#* * * * * /app/cli  migrate-klines >>/app/var/logs/exchange-go.log 2>>/app/var/logs/exchange-go.log
+#Update user wallets balances
+0 0 * * * /app/cli  ub-update-user-wallet-balances >>/app/var/logs/exchange-go.log
+
+
+
+
+
+
+

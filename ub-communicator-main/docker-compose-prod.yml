@@ -1,0 +1,48 @@
+version: '3'
+services:
+  mongodb:
+    container_name: communicator-db
+    image: mongo
+    restart: always
+    env_file:
+      - /home/gitlab-runner/communicator-app/.env
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: root
+#      MONGO_INITDB_ROOT_PASSWORD: example
+#      MONGO_INITDB_DATABASE: ubMessages
+#    ports:
+#      - "27017"
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - /home/exchange/communicator-db:/data/db
+      - ./.docker/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - default
+
+  go:
+    container_name: communicator-app
+    build:
+      context: ./
+      dockerfile: .docker/go/Dockerfile.prod
+#    restart: always
+    working_dir: /app
+    command: >
+      bash -c "./main"
+#      bash -c "go build -mod=vendor cmd/rabbit-consumer/main.go && ./main"
+    networks:
+      - default
+      - ub-server_rabbit
+    env_file:
+      - /home/gitlab-runner/communicator-app/.env
+#    environment:
+#      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+    volumes:
+      - /home/exchange/communicator-app/var:/app/var
+      - /home/exchange/communicator-app/config/config.yaml:/app/config/config.yaml
+
+networks:
+  ub-server_rabbit:
+    external: true
+
+

@@ -1,0 +1,52 @@
+communicator:
+  environment: "dev"
+  allowed_ips:
+    - "127.0.0.1"
+
+consumer:
+  worker_count: 5
+
+mail:
+  name: "UNITEDBIT"
+  from_address: "no-reply@unitedbit.com"
+
+sms:
+  account_sid: ""    # Set via UBCOMMUNICATOR_SMS_ACCOUNT_SID
+  auth_token: ""     # Set via UBCOMMUNICATOR_SMS_AUTH_TOKEN
+  from: ""           # Set via UBCOMMUNICATOR_SMS_FROM
+
+mongodb:
+  dsn: ""            # Set via UBCOMMUNICATOR_MONGODB_DSN
+  name: "ubMessages"
+
+rabbitmq:
+  dsn: ""            # Set via UBCOMMUNICATOR_RABBITMQ_DSN
+  queue_name: "messages.command.send.consumer"
+
+mailer_broker: "smtp"  # sendgrid, mailjet, smtp, mailgun
+
+sendgrid:
+  api_key: ""        # Set via UBCOMMUNICATOR_SENDGRID_API_KEY
+
+mailjet:
+  api_public_key: "" # Set via UBCOMMUNICATOR_MAILJET_API_PUBLIC_KEY
+  api_private_key: "" # Set via UBCOMMUNICATOR_MAILJET_API_PRIVATE_KEY
+
+mailgun:
+  api_key: ""        # Set via UBCOMMUNICATOR_MAILGUN_API_KEY
+  domain: ""         # Set via UBCOMMUNICATOR_MAILGUN_DOMAIN
+  api_base: "https://api.eu.mailgun.net/v3"
+
+smtp:
+  host: ""           # Set via UBCOMMUNICATOR_SMTP_HOST
+  port: 587
+  username: ""       # Set via UBCOMMUNICATOR_SMTP_USERNAME
+  password: ""       # Set via UBCOMMUNICATOR_SMTP_PASSWORD
+
+sentry:
+  dsn: ""            # Set via UBCOMMUNICATOR_SENTRY_DSN
+  debug: false
+
+logging:
+  file_path: "stdout"  # Set to a file path to also write to file, e.g., "var/logs/communicator.log"
+

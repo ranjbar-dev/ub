@@ -1,0 +1,32 @@
+FROM debian:bullseye-slim AS build-env
+
+# Install flutter + Android build dependencies
+RUN apt-get update && \
+    apt-get install -yq libc6 libstdc++6 zlib1g libncurses5 build-essential libssl-dev --no-install-recommends && \
+    apt-get install -y curl git wget unzip libgconf-2-4 libglu1-mesa fonts-droid-fallback lib32stdc++6 python3 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Clone flutter and pin to 2.10.5 (last stable with Dart 2.x SDK)
+# Project requires SDK >=2.11.0 <3.0.0 — Flutter 3.x ships Dart 3.x which is incompatible
+RUN git clone --branch 2.10.5 --depth 1 https://github.com/flutter/flutter.git /usr/local/flutter
+
+# Download Android command-line tools
+RUN mkdir -p /usr/local/android-sdk-linux/cmdline-tools && \
+    wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip && \
+    unzip cmdtools.zip -d /usr/local/android-sdk-linux/cmdline-tools && \
+    mv /usr/local/android-sdk-linux/cmdline-tools/cmdline-tools /usr/local/android-sdk-linux/cmdline-tools/latest && \
+    rm cmdtools.zip
+
+ENV ANDROID_HOME=/usr/local/android-sdk-linux
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
+
+# Accept Android SDK licenses
+RUN yes | sdkmanager --licenses || true
+
+# Copy files to container and build
+RUN mkdir /app/
+COPY . /app/
+WORKDIR /app/
+
+RUN chmod +x buildAPK.sh
+RUN ./buildAPK.sh

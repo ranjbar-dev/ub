@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build outputs
+build/
+.dart_tool/
+
+# Android build outputs
+android/.gradle/
+android/app/build/
+z_androidApps/
+
+# iOS build outputs
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Test/coverage
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# APK/AAB outputs
+*.apk
+*.aab
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Screenshots/docs
+screenShots/
+mock/
+README.md
+AGENTS.md

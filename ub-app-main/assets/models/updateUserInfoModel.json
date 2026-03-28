@@ -1,0 +1,10 @@
+{
+  "address": "address",
+  "country_id": "selectedCountry",
+  "date_of_birth": "birthday",
+  "first_name": "firstName",
+  "gender": "gender",
+  "last_name": "lastName",
+  "postal_code": "postalCode",
+  "region_and_city": "city"
+}

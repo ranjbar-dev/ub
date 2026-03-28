@@ -1,0 +1,19 @@
+.chart-page {
+    background: transparent !important;
+}
+
+html.theme-dark div[class*="group-"] {
+    background-color: #1c1c21;
+}
+
+html.theme-dark .pane-legend-line .pane-legend-title__container {
+    color: rgb(88, 91, 98) !important;
+    border-color: rgb(88, 91, 98) !important;
+}
+
+html .layout__area--center {
+  top: 0px !important;
+}
+/*html.theme-dark .js-button-text {
+    color: rgb(88, 91, 98) !important;
+}*/

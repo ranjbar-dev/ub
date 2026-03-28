@@ -1,0 +1,7 @@
+{
+    "token":"",
+    "verificationMessage":"",
+    "need2fa":false,
+    "needEmailCode":false,
+    "isNewDevice":false
+}

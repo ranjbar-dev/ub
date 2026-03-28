@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <!-- Make the page mobile compatible -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="%PUBLIC_URL%/datafeeds/udf/dist/polyfills.js"></script>
+    <script src="%PUBLIC_URL%/datafeeds/udf/dist/bundle.js"></script>
+    <!-- Allow installing the app to the homescreen -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="/favicon.ico" />
+    <title>UnitedBit</title>
+    <script>
+      var ignoreUrls = ['/auth/verify', '/auth/forgot-password/update'];
+      var mobileProductionAddress = 'https://m.unitedbit.com';
+      var mobileDevAddress = 'https://dev-m.unitedbit.com';
+      var minWidthToRedirectToMobile = 1000;
+      var mobileUrl =
+        window.location.pathname.includes('dev-') ||
+        window.location.pathname.includes('localhost')
+          ? mobileDevAddress
+          : mobileProductionAddress;
+      if (window.innerWidth < minWidthToRedirectToMobile) {
+        var redirect = true;
+
+        ignoreUrls.forEach(item => {
+          if (window.location.pathname.includes(item)) {
+            redirect = false;
+          }
+        });
+        if (redirect === true) {
+          window.location.href = mobileUrl;
+        }
+      }
+    </script>
+  </head>
+
+  <body class="darkTheme">
+    <noscript
+      >If you're seeing this message, that means
+      <strong>JavaScript has been disabled on your browser</strong>, please
+      <strong>enable JS</strong> to make UnitedBit work for you.</noscript
+    >
+    <div id="unitedBit"></div>
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700"
+      rel="stylesheet"
+    />
+    <script src="%PUBLIC_URL%/vendor/webcomponents-bundle.js"></script>
+    <script>
+      if (!window.customElements) {
+        document.write('<!--');
+      }
+    </script>
+    <script src="%PUBLIC_URL%/vendor/custom-elements-es5-adapter.js"></script>
+    <!--!  -->
+  </body>
+</html>

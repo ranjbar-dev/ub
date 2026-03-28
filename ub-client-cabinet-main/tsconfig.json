@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+
+    "target": "es2017",
+    "module": "esnext", //commonjs destroys 'dynamic imports' which is used for code splitting
+    "noImplicitAny": false,
+    "preserveConstEnums": true,
+    "baseUrl": "./app",
+    "jsx": "react", // process JSX
+    "lib": ["dom", "dom.iterable", "es2017", "es2020.promise"],
+    "allowSyntheticDefaultImports": true, // no errors with commonjs modules interop
+    "esModuleInterop": true,
+
+    "declaration": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "strict": true,
+    "useUnknownInCatchVariables": false,
+    "strictFunctionTypes": false,
+    "pretty": true,
+    "removeComments": true,
+    "sourceMap": true,
+    "skipLibCheck": true
+  },
+
+  "include": ["app/**/*"],
+  "exclude": ["node_modules", "app/datafeeds"]
+}

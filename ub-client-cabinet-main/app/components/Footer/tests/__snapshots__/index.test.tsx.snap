@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<Footer /> should render and match the snapshot 1`] = `
+<footer
+  className="sc-bdnylx kvxbho"
+>
+  © 2021 UNITEDBIT EXCHANGE. All Rights Reserved. V: 
+</footer>
+`;

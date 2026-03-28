@@ -1,0 +1,25 @@
+{
+	"sum": "0.00",
+	"pairData":{
+		"id": 1,
+		"minimumOrderAmount": "10",
+		"name": "BTC-USDT"
+	},
+	"pairBalances":[{
+		"balance": "0.00",
+		"currencyCode": "USDT",
+		"currencyId": 1,
+		"currencyName": "Tether"
+	}],
+	"fee":{
+		"makerFee": 0.01,
+		"takerFee": 0.01
+	},
+	"charts":[
+		{"amount": "0.00000000",
+		"equivalentAmount": "0.00",
+		"name": "ETH",
+		"percent": "0"
+	}
+	]
+}

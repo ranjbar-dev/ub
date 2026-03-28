@@ -1,0 +1,165 @@
+[
+{
+"id": 119,
+"title": "Another attack on Binance Smart Chain and PancakeBunny plummets down 96%",
+"date": "2021-05-20T08:00:00.000Z",
+"content": "The most recent Binance Smart Chain-native decentralized finance (DeFi) protocol PancakeBunny was the target of an exploit where $200 million was robbed.",
+"main_content": "A hacker made over $200 million worth of crypto assets in an attack on Binance Smart Chain-based DeFi protocol PancakeBunny.\n\nHow did this happen?\nPancakeBunny team explained this in its tweeter account “pancakebunny.finance”. They said that they had fallen victim to a flash loan exploit. After borrowing a large amount of BNB, the hacker manipulated its price and then dumped the asset on BUNNY/BNB market on its platform.\n\n![rtrtrtrt.png](/uploads/rtrtrtrt_9d50a4d38b.png)\n\nWhat is really interesting about this attack is that Bunny first surged to $240 while it was trading at $140 prior to plunging to $0 in just half an hour. Whether you are a beginner or a pro trader, seeing such pumps and dumps in just a few minutes and hours is so shocking. Take a look at the following:\n\n![gtyukyvgukivyukgvyu.png](/uploads/gtyukyvgukivyukgvyu_6c6579903b.png)\n\nAfter dumping to $0, the price of BUNNY was below $10 and was trading at about $8.8 at the time of writing this article.\n\nThe hacker managed to drain the BUNNY/BNB pool (the only pool to be drained) and laid hands on 697,000 Bunny tokens and 114,000 BNB. The hacker managed to make around $200,000 million worth of crypto assets considering the current BNB rate of $296. He left the scene with a note though. The note, which contained a rabbit-themed pun, was attached to the transaction that reads: “ArentFlashloansEaritating.” \n\nAfter this incident and what happened to Bunny as a major project on Binance Smart Chain, with over $1 million value locked, we don’t know for sure if Binance will take any actions to roll back this unfortunate incident.\n\nPreviously Binance suffered a huge attack in May 2019 where they lost over $40 million. Back then, Binance CEO stated that they could reverse the attack by gathering the miners to roll back the transactions from the Binance blockchain.\n\nWith half of the attacks worth $285 million since 2019, flash loan attacks have turned into the most prevalent attack routes in the ecosystem of Decentralized Finance according to the crypto data aggregator Messari. And PancakeBunny was the most recent.\n",
+"created_by": {
+"id": 1,
+"firstname": "ad",
+"lastname": "min",
+"username": "null"
+},
+"updated_by": {
+"id": 1,
+"firstname": "ad",
+"lastname": "min",
+"username": "null"
+},
+"created_at": "2021-06-02T12:52:47.797Z",
+"updated_at": "2021-06-02T12:52:47.832Z",
+"mainImage": {
+"id": 179,
+"name": "pancake bunny HACK.jpg",
+"alternativeText": "",
+"caption": "",
+"width": 900,
+"height": 600,
+"formats": {
+"thumbnail": {
+"name": "thumbnail_pancake bunny HACK.jpg",
+"hash": "thumbnail_pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"width": 234,
+"height": 156,
+"size": 6.48,
+"path": "null",
+"url": "/uploads/thumbnail_pancake_bunny_HACK_1fbb92ca2c.jpg"
+},
+"medium": {
+"name": "medium_pancake bunny HACK.jpg",
+"hash": "medium_pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"width": 750,
+"height": 500,
+"size": 40.92,
+"path": "null",
+"url": "/uploads/medium_pancake_bunny_HACK_1fbb92ca2c.jpg"
+},
+"small": {
+"name": "small_pancake bunny HACK.jpg",
+"hash": "small_pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"width": 500,
+"height": 333,
+"size": 21.04,
+"path": "null",
+"url": "/uploads/small_pancake_bunny_HACK_1fbb92ca2c.jpg"
+}
+},
+"hash": "pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"size": 50.95,
+"url": "/uploads/pancake_bunny_HACK_1fbb92ca2c.jpg",
+"previewUrl": "null",
+"provider": "local",
+"provider_metadata": "null",
+"created_by": 1,
+"updated_by": 1,
+"created_at": "2021-06-02T12:46:52.988Z",
+"updated_at": "2021-06-02T12:46:53.049Z"
+},
+"media": [
+{
+"id": 179,
+"name": "pancake bunny HACK.jpg",
+"alternativeText": "",
+"caption": "",
+"width": 900,
+"height": 600,
+"formats": {
+"thumbnail": {
+"name": "thumbnail_pancake bunny HACK.jpg",
+"hash": "thumbnail_pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"width": 234,
+"height": 156,
+"size": 6.48,
+"path": "null",
+"url": "/uploads/thumbnail_pancake_bunny_HACK_1fbb92ca2c.jpg"
+},
+"medium": {
+"name": "medium_pancake bunny HACK.jpg",
+"hash": "medium_pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"width": 750,
+"height": 500,
+"size": 40.92,
+"path": "null",
+"url": "/uploads/medium_pancake_bunny_HACK_1fbb92ca2c.jpg"
+},
+"small": {
+"name": "small_pancake bunny HACK.jpg",
+"hash": "small_pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"width": 500,
+"height": 333,
+"size": 21.04,
+"path": "null",
+"url": "/uploads/small_pancake_bunny_HACK_1fbb92ca2c.jpg"
+}
+},
+"hash": "pancake_bunny_HACK_1fbb92ca2c",
+"ext": ".jpg",
+"mime": "image/jpeg",
+"size": 50.95,
+"url": "/uploads/pancake_bunny_HACK_1fbb92ca2c.jpg",
+"previewUrl": "null",
+"provider": "local",
+"provider_metadata": "null",
+"created_by": 1,
+"updated_by": 1,
+"created_at": "2021-06-02T12:46:52.988Z",
+"updated_at": "2021-06-02T12:46:53.049Z"
+}
+],
+"categories": [],
+"tags": [
+{
+"id": 102,
+"tagName": "Binance Smart Chain",
+"blog_post": "null",
+"created_by": 1,
+"updated_by": 1,
+"created_at": "2021-06-02T12:52:07.132Z",
+"updated_at": "2021-06-02T12:52:07.150Z"
+},
+{
+"id": 101,
+"tagName": "PancakeBunny ",
+"blog_post": "null",
+"created_by": 1,
+"updated_by": 1,
+"created_at": "2021-06-02T12:51:48.607Z",
+"updated_at": "2021-06-02T12:51:48.620Z"
+},
+{
+"id": 7,
+"tagName": "Crypto Hack",
+"blog_post": "null",
+"created_by": 1,
+"updated_by": 1,
+"created_at": "2020-12-19T10:30:28.656Z",
+"updated_at": "2020-12-19T10:30:28.669Z"
+}
+]
+}
+]

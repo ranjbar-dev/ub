@@ -1,0 +1,38 @@
+@font-face {
+    font-family: "ir";
+    src: local("ir"), url(ir.woff) format("woff");
+}
+
+
+/* @font-face {
+    font-family: "Open Sans";
+    src: url(fonts/OpenSans-Regular.woff) format("woff");
+}
+
+@font-face {
+    font-family: "Open Sans";
+    src: url(fonts/OpenSans-Regular.woff) format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Open Sans";
+    src: url(fonts/OpenSans-Italic.ttf) format("truetype");
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "Open Sans";
+    src: url(fonts/OpenSans-SemiBold.woff) format("woff");
+    font-weight: "bold";
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Open Sans";
+    src: url(fonts/OpenSans-Bold.woff) format("woff");
+    font-weight: 'bolder';
+    font-style: normal;
+} */

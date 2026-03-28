@@ -1,0 +1,104 @@
+stages:
+  - build-dev
+  - deploy-dev
+  - dev-notification
+  - build-prod
+  - deploy-prod
+  - prod-notification
+
+before_script:
+  - docker info
+  - echo $CI_COMMIT_SHA
+  - echo $CI_REGISTRY
+
+build-dev:
+  stage: build-dev
+  script:
+    - docker-compose -f docker-compose-dev.yml build --no-cache
+  tags:
+    - communicator-app-dev
+  only:
+    - develop
+
+deploy-dev:
+  stage: deploy-dev
+  script:
+    - docker-compose -f docker-compose-dev.yml stop
+    - docker-compose -f docker-compose-dev.yml up -d
+    - docker exec communicator-app go build -mod=vendor cmd/rabbit-consumer/main.go
+  tags:
+    - communicator-app-dev
+  only:
+    - develop
+
+dev-notification-pass:
+  stage: dev-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001524450069
+      -F text='🟢 New-ub-Communicator Dev Deployed Successfully !'
+  tags:
+    - communicator-app-dev
+  only:
+    - develop
+  when: on_success
+
+dev-notification-fail:
+  stage: dev-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001524450069
+      -F text='🔴 New-ub-Communicator Dev Deploy Failed !'
+  tags:
+    - communicator-app-dev
+  only:
+    - develop
+  when: on_failure
+
+
+build-prod:
+  stage: build-prod
+  script:
+    - docker-compose  -f docker-compose-prod.yml build --no-cache
+  tags:
+    - communicator-app-prod
+  only:
+    - master
+
+deploy-prod:
+  stage: deploy-prod
+  script:
+    - docker-compose -f docker-compose-prod.yml down
+    - docker-compose -f docker-compose-prod.yml up -d
+  tags:
+    - communicator-app-prod
+  only:
+    - master
+
+prod-notification-pass:
+  stage: prod-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001524450069
+      -F text='🟢 New-ub-Communicator Production Deployed Successfully !'
+  tags:
+    - communicator-app-prod
+  only:
+    - master
+  when: on_success
+
+prod-notification-fail:
+  stage: prod-notification
+  script:
+    - curl -s
+      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
+      -F chat_id=-1001524450069
+      -F text='🔴 New-ub-Communicator Production Deploy Failed !'
+  tags:
+    - communicator-app-prod
+  only:
+    - master
+  when: on_failure

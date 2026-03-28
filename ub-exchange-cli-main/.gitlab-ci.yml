@@ -1,0 +1,60 @@
+stages:
+  - test
+#  - build
+  - dev_deploy
+  - deploy
+
+services:
+  - name: mariadb:10.5
+    alias: db
+  - name: redis:alpine
+    alias: redis
+
+variables:
+  # Configure mysql environment variables (https://hub.docker.com/_/mysql/)
+  MYSQL_DATABASE: "exchange_go_test"
+  MYSQL_ROOT_PASSWORD: "jkashdfgksjfg811@"
+  MYSQL_USER: "exchange_user"
+  MYSQL_PASSWORD: "exchange_pass"
+
+#
+test:
+  stage: test
+  image: golang:1.22
+#  before_script:
+#    - go build -o ws cmd/exchange-ws/main.go && ./ws
+  script:
+    - go test ./... --failfast
+  tags:
+    - golang-exchange
+  only: [merge_requests]
+
+#build:
+#  stage: build
+
+dev_deploy:
+  stage: dev_deploy
+  tags:
+    - shell
+  script:
+    - ssh -p 7268 -T exchange@135.181.30.255 "cd /home/exchange/exchange-go && git checkout develop && git pull origin develop && cd  /home/gitlab-runner/builds/t3_fxsau/0/becdevs/ub-server && docker-compose -f docker-compose-dev.yml restart  exchange-go exchange-httpd-go exchange-engine-go && exit"
+
+  only:
+    
+    - develop
+
+deploy:
+  before_script:
+  #      - mkdir -p ~/.ssh
+  #      - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+  #      - chmod 700 ~/.ssh/id_rsa
+  #      - eval "$(ssh-agent -s)"
+  #      - ssh-add ~/.ssh/id_rsa
+  #      - ssh-keyscan -H 116.203.76.196 >> ~/.ssh/known_hosts
+  stage: deploy
+  tags:
+    - shell
+  script:
+    - ssh -p 7268 -T exchange@116.203.76.196 "cd /home/exchange/exchange-go && git checkout master && git pull origin master && cd  /home/exchange/ub-server && docker-compose -f docker-compose-prod.yml restart  exchange-go exchange-httpd-go exchange-engine-go nginx && exit"
+  only:
+    - master
