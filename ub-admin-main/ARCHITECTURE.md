@@ -7,8 +7,8 @@ React admin panel for the UnitedBit cryptocurrency exchange platform. Provides f
 **Tech Stack:**
 - **React** 17.0.2 with hooks
 - **TypeScript** 5.4.5
-- **Redux Toolkit** 1.9.7 + **Redux-Saga** 1.1.3 for state & side effects
-- **Material-UI** 4.10.1 for base components
+- **Redux Toolkit** 1.3.6 + **Redux-Saga** 1.1.3 for state & side effects
+- **Material-UI** 4.12.4 for base components
 - **styled-components** 5.1.1 for custom styling
 - **AG Grid** 23.2.0 (`ag-grid-react`) for data tables
 - **RxJS** Subjects for `MessageService` pub/sub event bus
@@ -39,18 +39,18 @@ src/
 │   ├── ForceStyles.tsx     # Global CSS injection
 │   └── NewWindowContainer.tsx  # Multi-window (new tab) support
 ├── services/
-│   ├── api_service.ts          # Singleton HTTP client (Fetch API wrapper)
-│   ├── constants.ts            # RequestTypes enum, LocalStorageKeys, API base URLs
-│   ├── message_service.ts      # RxJS pub/sub event bus (67+ event types)
-│   ├── security_service.ts     # loginAPI
-│   ├── user_management_service.ts  # User, billing, order, finance APIs
-│   ├── orders_service.ts       # Order actions, deposit updates, balances
-│   ├── order_management_service.ts # Liquidity/commission reports
-│   ├── external_orders_service.ts  # External exchange orders & queue
-│   ├── admin_reports_service.ts    # Admin comments, currency/pair updates
-│   ├── global_data_service.ts  # Countries, currencies, managers (reference data)
-│   ├── profile_image_service.ts    # Profile image approval/rejection
-│   └── toastService.ts         # react-toastify error display helper
+│   ├── apiService.ts            # Singleton HTTP client (Fetch API, JWT, CSRF, retry)
+│   ├── constants.ts             # RequestTypes enum, LocalStorageKeys, API base URLs
+│   ├── messageService.ts        # RxJS pub/sub event bus (67 event types)
+│   ├── securityService.ts       # loginAPI, refreshTokenAPI
+│   ├── userManagementService.ts # User, billing, order, finance APIs (~30+ endpoints)
+│   ├── ordersService.ts         # Order actions, deposit updates, balances
+│   ├── orderManagementService.ts # Liquidity/commission reports
+│   ├── externalOrdersService.ts # External exchange orders & queue
+│   ├── adminReportsService.ts   # Admin comments, currency/pair updates
+│   ├── globalDataService.ts     # Countries, currencies, managers (cached 1hr)
+│   ├── profileImageService.ts   # Profile image approval/rejection
+│   └── toastService.ts          # Toast notification error display helper
 ├── store/
 │   ├── configureStore.ts   # Store setup with saga middleware + injectors enhancer
 │   ├── reducers.ts         # Root reducer (router + global + injected slices)
@@ -60,10 +60,16 @@ src/
 ├── styles/                 # Global styles, theme definitions (light/dark)
 ├── locales/                # i18next translation files
 ├── utils/
-│   ├── formatters.ts       # Currency, date, number formatters
-│   ├── stylers.ts          # AG Grid cell style helpers
+│   ├── formatters.ts       # Currency, date, number formatters, queryStringer
+│   ├── stylers.ts          # AG Grid cell style helpers (stateStyler, cellColorAndNameFormatter)
+│   ├── sagaUtils.ts        # safeApiCall wrapper, toast helpers
 │   ├── loadable.tsx        # React.lazy + Suspense wrapper factory
-│   └── fileDownload.js     # Browser file-download trigger
+│   ├── commonUtils.ts      # omit utility
+│   ├── fileDownload.ts     # Browser file-download trigger (fetch-based)
+│   ├── loading.ts          # Button loading state helpers
+│   ├── hooks/              # useDimensions, useForceUpdate, useOpenWithdrawWindow
+│   ├── gridUtilities/      # AG Grid helpers (headerHider, ToggleDetail, getPageSize)
+│   └── NW/                 # New window PureComponent (portal-based)
 ├── images/                 # Static image assets
 ├── index.tsx               # Entry point (ReactDOM.render)
 └── serviceWorker.ts
@@ -204,7 +210,7 @@ Container saga → MessageService.send(SET_GRID_DATA)
 
 ## Services Reference
 
-### `api_service.ts` — HTTP Client
+### `apiService.ts` — HTTP Client
 
 Singleton class. All HTTP traffic passes through here.
 
@@ -215,11 +221,14 @@ Singleton class. All HTTP traffic passes through here.
 | `setHeaders()` | Builds auth headers from `localStorage[ACCESS_TOKEN]` |
 | `handleRawResponse()` | 401 → logout event; 422 → validation; 500 → toast |
 
-- **Base URL (admin):** `https://admin.unitedbit.com/api/v1/`
+- **Base URL (admin):** `process.env.REACT_APP_API_BASE_URL || 'https://admin.unitedbit.com/api/v1/'` + `admin/` prefix
 - **Base URL (web app):** `https://[dev-]app.unitedbit.com/api/v1/` (for countries/currencies)
+- **CSRF protection:** X-CSRF-Token header on non-GET requests
+- **Retry logic:** GET/PUT retry up to 3 times with exponential backoff on [408, 429, 502-504]
+- **Timeout:** 30 seconds per request via AbortController
 - Dev mode logs every request/response to console with emoji prefixes
 
-### `message_service.ts` — Event Bus
+### `messageService.ts` — Event Bus
 
 Three subject types:
 - `Subscriber` — plain `Subject` (emit only to current subscribers)
@@ -241,14 +250,14 @@ Key event categories:
 
 | Service File | Key Functions | Endpoints |
 |---|---|---|
-| `security_service.ts` | `loginAPI` | `POST /auth/login` |
-| `user_management_service.ts` | `GetUserAccountsAPI`, `GetInitialUserDataAPI`, `GetUserBalancesAPI`, `GetUserWhiteAddressesAPI`, `GetUserPermissionsAPI`, `UpdateUserPermissionsAPI`, `GetBillingGridDataAPI`, `GetOpenOrdersAPI`, `GetTradeHistoryAPI`, `GetUserImagesAPI`, `GetLoginHistoryAPI`, `GetFinanceMethodsAPI`, `GetCurrencyPairsAPI`, `GetExternalExchangeAPI`, `GetMarketTicksAPI`, `UpdateUserDataAPI`, `GetWithdrawDetailAPI`, `AddPaymentCommentAPI`, `UpdateWithdrawAPI` | `/user/*`, `/payment/*`, `/order/*`, `/trade/*`, `/currency/*`, `/ohlc/*`, `/exchange/*` |
-| `orders_service.ts` | `CancelOrderAPI`, `FullFillOrderAPI`, `UpdateDepositAPI`, `GetBalancesAPI`, `GetBalanceHistoryAPI`, `UpdateAllBalancesAPI`, `InternalTransferAPI` | `/order/*`, `/payment/*`, `/crypto-balance/*`, `/crypto-internal-transfer/*` |
-| `external_orders_service.ts` | `GetExternalOrdersAPI`, `GetNetQueueAPI`, `GetAllQueueAPI`, `ChangeNetQueueStatusAPI`, `CancelNetQueueAPI`, `SubmitNetQueueAPI` | `/exchange/order/*`, `/exchange/aggregation/*` |
-| `order_management_service.ts` | `GetLiquidityOrdersAPI`, `UpdateCommissionReportAPI` | `/exchange/order/commission-report`, `/exchange/order/update-commission-report` |
-| `admin_reports_service.ts` | `AddAdminCommentAPI`, `DeleteAdminCommentAPI`, `EditAdminCommentAPI`, `UpdateFinancialMethodAPI`, `UpdateCurrencyPairAPI`, `GetCommitionsAPI` | `/user/admin-comment/*`, `/currency/update*`, `/statistic/*` |
-| `global_data_service.ts` | `GetCountriesAPI`, `GetCurrenciesAPI`, `GetManagersAPI` | `[webApp]/main-data/country-list`, `[webApp]/currencies`, `/user/admins` |
-| `profile_image_service.ts` | `UpdateProfileImageStatusAPI` | `/user/profile-image/update` |
+| `securityService.ts` | `loginAPI` | `POST /auth/login` |
+| `userManagementService.ts` | `GetUserAccountsAPI`, `GetInitialUserDataAPI`, `GetUserBalancesAPI`, `GetUserWhiteAddressesAPI`, `GetUserPermissionsAPI`, `UpdateUserPermissionsAPI`, `GetBillingGridDataAPI`, `GetOpenOrdersAPI`, `GetTradeHistoryAPI`, `GetUserImagesAPI`, `GetLoginHistoryAPI`, `GetFinanceMethodsAPI`, `GetCurrencyPairsAPI`, `GetExternalExchangeAPI`, `GetMarketTicksAPI`, `UpdateUserDataAPI`, `GetWithdrawDetailAPI`, `AddPaymentCommentAPI`, `UpdateWithdrawAPI` | `/user/*`, `/payment/*`, `/order/*`, `/trade/*`, `/currency/*`, `/ohlc/*`, `/exchange/*` |
+| `ordersService.ts` | `CancelOrderAPI`, `FullFillOrderAPI`, `UpdateDepositAPI`, `GetBalancesAPI`, `GetBalanceHistoryAPI`, `UpdateAllBalancesAPI`, `InternalTransferAPI` | `/order/*`, `/payment/*`, `/crypto-balance/*`, `/crypto-internal-transfer/*` |
+| `externalOrdersService.ts` | `GetExternalOrdersAPI`, `GetNetQueueAPI`, `GetAllQueueAPI`, `ChangeNetQueueStatusAPI`, `CancelNetQueueAPI`, `SubmitNetQueueAPI` | `/exchange/order/*`, `/exchange/aggregation/*` |
+| `orderManagementService.ts` | `GetLiquidityOrdersAPI`, `UpdateCommissionReportAPI` | `/exchange/order/commission-report`, `/exchange/order/update-commission-report` |
+| `adminReportsService.ts` | `AddAdminCommentAPI`, `DeleteAdminCommentAPI`, `EditAdminCommentAPI`, `UpdateFinancialMethodAPI`, `UpdateCurrencyPairAPI`, `GetCommitionsAPI` | `/user/admin-comment/*`, `/currency/update*`, `/statistic/*` |
+| `globalDataService.ts` | `GetCountriesAPI`, `GetCurrenciesAPI`, `GetManagersAPI` | `[webApp]/main-data/country-list`, `[webApp]/currencies`, `/user/admins` |
+| `profileImageService.ts` | `UpdateProfileImageStatusAPI` | `/user/profile-image/update` |
 
 ---
 
@@ -398,14 +407,16 @@ npm start
 # Production build
 npm run build
 
-# Run tests (Jest, 98% coverage threshold)
+# Run tests (Jest, 90% coverage threshold)
 npm test
 ```
 
 ### Environment
 
 - Dev API logs are printed to the browser console with color-coded prefixes
-- `IS_LOCAL=true` activates local development mode
+- `BROWSER=none` in `.env.local` suppresses auto-open
+- `IS_DEV=true` in `.env.local` activates local development mode
+- `REACT_APP_API_BASE_URL` in `.env.local` overrides the production API URL
 - `localStorage[ACCESS_TOKEN]` holds the JWT; clearing it logs out the user
 - Redux DevTools extension shows dispatched actions in non-production builds
 
@@ -417,4 +428,4 @@ npm test
 2. Add `MyFeatureState` to `src/types/RootState.ts`
 3. Add route to `src/app/index.tsx` using the `Loadable` import
 4. Add `AppPages.MyFeature = '/MyFeature'` to `src/app/constants.ts`
-5. Add sidebar link in `src/app/components/sideNav/index.tsx`
+5. Add sidebar link in the `Categories` array in `src/app/index.tsx` (NOT in the sideNav component)
