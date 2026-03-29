@@ -54,8 +54,14 @@ func (ob *orderBook) processOrder(o Order) (doneOrders []Order, partialOrder *Or
 
 func (ob *orderBook) processLimitOrder(o Order) (done []Order, partialOrder *Order, error error) {
 	var partial *Order
-	price, _ := o.GetPrice()
-	quantityToTrade, _ := o.GetQuantity()
+	price, err := o.GetPrice()
+	if err != nil {
+		return nil, &o, err
+	}
+	quantityToTrade, err := o.GetQuantity()
+	if err != nil {
+		return nil, &o, err
+	}
 	sideToLoad := SideBid
 	comparator := price.LessThanOrEqual
 	if o.Side == SideBid {
@@ -63,16 +69,22 @@ func (ob *orderBook) processLimitOrder(o Order) (done []Order, partialOrder *Ord
 		comparator = price.GreaterThanOrEqual
 	}
 
-	ob.loadOrders(sideToLoad, o.Price, "", "")
+	if err := ob.loadOrders(sideToLoad, o.Price, "", ""); err != nil {
+		return nil, &o, err
+	}
 	bestOrder, bestPriceFound := ob.bestOrder(sideToLoad)
 	bestOrderPrice, _ := bestOrder.GetPrice()
 
 	partial = &o
 	for quantityToTrade.Sign() > 0 && bestPriceFound && comparator(bestOrderPrice) {
+		prevQuantity := quantityToTrade
 		doneOrders, newPartial, remaining := ob.tradeOrders(*partial, bestOrder)
 		done = append(done, doneOrders...)
 		partial = newPartial
 		quantityToTrade = remaining
+		if quantityToTrade.Equal(prevQuantity) {
+			break
+		}
 		bestOrder, bestPriceFound = ob.bestOrder(sideToLoad)
 		bestOrderPrice, _ = bestOrder.GetPrice()
 	}
@@ -171,7 +183,6 @@ func (ob *orderBook) tradeOrders(order Order, bestOrder Order) (doneOrders []Ord
 }
 
 func (ob *orderBook) processMarketOrder(o Order) (doneOrders []Order, partialOrder *Order, error error) {
-	//ctx := context.Background()
 	var done []Order
 	var partial *Order
 
@@ -185,26 +196,33 @@ func (ob *orderBook) processMarketOrder(o Order) (doneOrders []Order, partialOrd
 		return done, partialOrder, err
 	}
 
-	quantityToTrade, _ := o.GetQuantity()
+	quantityToTrade, err := o.GetQuantity()
+	if err != nil {
+		return done, &o, err
+	}
 	sideToLoad := SideBid
-	//comparator := maxPrice.GreaterThanOrEqual
 	comparator := minPrice.LessThanOrEqual
 
 	if o.Side == SideBid {
 		sideToLoad = SideAsk
-		//comparator = minPrice.LessThanOrEqual
 		comparator = maxPrice.GreaterThanOrEqual
 	}
 
-	ob.loadOrders(sideToLoad, o.Price, minPrice.String(), maxPrice.String())
+	if err := ob.loadOrders(sideToLoad, o.Price, minPrice.String(), maxPrice.String()); err != nil {
+		return done, &o, err
+	}
 	bestOrder, bestPriceFound := ob.bestOrder(sideToLoad)
 	bestOrderPrice, _ := bestOrder.GetPrice()
 	partial = &o
 	for quantityToTrade.Sign() > 0 && bestPriceFound && comparator(bestOrderPrice) {
+		prevQuantity := quantityToTrade
 		doneOrders, newPartial, remaining := ob.tradeOrders(*partial, bestOrder)
 		done = append(done, doneOrders...)
 		partial = newPartial
 		quantityToTrade = remaining
+		if quantityToTrade.Equal(prevQuantity) {
+			break
+		}
 		bestOrder, bestPriceFound = ob.bestOrder(sideToLoad)
 		bestOrderPrice, _ = bestOrder.GetPrice()
 	}
@@ -241,7 +259,7 @@ func (ob *orderBook) rewriteOrderBook(doneOrders []Order, partialOrder *Order) e
 	return err
 }
 
-func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxPrice string) {
+func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxPrice string) error {
 	ctx := context.Background()
 	params := OrderBookProviderParams{
 		Pair:     ob.pair,
@@ -258,6 +276,7 @@ func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxP
 			zap.String("side", params.Side),
 			zap.String("price", params.Price),
 		)
+		return err
 	}
 
 	if side == SideAsk {
@@ -305,6 +324,7 @@ func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxP
 		ob.bids = bidsCopy
 	}
 
+	return nil
 }
 
 func (ob *orderBook) removeOrder(o Order) error {
