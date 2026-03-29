@@ -129,20 +129,16 @@ const OrderBookGrid = (props: {
           const { asks, bids } = message.payload;
           for (let i = 0; i < asks.length; i++) {
             if (i === 0) {
-              bids[i].price = (+bids[i].price).toFixed(Precision);
-              asks[i].price = (+asks[i].price).toFixed(Precision);
-              currected.buy.push(bids[i]);
-              currected.sell.push(asks[i]);
+              currected.buy.push({ ...bids[i], price: (+bids[i].price).toFixed(Precision) });
+              currected.sell.push({ ...asks[i], price: (+asks[i].price).toFixed(Precision) });
             } else {
               if (
                 bids[i] &&
                 (+bids[i].price).toFixed(Precision) !==
                   (+bids[i - 1].price).toFixed(Precision)
               ) {
-                bids[i].price = Number(bids[i].price).toFixed(Precision);
-                asks[i].price = Number(asks[i].price).toFixed(Precision);
-                currected.buy.push(bids[i]);
-                currected.sell.push(asks[i]);
+                currected.buy.push({ ...bids[i], price: Number(bids[i].price).toFixed(Precision) });
+                currected.sell.push({ ...asks[i], price: Number(asks[i].price).toFixed(Precision) });
               }
             }
           }

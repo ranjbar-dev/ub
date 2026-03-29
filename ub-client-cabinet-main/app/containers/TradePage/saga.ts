@@ -30,7 +30,7 @@ function* getCurrencies(action: { type: string }) {
   try {
 
 
-    const [currenciesResponse, pairsResponse] = yield all([getCurrenciesAPI(), getPairsListAPI()]);
+    const [currenciesResponse, pairsResponse] = yield all([call(getCurrenciesAPI), call(getPairsListAPI)]);
 
     if (currenciesResponse.status === true) {
       storage.write(LocalStorageKeys.CURRENCIES, currenciesResponse.data.currencies);

@@ -376,11 +376,9 @@ function * createNewOrder (action: { type: string; payload: NewOrderModel }) {
       return;
     }
 
-    // else if (response.status === true) {
-    //   MessageService.send({
-    //     name: MessageNames.GET_CURRENCY_PAIR_DETAILS,
-    //   });
-    // }
+    if (response.status === true) {
+      yield put(getOpenOrdersAction({ silent: true }));
+    }
 
     MessageService.send({
       name: MessageNames.IS_LOADING_BUY_SELL,

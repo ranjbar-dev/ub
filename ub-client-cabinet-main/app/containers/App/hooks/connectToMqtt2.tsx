@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LocalStorageKeys } from 'services/constants';
 import { CookieKeys, cookies } from 'services/cookie';
 import { RegisteredMqttService } from 'services/RegisteredMqttService';
@@ -6,12 +6,17 @@ import { storage } from 'utils/storage';
 
 export const useConnectToAuthorizedMqtt2 = () => {
   const mqtt2 = useRef<any>(null);
+  const [token, setToken] = useState(() => cookies.get(CookieKeys.Token));
+
+  const currentToken = cookies.get(CookieKeys.Token);
+  if (currentToken !== token) {
+    setToken(currentToken);
+  }
+
   useEffect(() => {
     let channel;
-    if (cookies.get(CookieKeys.Token)) {
-      mqtt2.current = RegisteredMqttService.getInstance(
-        cookies.get(CookieKeys.Token),
-      );
+    if (token) {
+      mqtt2.current = RegisteredMqttService.getInstance(token);
       channel = storage.read(LocalStorageKeys.CHANNEL);
       mqtt2.current.ConnectToSubject({
         subject: `main/trade/user/${channel}/open-orders/`,
@@ -34,5 +39,5 @@ export const useConnectToAuthorizedMqtt2 = () => {
 
       mqtt2.current && (mqtt2.current = null);
     };
-  }, [cookies.get(CookieKeys.Token)]);
+  }, [token]);
 };

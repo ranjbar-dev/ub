@@ -10,24 +10,9 @@ import {
 import {MqttTopicsPrefixes} from 'containers/App/constants';
 import {cookies,CookieKeys} from './cookie';
 
-export const mqttCipher=(salt: string) => {
-	const textToChars=(text: string) => text.split('').map(c => c.charCodeAt(0));
-	const byteHex=(n: string) => ('0'+Number(n).toString(16)).substr(-2);
-	const applySaltToChar=code => textToChars(salt).reduce((a,b) => a^b,code);
-
-	return (text: string) =>
-		text
-			.split('')
-			.map(textToChars)
-			.map(applySaltToChar)
-			.map(byteHex)
-			.join('');
-};
-
 export class MqttService {
 	private static instance: MqttService;
 	private static mqttCl;
-	private static cipher;
 	private static clId;
 	private static activeSubscriptions: Set<string> = new Set();
 	public static Encoder;
@@ -44,13 +29,7 @@ export class MqttService {
 	public static getInstance(): MqttService {
 		if(!MqttService.instance) {
 			MqttService.instance=new MqttService();
-			MqttService.cipher=mqttCipher('ubSalt');
-			MqttService.clId=MqttService.cipher(
-				'mqttjs_'+
-				Math.random()
-					.toString(16)
-					.substr(2,8),
-			);
+			MqttService.clId=`mqttjs_${crypto.randomUUID()}`;
 			MqttService.mqttCl=mqttConnect(mqttServer,{
 				password: MqttService.clId,
 				username: cookies.get(CookieKeys.Token)??MqttService.clId,

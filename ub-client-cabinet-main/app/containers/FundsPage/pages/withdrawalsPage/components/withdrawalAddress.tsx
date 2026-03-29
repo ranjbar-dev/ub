@@ -54,9 +54,6 @@ const stateSelector = createStructuredSelector({
   formerWithdrawAddresses: makeSelectFormerWithdrawAddresses(),
   //  userData: makeSelectUserData(),
 });
-let amountEntryTimeout;
-let wData: any = {};
-let formerAdresses;
 const WithdrawalAddress = ({ intl }) => {
   const currencies: Currency[] = localStorage[LocalStorageKeys.CURRENCIES]
     ? JSON.parse(localStorage[LocalStorageKeys.CURRENCIES])
@@ -64,7 +61,8 @@ const WithdrawalAddress = ({ intl }) => {
   const { depositAndWithDrawData, formerWithdrawAddresses } = useSelector(
     stateSelector,
   );
-  formerAdresses = formerWithdrawAddresses;
+  const amountEntryTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const wDataRef = useRef<any>({});
   const [PageData, setPageData]: [depositAndWithDrawData, any] = useState(
     depositAndWithDrawData,
   );
@@ -140,7 +138,7 @@ const WithdrawalAddress = ({ intl }) => {
         }, 200);
       } else if (message.name === MessageNames.SET_DEPOSIT_PAGE_DATA) {
         setPageData(message.payload);
-        wData = message.payload;
+        wDataRef.current = message.payload;
       } else if (
         message.name === MessageNames.OPEN_WITHDRAW_VERIFICATION_POPUP
       ) {
@@ -150,7 +148,7 @@ const WithdrawalAddress = ({ intl }) => {
         setIsWithdrawing(message.payload);
       } else if (message.name === MessageNames.ADD_DATA_ROW_TO_WITHDRAWS) {
         if (PageData.balance) {
-          const data = wData.balance ? wData : PageData;
+          const data = wDataRef.current.balance ? wDataRef.current : PageData;
           data.balance.availableAmount = Decimal(+data.balance.availableAmount)
             .sub(+message.payload.amount)
             .toString();
@@ -169,8 +167,7 @@ const WithdrawalAddress = ({ intl }) => {
       // }
     });
     return () => {
-      wData = {};
-      formerAdresses = [];
+      wDataRef.current = {};
       Subscription.unsubscribe();
       localStorage.removeItem(LocalStorageKeys.SELECTED_COIN);
     };
@@ -229,8 +226,8 @@ const WithdrawalAddress = ({ intl }) => {
     if (isNaN(value)) {
       return;
     }
-    clearTimeout(amountEntryTimeout);
-    amountEntryTimeout = setTimeout(() => {
+    clearTimeout(amountEntryTimeout.current);
+    amountEntryTimeout.current = setTimeout(() => {
       if (value === '') {
         setToolTipProps({
           ...ToolTipProps,
@@ -291,7 +288,7 @@ const WithdrawalAddress = ({ intl }) => {
 
   const handleCloseAddress = () => {
     setIsSelectAddressOpen(false);
-    setFormerAddresses(formerAdresses);
+    setFormerAddresses(formerWithdrawAddresses);
   };
 
   const handleOpenAddress = () => {

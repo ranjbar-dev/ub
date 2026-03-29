@@ -88,15 +88,15 @@ export default function G2fa (props: {
   }, []);
   const checkValidation = () => {
     if (whatSteps() === 'emailAnd2fa') {
-      setCanSubmit(true);
+      if (Step === 1) {
+        setCanSubmit(!!EnteredEmailCode.current.length);
+      } else {
+        setCanSubmit(!!EnteredPin.current.length);
+      }
     } else if (whatSteps() === 'only2fa') {
-      if (EnteredPin.current) {
-        setCanSubmit(true);
-      }
+      setCanSubmit(!!EnteredPin.current.length);
     } else if (whatSteps() === 'onlyEmail') {
-      if (EnteredEmailCode) {
-        setCanSubmit(true);
-      }
+      setCanSubmit(!!EnteredEmailCode.current.length);
     }
   };
   return (

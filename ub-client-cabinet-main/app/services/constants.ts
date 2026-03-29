@@ -19,7 +19,6 @@ export enum LocalStorageKeys {
   USERNAME = 'username',
   RECAPTCHA = 'recall',
   SITEKEY = 'refreshToken',
-  PASSWORD = 'password',
   CURRENCIES = 'currencies',
   CURRENCY_MAP = 'currencyMap',
   PAIRS_MAP = 'pairsMap',

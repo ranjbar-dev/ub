@@ -3,26 +3,11 @@ import { connect as mqttConnect, MqttClient } from 'mqtt';
 import { RegisteredUserMessageService } from './message_service';
 import { cookies, CookieKeys } from './cookie';
 
-export const mqttCipher = (salt: string) => {
-  const textToChars = (text: string) => text.split('').map(c => c.charCodeAt(0));
-  const byteHex = (n: string) => ('0' + Number(n).toString(16)).substr(-2);
-  const applySaltToChar = code => textToChars(salt).reduce((a, b) => a ^ b, code);
-
-  return (text: string) =>
-    text
-      .split('')
-      .map(textToChars)
-      .map(applySaltToChar)
-      .map(byteHex)
-      .join('');
-};
-
 let connectionTestTimer;
 
 export class RegisteredMqttService {
   private static instance: RegisteredMqttService;
   private static mqttCl: MqttClient;
-  private static cipher;
   private static clId;
   private static activeSubscriptions: Set<string> = new Set();
   public static Encoder;
@@ -40,13 +25,7 @@ export class RegisteredMqttService {
   public static getInstance (updatedToken?: string): RegisteredMqttService {
     if (!RegisteredMqttService.instance) {
       RegisteredMqttService.instance = new RegisteredMqttService();
-      RegisteredMqttService.cipher = mqttCipher('ubSalt');
-      RegisteredMqttService.clId = RegisteredMqttService.cipher(
-        'mqttjs_' +
-          Math.random()
-            .toString(16)
-            .substr(2, 8),
-      );
+      RegisteredMqttService.clId = `mqttjs_${crypto.randomUUID()}`;
       RegisteredMqttService.mqttCl = mqttConnect(mqttServer, {
         password: RegisteredMqttService.clId,
         username: cookies.get(CookieKeys.Token) ?? RegisteredMqttService.clId,
@@ -70,6 +49,7 @@ export class RegisteredMqttService {
         });
       });
       RegisteredMqttService.mqttCl.on('close', () => {
+        clearInterval(connectionTestTimer);
         if (process.env.NODE_ENV !== 'production') {
           console.log(
             `%cRegistered mqtt disconnected1 ${new Date().toISOString()}`,
@@ -87,6 +67,7 @@ export class RegisteredMqttService {
         });
       });
     } else if (updatedToken) {
+      clearInterval(connectionTestTimer);
       RegisteredMqttService.mqttCl.end(true);
       RegisteredMqttService.activeSubscriptions.clear();
       //@ts-ignore
@@ -94,13 +75,7 @@ export class RegisteredMqttService {
       //@ts-ignore
       delete RegisteredMqttService.instance;
       RegisteredMqttService.instance = new RegisteredMqttService();
-      RegisteredMqttService.cipher = mqttCipher('ubSalt');
-      RegisteredMqttService.clId = RegisteredMqttService.cipher(
-        'mqttjs_' +
-          Math.random()
-            .toString(16)
-            .substr(2, 8),
-      );
+      RegisteredMqttService.clId = `mqttjs_${crypto.randomUUID()}`;
       RegisteredMqttService.mqttCl = mqttConnect(mqttServer, {
         password: RegisteredMqttService.clId,
         username: updatedToken,
@@ -129,6 +104,7 @@ export class RegisteredMqttService {
         });
       });
       RegisteredMqttService.mqttCl.on('close', () => {
+        clearInterval(connectionTestTimer);
         if (process.env.NODE_ENV !== 'production') {
           console.log(
             `%cRegistered mqtt disconnected2 ${new Date().toISOString()}`,

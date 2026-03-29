@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { LocalStorageKeys } from 'services/constants';
 import { MessageNames, Subscriber } from 'services/message_service';
 import { AppPages } from '../constants';
 
 export const useCheckForAuthErrors=({dispatch,loggedInAction,replace})=>{
+  const location = useLocation();
   useEffect(() => {
     const Subscription = Subscriber.subscribe((message: any) => {
       if (message.name === MessageNames.AUTH_ERROR_EVENT) {
