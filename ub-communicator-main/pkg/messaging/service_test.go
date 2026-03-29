@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -79,6 +80,8 @@ func (m *mockLogger) Error(msg string, fields ...zap.Field) {
 }
 
 func (m *mockLogger) Fatal(msg string, fields ...zap.Field) {}
+
+func (m *mockLogger) Shutdown(timeout time.Duration) {}
 
 // --- Tests ---
 
@@ -205,10 +208,8 @@ func TestSend_EmailFailure(t *testing.T) {
 
 	err := svc.Send(msg)
 
-	// NOTE: Based on current implementation, Send() returns nil even on delivery failure
-	// The original test expects an error, but the current code doesn't return errors from Send()
-	if err != nil {
-		t.Errorf("unexpected error returned: %v", err)
+	if err == nil {
+		t.Error("expected error for email delivery failure")
 	}
 	if repo.savedMessage.Status != "failed" {
 		t.Errorf("status: got %q, want %q", repo.savedMessage.Status, "failed")

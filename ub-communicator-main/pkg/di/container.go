@@ -22,6 +22,7 @@ import (
 // All services are lazily initialized on first access.
 type Container interface {
 	GetConsumer() consumer.Service
+	GetLogger() platform.Logger
 }
 
 type container struct {
@@ -111,6 +112,10 @@ func (c *container) getConfigs() platform.Configs {
 		c.configs = platform.NewConfigs(viper)
 	}
 	return c.configs
+}
+
+func (c *container) GetLogger() platform.Logger {
+	return c.getLogger()
 }
 
 func (c *container) getLogger() platform.Logger {

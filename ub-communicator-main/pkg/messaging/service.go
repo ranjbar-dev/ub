@@ -78,6 +78,8 @@ func (s *service) Send(message Message) error {
 		return fmt.Errorf("message validation failed: %w", err)
 	}
 
+	var deliveryErr error
+
 	switch message.Type {
 	case MessageTypeEmail:
 		isSent, err := s.ms.Send(message.Subject, message.Receiver, message.Content)
@@ -86,12 +88,15 @@ func (s *service) Send(message Message) error {
 		} else {
 			if err != nil {
 				s.logger.Error("failed to send email", zap.Error(err))
+				deliveryErr = fmt.Errorf("email delivery failed: %w", err)
+			} else {
+				deliveryErr = fmt.Errorf("email delivery failed: provider returned false with no error")
+				s.logger.Error("email delivery failed: provider returned false with no error")
 			}
 			message.Status = MessageStatusFailed
 		}
-		err = s.mr.NewMessage(&message)
-		if err != nil {
-			s.logger.Error("failed to save message to database", zap.Error(err))
+		if saveErr := s.mr.NewMessage(&message); saveErr != nil {
+			s.logger.Error("failed to save message to database", zap.Error(saveErr))
 		}
 
 	case MessageTypeSms:
@@ -101,17 +106,18 @@ func (s *service) Send(message Message) error {
 		} else {
 			if err != nil {
 				s.logger.Error("failed to send sms", zap.Error(err))
+				deliveryErr = fmt.Errorf("sms delivery failed: %w", err)
 			} else {
-				s.logger.Error("send returned false with no error")
+				deliveryErr = fmt.Errorf("sms delivery failed: provider returned false with no error")
+				s.logger.Error("sms delivery failed: provider returned false with no error")
 			}
 			message.Status = MessageStatusFailed
 		}
-		err = s.mr.NewMessage(&message)
-		if err != nil {
-			s.logger.Error("failed to save message to database", zap.Error(err))
+		if saveErr := s.mr.NewMessage(&message); saveErr != nil {
+			s.logger.Error("failed to save message to database", zap.Error(saveErr))
 		}
 	}
-	return nil
+	return deliveryErr
 }
 
 func (s *service) CreateMessage(data []byte) (Message, error) {

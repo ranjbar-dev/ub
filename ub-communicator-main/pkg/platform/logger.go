@@ -18,6 +18,8 @@ type Logger interface {
 	Warn(msg string, fields ...zap.Field)
 	Error(msg string, fields ...zap.Field)
 	Fatal(msg string, fields ...zap.Field)
+	// Shutdown flushes buffered Sentry events. Call once during graceful shutdown.
+	Shutdown(timeout time.Duration)
 }
 
 type logger struct {
@@ -106,5 +108,9 @@ func (l *logger) captureError(err error) {
 		return
 	}
 	sentry.CaptureException(err)
-	sentry.Flush(2 * time.Second)
+	// Flush removed — call logger.Shutdown() once at process exit instead.
+}
+
+func (l *logger) Shutdown(timeout time.Duration) {
+	sentry.Flush(timeout)
 }

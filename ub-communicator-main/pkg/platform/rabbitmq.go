@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"crypto/tls"
 	"fmt"
 	"sync"
 
@@ -53,7 +54,18 @@ func (r *rabbitMqClient) connect() error {
 	// Connection is dead or doesn't exist — (re)connect
 	r.isConnected = false
 	rabbitMqDsn := r.configs.GetString("rabbitmq.dsn")
-	conn, err := amqp.Dial(rabbitMqDsn)
+
+	var conn *amqp.Connection
+	var err error
+	if r.configs.GetBool("rabbitmq.tls") {
+		tlsCfg := &tls.Config{
+			InsecureSkipVerify: false,
+			MinVersion:         tls.VersionTLS12,
+		}
+		conn, err = amqp.DialTLS(rabbitMqDsn, tlsCfg)
+	} else {
+		conn, err = amqp.Dial(rabbitMqDsn)
+	}
 	if err != nil {
 		r.logger.Error("failed to dial rabbitmq", zap.Error(err))
 		return fmt.Errorf("failed to dial rabbitmq: %w", err)

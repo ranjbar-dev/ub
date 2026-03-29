@@ -1,7 +1,7 @@
 package platform
 
 import (
-	"errors"
+	"fmt"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"strings"
@@ -16,7 +16,7 @@ type sendGridMailerClient struct {
 
 func (m *sendGridMailerClient) Send(subject string, receiver string, content string) (bool, error) {
 	from := mail.NewEmail(m.name, m.fromAddress)
-	to := mail.NewEmail(m.name, receiver)
+	to := mail.NewEmail("", receiver)
 	plainTextContent := subject
 	// WHY: Subject is prefixed with [UNITEDBIT] to identify automated emails
 	// in the recipient's inbox. The check for "[" prevents double-prefixing
@@ -30,8 +30,8 @@ func (m *sendGridMailerClient) Send(subject string, receiver string, content str
 	if err != nil {
 		return false, err
 	} else {
-		if response.StatusCode < 200 || response.StatusCode > 300 {
-			return false, errors.New("status code of sending mail is not 200")
+		if response.StatusCode < 200 || response.StatusCode >= 300 {
+			return false, fmt.Errorf("unexpected status code from SendGrid: %d", response.StatusCode)
 		}
 		return true, nil
 	}

@@ -68,7 +68,39 @@ func (s *service) Consume(ctx context.Context) error {
 		return fmt.Errorf("failed to declare exchange %q: %w", exchange, err)
 	}
 
-	q, err := ch.QueueDeclare(queueName, true, false, false, false, nil)
+	// --- DLQ setup ---
+	dlqExchange := s.configs.GetString("rabbitmq.dlq_exchange")
+	if dlqExchange == "" {
+		dlqExchange = "email_dlq_exchange"
+	}
+	dlqQueue := s.configs.GetString("rabbitmq.dlq_queue")
+	if dlqQueue == "" {
+		dlqQueue = "email_dlq"
+	}
+	dlqRoutingKey := s.configs.GetString("rabbitmq.dlq_routing_key")
+	if dlqRoutingKey == "" {
+		dlqRoutingKey = "email_dlq"
+	}
+
+	err = ch.ExchangeDeclare(dlqExchange, amqp.ExchangeDirect, true, false, false, false, nil)
+	if err != nil {
+		return fmt.Errorf("failed to declare DLQ exchange %q: %w", dlqExchange, err)
+	}
+	dlq, err := ch.QueueDeclare(dlqQueue, true, false, false, false, nil)
+	if err != nil {
+		return fmt.Errorf("failed to declare DLQ queue %q: %w", dlqQueue, err)
+	}
+	err = ch.QueueBind(dlq.Name, dlqRoutingKey, dlqExchange, false, nil)
+	if err != nil {
+		return fmt.Errorf("failed to bind DLQ queue %q: %w", dlq.Name, err)
+	}
+	// --- End DLQ setup ---
+
+	mainQueueArgs := amqp.Table{
+		"x-dead-letter-exchange":    dlqExchange,
+		"x-dead-letter-routing-key": dlqRoutingKey,
+	}
+	q, err := ch.QueueDeclare(queueName, true, false, false, false, mainQueueArgs)
 	if err != nil {
 		return fmt.Errorf("failed to declare queue %q: %w", queueName, err)
 	}

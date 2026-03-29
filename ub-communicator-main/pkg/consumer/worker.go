@@ -29,6 +29,11 @@ type Worker struct {
 // on the WorkerChannel, then waits for Work items on its private Channel.
 func (w *Worker) Start() {
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("worker [%d] panic recovered: %v", w.ID, r)
+			}
+		}()
 		for {
 			// First blocking point: register as available.
 			// Must also listen on ctx.Done() or Stop() deadlocks here.
