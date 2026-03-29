@@ -1143,3 +1143,84 @@ See `UPGRADE_PLAN.md` for the full 8-phase roadmap. Summary:
 | 8 | Modernization (redux-form, AG Grid, Error Boundaries) | Varies | Not started |
 
 **Constraints:** Tests must pass after each phase. Baseline: 30/30 suites, 94 tests.
+
+---
+
+## q) Deep Audit Findings & Corrections
+
+> Results of a line-by-line code audit cross-referencing all AGENTS.md claims against actual source.
+
+### AGENTS.md Accuracy Corrections
+
+| Section | Original Claim | Correction |
+|---------|---------------|------------|
+| §f API Service | "422 → ToastMessages(errors) → individual field toasts" | 422 handling is in individual saga `catch` blocks, not in `api_service.ts`. The API service has no 422-specific code. |
+| §f API Service | 4 methods listed | Actually 5 methods — `handleRawResponse()` is implicitly public (no `private` keyword) and was omitted |
+| §f mqttService.ts | "Legacy MQTT (Deprecated) — Hook-style, uses Paho" | Uses **mqtt.js** (same lib as MqttService2), not Eclipse Paho. Correct that it's hook-style and deprecated. |
+| §g MessageNames | "All 90+ MessageService Message Types" | Exactly **82 total** enum values: 78 `MessageNames` + 3 `EventMessageNames` + 1 `DataInjectMessageNames` |
+| §h MQTT Topics | 4 topic prefixes listed | Actually **7 distinct topic patterns** (see below) |
+| §i Auth | Token refresh described as active | Token refresh is **DISABLED** — `retryWithNewToken()` call is commented out in `api_service.ts:68-70`; refresh token storage is commented out in `LoginPage/saga.ts:52-57` |
+| §i Auth | Logout flow | Missing critical detail: **NO server-side logout API call** — logout is entirely client-side (clear cookies + localStorage) |
+| §k Build | "Internals path: Legacy configs" | Should explicitly state **DEAD CODE** — only `craConfig/` configs are used; `internals/webpack/` files are unreachable |
+
+### Additional MQTT Topics (Missing from §h)
+
+| # | Topic Pattern | Service | Auth | Purpose |
+|---|---------------|---------|------|---------|
+| 5 | `main/trade/user/{channel}/open-orders/` | RegisteredMqttService | Yes | Real-time user order updates |
+| 6 | `main/trade/user/{channel}/crypto-payments/` | RegisteredMqttService | Yes | Real-time payment notifications |
+| 7 | `/testing` (publish only) | RegisteredMqttService | Yes | Health check every 5 seconds |
+
+### Dead Message Types (7 enum values never referenced)
+
+| Enum | Safe to Delete |
+|------|---------------|
+| `SETGRIDLOADING` | ✅ |
+| `SETWITHDRAWLOADING` | ✅ |
+| `SET_INFINITE_DW_PAGE_DATA` | ✅ |
+| `SET_IMAGE_PREVIEW` | ✅ |
+| `UNSUBSCRIBE_FORM_STREAM` | ✅ |
+| `SUBSCRIBE_TO_STREAM` | ✅ |
+| `REFRESH_VISIBLE_SECTION` | ✅ |
+
+Additionally, **16 message types** are subscribed to but never published (orphaned listeners), and **3 message types** are published but never subscribed to (`DELETE_UPLOADED_IMAGE`, `GET_CURRENCY_PAIR_DETAILS`, `SET_ERROR`).
+
+### Dead Code Files
+
+| File | Evidence | Action |
+|------|----------|--------|
+| `app/services/mqttService.ts` | `useStartMQTTMessages` exported but **never imported** anywhere | Delete |
+| `internals/webpack/webpack.base.babel.js` | Only referenced by `yarn old_build` (never called in CI/CD) | Delete |
+| `internals/webpack/webpack.dev.babel.js` | Same — legacy, unreachable | Delete |
+| `internals/webpack/webpack.prod.babel.js` | Same — legacy, unreachable | Delete |
+| `unused.md` | References developer's local `D:\mohsen\` paths | Delete or replace |
+| `tslint.json` + `tslint-imports.json` | TSLint deprecated; ESLint is the active linter | Delete |
+
+### Security Findings
+
+| Severity | Issue | Location |
+|----------|-------|----------|
+| 🔴 Critical | **Hardcoded IP address** `http://116.203.76.196/tv/api/v1/js/get-configuration` (HTTP, not HTTPS) | `services/trade_chart_service.ts:6` |
+| 🔴 Critical | **No HttpOnly flag** on JWT cookies — XSS can steal tokens via `document.cookie` | `services/cookie.ts` (js-cookie cannot set HttpOnly; requires server-side Set-Cookie) |
+| 🟠 High | **Token refresh disabled** — `retryWithNewToken()` commented out; users must re-login on expiry | `services/api_service.ts:68-70`, `LoginPage/saga.ts:52-57` |
+| 🟠 High | **71 console.log statements** in production code — `api_service.ts` logs request params | App-wide |
+| 🟡 Medium | **reCAPTCHA token in localStorage** (`'recall'` key) — should use sessionStorage | `LoginPage/loginBody.tsx`, `RecapchaContainer/` |
+| 🟡 Medium | **No security headers** in Express server (no helmet/CSP/HSTS/X-Frame-Options) | `server/index.js` |
+| 🟢 Low | **Misleading key name** `LocalStorageKeys.SITEKEY = 'refreshToken'` | `services/constants.ts:21` |
+
+### Undocumented Build Features
+
+| Feature | Location | Notes |
+|---------|----------|-------|
+| **Brotli compression** | `craConfig/config/webpack.config.js` | `.js`, `.css`, `.html`, `.svg` files; threshold 10KB |
+| **PWA manifest** | WebpackPwaManifest plugin | App name: "Client Cabinet", theme: #396DE0 |
+| **Service Worker** | WorkboxWebpackPlugin.GenerateSW | SPA navigateFallback to `index.html` |
+| **Bundle analyzer** | BundleAnalyzerPlugin | Generates `stats.json` (mode: disabled in prod) |
+
+### Express Server Gaps (Not in AGENTS.md)
+
+- **No security headers** — no helmet, CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+- **No request logging** — no morgan or equivalent
+- **No global error handler** — `app.use((err, req, res, next))` missing
+- **Gzip hack** — `app.get('*.js')` rewrites URL to `.js.gz` instead of using content negotiation
+- **No CORS middleware** — code exists but is commented out
