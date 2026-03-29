@@ -284,6 +284,7 @@ export const formatCurrencyWithMaxFraction = (
   return formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 export const formatTableCell = ({ value }) => {
+  if (!value) return '';
   const splitted = value.split(' ');
   if (splitted[0] === '0') {
     return `0.00 ${splitted[1] ?? ''}`;
