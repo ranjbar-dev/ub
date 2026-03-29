@@ -21,7 +21,10 @@ mongodb:
 
 rabbitmq:
   dsn: ""            # Set via UBCOMMUNICATOR_RABBITMQ_DSN
-  queue_name: "messages.command.send.consumer"
+  exchange: "email_exchange"
+  exchange_type: "direct"
+  queue_name: "email_queue_1"
+  binding: ""
 
 mailer_broker: "smtp"  # sendgrid, mailjet, smtp, mailgun
 

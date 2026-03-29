@@ -41,20 +41,29 @@ func (s *service) Consume(ctx context.Context) error {
 
 	exchange := s.configs.GetString("rabbitmq.exchange")
 	if exchange == "" {
-		exchange = "messages"
+		exchange = "email_exchange"
 	}
 	queueName := s.configs.GetString("rabbitmq.queue_name")
 	if queueName == "" {
-		queueName = "messages.command.send.consumer"
+		queueName = "email_queue_1"
 	}
 	binding := s.configs.GetString("rabbitmq.binding")
-	if binding == "" {
-		binding = "messages.command.send"
+
+	exchangeType := s.configs.GetString("rabbitmq.exchange_type")
+	if exchangeType == "" {
+		exchangeType = "direct"
+	}
+	var amqpExchangeType string
+	switch exchangeType {
+	case "topic":
+		amqpExchangeType = amqp.ExchangeTopic
+	case "fanout":
+		amqpExchangeType = amqp.ExchangeFanout
+	default:
+		amqpExchangeType = amqp.ExchangeDirect
 	}
 
-	// WHY: Using topic exchange (not direct/fanout) to allow future multi-consumer
-	// routing based on message type patterns (e.g., messages.command.send.email).
-	err = ch.ExchangeDeclare(exchange, amqp.ExchangeTopic, true, false, false, false, nil)
+	err = ch.ExchangeDeclare(exchange, amqpExchangeType, true, false, false, false, nil)
 	if err != nil {
 		return fmt.Errorf("failed to declare exchange %q: %w", exchange, err)
 	}
