@@ -92,7 +92,7 @@ class WithdrawalsController extends GetxController
   @override
   void onInit() {
     final List<dynamic> storedCoins =
-        storage.read<List>(StorageKeys.savedDepositCoins);
+        storage.read<List>(StorageKeys.savedWithdrawalCoins);
     if (storedCoins != null) {
       savedCoins.assignAll(
           storedCoins.map((e) => AutoCompleteItem.fromJson(e)).toList());

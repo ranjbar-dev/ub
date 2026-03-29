@@ -23,7 +23,7 @@ class StorageKeys {
   static final orderedPairs = 'orderedPairs';
   static final activeMarketTabIndex = 'activeMarketTabIndex';
   static final savedDepositCoins = 'savedDepositCoins';
-  static final savedWithdrawalCoins = 'savedDepositCoins';
+  static final savedWithdrawalCoins = 'savedWithdrawalCoins';
   static final lastCancelUpdate = 'lastCancelUpdate';
   static final biometricsActivated = 'biometricsActivated';
 }
