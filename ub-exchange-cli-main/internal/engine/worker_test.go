@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"exchange-go/internal/platform"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -74,11 +75,11 @@ func TestWorker_processOrder(t *testing.T) {
 	redisClient := platform.NewRedisTestClient(rc)
 
 	obp := NewRedisOrderBookProvider(redisClient)
-	orderbookProvider = obp
 
 	workChan := make(chan *work)
 	rh := new(engineResultHandler)
-	shouldCallPostOrderMatching = true
+	shouldCall := &atomic.Bool{}
+	shouldCall.Store(true)
 	matchingResult := MatchingResult{
 		Err:                   nil,
 		RemainingPartialOrder: nil,
@@ -86,7 +87,7 @@ func TestWorker_processOrder(t *testing.T) {
 	}
 	rh.On("CallBack", mock.Anything, mock.Anything).Once().Return(matchingResult)
 	cbm := getCallbackManager(rh)
-	worker := newWorker(workChan, 1, cbm)
+	worker := newWorker(workChan, 1, cbm, obp, shouldCall)
 
 	o := Order{
 		Pair:              "BTC-USDT",

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"go.uber.org/zap"
@@ -9,9 +10,6 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-var orderbookProvider OrderbookProvider
-var shouldCallPostOrderMatching bool //just would be used for our tests
-var cbm *callBackManager
 var logHandler Logger
 
 // ResultHandler is a callback interface for processing matched trades.
@@ -55,19 +53,22 @@ type Engine interface {
 }
 
 type engine struct {
-	pool  *pool
-	queue *queue
-	env   string
-	quit  chan bool
+	pool                        *pool
+	queue                       *queue
+	env                         string
+	quit                        chan bool
+	obp                         OrderbookProvider
+	cbm                         *callBackManager
+	shouldCallPostOrderMatching atomic.Bool
 }
 
 func (e *engine) SetPostOrderMatchingCall(shouldCall bool) error {
-	shouldCallPostOrderMatching = shouldCall
+	e.shouldCallPostOrderMatching.Store(shouldCall)
 	return nil
 }
 
 func (e *engine) Run(workerCount int, shouldStartDispatcher bool) {
-	e.pool = newPool(workerCount)
+	e.pool = newPool(workerCount, e.obp, e.cbm, &e.shouldCallPostOrderMatching)
 	e.pool.run()
 	if shouldStartDispatcher {
 		go e.dispatchOrder()
@@ -145,7 +146,7 @@ func (e *engine) SubmitOrder(order Order) error {
 
 func (e *engine) RemoveOrder(order Order) error {
 	ctx := context.Background()
-	ob := newOrderBook(order.Pair, orderbookProvider)
+	ob := newOrderBook(order.Pair, e.obp)
 	err := e.queue.remove(ctx, order)
 	if err != nil {
 		logHandler.Warn("error in engine:RemoveOrder",
@@ -166,7 +167,7 @@ func (e *engine) RemoveOrder(order Order) error {
 }
 
 func (e *engine) HandleInQueueOrders(pair string, price string) error {
-	ob := newOrderBook(pair, orderbookProvider)
+	ob := newOrderBook(pair, e.obp)
 
 	orders, err := ob.getInQueueOrder(price)
 	if err != nil {
@@ -176,7 +177,7 @@ func (e *engine) HandleInQueueOrders(pair string, price string) error {
 		for i, o := range orders {
 			var emptyDoneOrders []Order
 			o.IsAlreadyInOrderBook = true
-			engineMatchingResult := cbm.callBack(emptyDoneOrders, &orders[i])
+			engineMatchingResult := e.cbm.callBack(emptyDoneOrders, &orders[i])
 			if engineMatchingResult.Err != nil {
 				logHandler.Warn("error is not nil",
 					zap.Error(engineMatchingResult.Err),
@@ -205,7 +206,7 @@ func (e *engine) RetrieveOrder(order Order) error {
 	ctx := context.Background()
 	if order.Price != "" {
 		//it means limit order
-		ob := newOrderBook(order.Pair, orderbookProvider)
+		ob := newOrderBook(order.Pair, e.obp)
 		exists, err := ob.orderExists(ctx, order)
 		if err != nil {
 			return err
@@ -241,15 +242,17 @@ func (e *engine) RetrieveOrder(order Order) error {
 }
 
 func NewEngine(qh QueueHandler, obp OrderbookProvider, rh ResultHandler, logger Logger, env string) Engine {
-	orderbookProvider = obp
-	cbm = getCallbackManager(rh)
-	queue := newQueue(qh)
 	logHandler = logger
-	shouldCallPostOrderMatching = true
+	cbm := getCallbackManager(rh)
+	queue := newQueue(qh)
 	quit := make(chan bool, 1)
-	return &engine{
+	e := &engine{
 		queue: queue,
 		env:   env,
 		quit:  quit,
+		obp:   obp,
+		cbm:   cbm,
 	}
+	e.shouldCallPostOrderMatching.Store(true)
+	return e
 }

@@ -1,19 +1,22 @@
 package engine
 
+import "sync/atomic"
+
 type pool struct {
-	workerCount int
-	collector   chan *work
-	workers     []*worker
+	workerCount                 int
+	collector                   chan *work
+	workers                     []*worker
+	obp                         OrderbookProvider
+	cbm                         *callBackManager
+	shouldCallPostOrderMatching *atomic.Bool
 }
 
 func (p *pool) run() {
 	for i := 0; i < p.workerCount; i++ {
-		worker := newWorker(p.collector, i, cbm)
+		worker := newWorker(p.collector, i, p.cbm, p.obp, p.shouldCallPostOrderMatching)
 		p.workers = append(p.workers, worker)
 		go worker.start()
 	}
-	//p.stopChan = make(chan bool)
-	//<-p.stopChan
 }
 
 func (p *pool) addWork(work *work) {
@@ -30,14 +33,15 @@ func (p *pool) stop() {
 	for i := range p.workers {
 		p.workers[i].stop()
 	}
-	//p.stopChan <- true
 }
 
-func newPool(workerCount int) *pool {
+func newPool(workerCount int, obp OrderbookProvider, cbm *callBackManager, shouldCall *atomic.Bool) *pool {
 	collector := make(chan *work, 1000)
-	//p.stopChan = make(chan bool)
 	return &pool{
-		workerCount: workerCount,
-		collector:   collector,
+		workerCount:                 workerCount,
+		collector:                   collector,
+		obp:                         obp,
+		cbm:                         cbm,
+		shouldCallPostOrderMatching: shouldCall,
 	}
 }

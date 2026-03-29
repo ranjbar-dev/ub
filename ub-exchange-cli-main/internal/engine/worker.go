@@ -2,6 +2,8 @@ package engine
 
 import (
 	"fmt"
+	"sync/atomic"
+
 	"go.uber.org/zap"
 )
 
@@ -15,10 +17,12 @@ type work struct {
 }
 
 type worker struct {
-	ID              int
-	workChan        chan *work
-	quit            chan bool
-	callBackManager *callBackManager
+	ID                          int
+	workChan                    chan *work
+	quit                        chan bool
+	callBackManager             *callBackManager
+	obp                         OrderbookProvider
+	shouldCallPostOrderMatching *atomic.Bool
 }
 
 func (w *worker) start() {
@@ -39,7 +43,7 @@ func (w *worker) start() {
 }
 
 func (w *worker) processOrder(o Order) {
-	ob := newOrderBook(o.Pair, orderbookProvider)
+	ob := newOrderBook(o.Pair, w.obp)
 	doneOrders, partialOrder, err := ob.processOrder(o)
 	if err != nil {
 		logHandler.Warn("error in engine:ProcessOrder",
@@ -49,7 +53,7 @@ func (w *worker) processOrder(o Order) {
 		return
 	}
 
-	if shouldCallPostOrderMatching {
+	if w.shouldCallPostOrderMatching.Load() {
 		engineMatchingResult := w.callBackManager.callBack(doneOrders, partialOrder)
 		var removingDoneOrders []Order
 		for _, id := range engineMatchingResult.RemovingDoneOrderIds {
@@ -72,11 +76,13 @@ func (w *worker) stop() {
 	w.quit <- true
 }
 
-func newWorker(workChan chan *work, ID int, callBackManager *callBackManager) *worker {
+func newWorker(workChan chan *work, ID int, callBackManager *callBackManager, obp OrderbookProvider, shouldCall *atomic.Bool) *worker {
 	return &worker{
-		ID:              ID,
-		workChan:        workChan,
-		quit:            make(chan bool, 1),
-		callBackManager: callBackManager,
+		ID:                          ID,
+		workChan:                    workChan,
+		quit:                        make(chan bool, 1),
+		callBackManager:             callBackManager,
+		obp:                         obp,
+		shouldCallPostOrderMatching: shouldCall,
 	}
 }
