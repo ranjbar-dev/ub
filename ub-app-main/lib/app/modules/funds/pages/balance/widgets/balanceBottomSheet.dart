@@ -171,7 +171,7 @@ class BalanceBottomSheet extends GetView<FundsController> with Toaster {
                                 text: double.parse(balance.availableAmount) == 0
                                     ? '0.00'
                                     : decimalCoin(
-                                        value: balance.totalAmount,
+                                        value: balance.availableAmount,
                                         coinCode: balance.code),
                                 color: ColorName.white,
                               ),
@@ -220,7 +220,7 @@ class BalanceBottomSheet extends GetView<FundsController> with Toaster {
                                 text: double.parse(balance.inOrderAmount) == 0
                                     ? '0.00'
                                     : decimalCoin(
-                                        value: balance.totalAmount,
+                                        value: balance.inOrderAmount,
                                         coinCode: balance.code),
                               ),
                               vspace10,

@@ -87,15 +87,21 @@ class LoginController extends GetxController with Toaster, Popups {
             commonDataProvider.getFavoritePairs(),
           ]);
 
-          accountController.accountData.value = UserModel.fromJson(
-            commonData[0]["data"],
-          );
-          storage.write(StorageKeys.channel,
-              accountController.accountData.value.channelName);
-          storage.write(
-            StorageKeys.favPairs,
-            commonData[1]["data"],
-          );
+          if (commonData != null && commonData.length >= 2) {
+            if (commonData[0] != null && commonData[0]["data"] != null) {
+              accountController.accountData.value = UserModel.fromJson(
+                commonData[0]["data"],
+              );
+              storage.write(StorageKeys.channel,
+                  accountController.accountData.value.channelName);
+            }
+            if (commonData[1] != null) {
+              storage.write(
+                StorageKeys.favPairs,
+                commonData[1]["data"],
+              );
+            }
+          }
           globalController.loadAuthenticatedControllers();
           Get.offAllNamed(AppPages.HOME);
         } else if (token.token == '') {
@@ -148,6 +154,7 @@ class LoginController extends GetxController with Toaster, Popups {
   @override
   void onClose() {
     isLoggingIn.value = false;
+    super.onClose();
   }
 
   void reset() {

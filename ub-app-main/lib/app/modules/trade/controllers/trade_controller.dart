@@ -222,9 +222,15 @@ class TradeController extends GetxController with Toaster {
 
   @override
   void onClose() {
-    priceSubscription.cancel();
-    ohlcSubscription.cancel();
-    orderbookSubscription.cancel();
+    if (priceSubscription != null) {
+      priceSubscription.cancel();
+    }
+    if (ohlcSubscription != null) {
+      ohlcSubscription.cancel();
+    }
+    if (orderbookSubscription != null) {
+      orderbookSubscription.cancel();
+    }
     if (updateSubscription != null) {
       updateSubscription.cancel();
     }
@@ -543,8 +549,8 @@ class TradeController extends GetxController with Toaster {
       if (mainActiveIndex.value == 1 && subActiveIndex.value != 1) {
         final fee = pairBalanceData.value.fee.makerFee;
         final newTradeFee = NumUtil.multiply(total, fee);
-        tradeFee.value = newTradeFee.toString();
-        youGet.value = (NumUtil.subtract(total, newTradeFee)).toString();
+        tradeFee.value = newTradeFee.toStringAsFixed(8);
+        youGet.value = NumUtil.subtract(total, newTradeFee).toStringAsFixed(8);
       } else {
         setValueToYouGet(amount: newAmount);
       }
@@ -577,9 +583,9 @@ class TradeController extends GetxController with Toaster {
       if (mainActiveIndex.value == 1 && subActiveIndex.value != 1) {
         final fee = pairBalanceData.value.fee.makerFee;
         final newTradeFee = NumUtil.multiply(total, fee);
-        tradeFee.value = newTradeFee.toString();
+        tradeFee.value = newTradeFee.toStringAsFixed(8);
         final newYouGet = NumUtil.subtract(total, fee);
-        youGet.value = newYouGet.toString();
+        youGet.value = newYouGet.toStringAsFixed(8);
       } else {
         updateInputValue(stream: amountValue, newValue: v);
         setValueToYouGet(amount: v.removeComma());
@@ -601,14 +607,14 @@ class TradeController extends GetxController with Toaster {
 
     if (amountValue.value != '') {
       double total = NumUtil.multiply(amountValue.value.toDouble(), price);
-      totalValue.value = total.toString();
+      totalValue.value = total.toStringAsFixed(8);
 
       if (mainActiveIndex.value == 1 && subActiveIndex.value != 1) {
         final fee = pairBalanceData.value.fee.makerFee;
         double newTradeFee = NumUtil.multiply(total, fee);
         double newYouGet = NumUtil.subtract(total, fee);
-        tradeFee.value = newTradeFee.toString();
-        youGet.value = newYouGet.toString();
+        tradeFee.value = newTradeFee.toStringAsFixed(8);
+        youGet.value = newYouGet.toStringAsFixed(8);
       } else {
         setValueToYouGet(
           amount: amountValue.value.removeComma(),
@@ -634,8 +640,8 @@ class TradeController extends GetxController with Toaster {
               NumUtil.multiply(amount, currentPairPrice.value.price.toDouble());
         }
         final marketFeeValue = NumUtil.multiply(eqEmount, fee);
-        tradeFee.value = marketFeeValue.toString();
-        youGet.value = NumUtil.subtract(eqEmount, marketFeeValue).toString();
+        tradeFee.value = marketFeeValue.toStringAsFixed(8);
+        youGet.value = NumUtil.subtract(eqEmount, marketFeeValue).toStringAsFixed(8);
       } else {
         tradeFee.value = '';
         youGet.value = '';
@@ -649,8 +655,8 @@ class TradeController extends GetxController with Toaster {
       if (mainActiveIndex.value == 0) {
         final amountByFee = NumUtil.multiply(amount.toDouble(), fee);
         youGet.value =
-            NumUtil.subtract(amount.toDouble(), amountByFee).toString();
-        tradeFee.value = amountByFee.toString();
+            NumUtil.subtract(amount.toDouble(), amountByFee).toStringAsFixed(8);
+        tradeFee.value = amountByFee.toStringAsFixed(8);
       }
     } else {
       updateMarketYouGet();

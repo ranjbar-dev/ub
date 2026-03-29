@@ -140,6 +140,8 @@ class ExchangeController extends GetxController with Popups, Toaster {
 
   @override
   void onClose() {
+    inputControllerFrom.value.dispose();
+    inputControllerTo.value.dispose();
     super.onClose();
   }
 

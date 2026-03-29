@@ -88,6 +88,12 @@ class AuthorizedMqttController extends GetxController with Toaster {
   void onInit() async {
     super.onInit();
 
+    // SECURITY RISK: The JWT access token is used as the MQTT username.
+    // If MQTT traffic is not encrypted end-to-end (TLS), or broker logs
+    // are exposed, the token can be stolen and replayed against the REST API.
+    // TODO: Replace with a short-lived MQTT-only credential obtained from
+    //       a dedicated server endpoint (e.g. POST /auth/mqtt-token) that
+    //       issues credentials scoped only to the MQTT broker.
     authorizedClient = UniversalMqttClient(
       broker: Uri.parse(Constants.mqttServer),
       autoReconnect: true,
@@ -135,8 +141,15 @@ class AuthorizedMqttController extends GetxController with Toaster {
             log.i('open Orders Mqtt Initialized');
             if (message != null) {
               log.i('new order event');
+              Map<String, dynamic> decoded;
+              try {
+                decoded = jsonDecode(message);
+              } catch (e) {
+                log.e('authorizedMqtt: failed to decode order message: $e');
+                return;
+              }
               final payload =
-                  AuthorizedOrderEventModel.fromJson(jsonDecode(message));
+                  AuthorizedOrderEventModel.fromJson(decoded);
               ordrPayload.value = payload;
               toastAuthorizedEvent(payload);
               final messageStatus = payload.status.toLowerCase();

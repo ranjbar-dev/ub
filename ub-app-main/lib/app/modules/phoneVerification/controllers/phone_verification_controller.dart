@@ -67,7 +67,12 @@ class PhoneVerificationController extends GetxController with Toaster, Popups {
   }
 
   @override
-  void onClose() {}
+  void onClose() {
+    if (timerController != null) {
+      timerController.cancel();
+    }
+    super.onClose();
+  }
 
   void handleCountrySelected(AutoCompleteItem item) {
     selectedCountry.value = item;
