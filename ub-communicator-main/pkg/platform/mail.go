@@ -55,7 +55,7 @@ func NewMailerClient(configs Configs, logger Logger) MailerClient {
 		domain := configs.GetString("mailgun.domain")
 		apiBase := configs.GetString("mailgun.api_base")
 
-		client := mailgun.NewMailgun(apiKey, domain)
+		client := mailgun.NewMailgun(domain, apiKey)
 		client.SetAPIBase(apiBase)
 
 		return &mailGunClient{client, name, fromAddress, logger}
