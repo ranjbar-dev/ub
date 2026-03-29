@@ -29,8 +29,8 @@ prod-notification-pass:
   stage: prod-notification
   script:
     - curl -s
-      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
-      -F chat_id=-1001317096458
+      "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+      -F chat_id=${TELEGRAM_CHAT_ID}
       -F text='🟢 UBAdmin Production Deployed Successfully !'
   tags:
     - prod-admin
@@ -42,8 +42,8 @@ prod-notification-fail:
   stage: prod-notification
   script:
     - curl -s
-      "https://api.telegram.org/bot1416070700:AAGSBy7qEn_g7Cqhm8ya-we-jeeYCZO5oCc/sendMessage"
-      -F chat_id=-1001317096458
+      "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+      -F chat_id=${TELEGRAM_CHAT_ID}
       -F text='🔴 UBAdmin Production Deploy Failed !'
   tags:
     - prod-admin
@@ -57,7 +57,7 @@ prod-notification-fail:
 #  tags:
 #    - shell
 #  script:
-#    - ssh -p 7268 -T exchange@116.203.76.196 "cd /home/exchange/new-ub-admin/ && git checkout master && git pull origin master && exit"
+#    - ssh -p ${DEPLOY_SSH_PORT} -T ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST} "cd /home/exchange/new-ub-admin/ && git checkout master && git pull origin master && exit"
 #  only:
 #    - master
 #  when: manual
