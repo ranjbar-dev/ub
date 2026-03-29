@@ -167,22 +167,6 @@ enum MessageNames {
   SET_WHITEADDRESSES_DATA = 'SET_WHITEADDRESSES_DATA',
 
   /**
-   * Delivers the permission flags for a specific user.
-   * @payload value: object — permissions map (feature key → boolean)
-   * @sender UserDetails/saga.ts (after fetchPermissions API call)
-   * @listener PermissionsSegment.tsx
-   */
-  SET_PERMISSIONS_DATA = 'SET_PERMISSIONS_DATA',
-
-  /**
-   * Delivers top-level billing summary data for a user.
-   * @payload value: object — billing summary record
-   * @sender Billing/saga.ts (after fetchBillingData API call)
-   * @listener Billing container (consumed via SimpleGrid messageName prop)
-   */
-  SET_BILLING_DATA = 'SET_BILLING_DATA',
-
-  /**
    * Delivers the user's asset balances to the Balances container.
    * @payload value: object[] — array of balance records per asset
    * @sender Balances/saga.ts (after fetchBalances API call)
@@ -191,76 +175,12 @@ enum MessageNames {
   SET_BALANCES_DATA = 'SET_BALANCES_DATA',
 
   /**
-   * Delivers the list of balances available in the Transfer modal's coin selector.
-   * @payload payload: { type: string; data: object[] } — transfer type and balance list
-   * @sender Balances/saga.ts (after fetchTransferModalBalances API call)
-   * @listener Balances/FromToComponent.tsx
-   */
-  SET_TRANSFER_MODAL_BALANCES_DATA = 'SET_TRANSFER_MODAL_BALANCES_DATA',
-
-  /**
-   * Notifies that the selected coin in the Transfer modal has changed.
-   * @payload value: string — the newly selected coin symbol
-   * @sender Transfer modal coin selector (on user selection change)
-   * @listener Transfer modal balance display components
-   */
-  TRANSFER_MODAL_COIN_CHANGED = 'TRANSFER_MODAL_COIN_CHANGED',
-
-  /**
    * Delivers paginated balance transfer history records.
    * @payload value: object — API response with history rows and pagination meta
    * @sender Balances/saga.ts (after fetchBalancesHistory API call)
    * @listener Balances/TransferHistory.tsx (via messageName prop)
    */
   SET_BALANCES_HISTORY_DATA = 'SET_BALANCES_HISTORY_DATA',
-
-  /**
-   * Delivers paginated deposit records for the Billing > Deposits tab.
-   * @payload value: object — API response with deposit rows and pagination meta
-   * @sender Billing/saga.ts (after fetchBillingDeposits API call)
-   * @listener Billing/BillingDepositsDataGrid.tsx (via messageName prop)
-   */
-  SET_BILLING_DEPOSITS_DATA = 'SET_BILLING_DEPOSITS_DATA',
-
-  /**
-   * Delivers paginated withdrawal records for the Billing > Withdrawals tab.
-   * @payload value: object — API response with withdrawal rows and pagination meta
-   * @sender Billing/saga.ts (after fetchBillingWithdrawals API call)
-   * @listener Billing/BillingWithdrawalssDataGrid.tsx (via messageName prop)
-   */
-  SET_BILLING_WITHDRAWALS_DATA = 'SET_BILLING_WITHDRAWALS_DATA',
-
-  /**
-   * Updates a single withdrawal row in-place inside the Billing Withdrawals grid.
-   * @payload value: object — updated withdrawal row data (must include row id)
-   * @sender Billing/saga.ts (after a status-change action on a withdrawal row)
-   * @listener Billing/BillingWithdrawalssDataGrid.tsx (via SimpleGrid UPDATE_GRID_ROW)
-   */
-  UPDATE_BILLING_WITHDRAW_ROW = 'UPDATE_BILLING_WITHDRAW_ROW',
-
-  /**
-   * Delivers paginated all-transactions records for the Billing > All Transactions tab.
-   * @payload value: object — API response with transaction rows and pagination meta
-   * @sender Billing/saga.ts (after fetchBillingAllTransactions API call)
-   * @listener Billing/BillingAllTransactionsDataGrid.tsx (via messageName prop)
-   */
-  SET_BILLING_ALLTRANSACTIONS_DATA = 'SET_BILLING_ALLTRANSACTIONS_DATA',
-
-  /**
-   * Delivers the admin reports list to the Reports page.
-   * @payload value: object — API response with report rows and pagination meta
-   * @sender Reports/saga.ts (after fetchAdminReports API call)
-   * @listener Reports/AdminReports.tsx
-   */
-  SET_ADMINREPORTS_DATA = 'SET_ADMINREPORTS_DATA',
-
-  /**
-   * Delivers the open-orders list for a specific user (user-details context).
-   * @payload value: object — API response with open order rows
-   * @sender UserOrders/saga.ts (after fetchOpenOrders API call for a user)
-   * @listener UserOrders/OpenOrders.tsx (via messageName prop)
-   */
-  SET_OPEN_ORDERS_DATA = 'SET_OPEN_ORDERS_DATA',
 
   /**
    * Delivers the paginated platform-wide open orders for the Open Orders admin page.
@@ -279,14 +199,6 @@ enum MessageNames {
   SET_FILLED_ORDERS_DATA = 'SET_FILLED_ORDERS_DATA',
 
   /**
-   * Delivers the paginated platform-wide filled orders for the Filled Orders admin page.
-   * @payload value: object — API response with filled order rows and pagination meta
-   * @sender FilledOrders/saga.ts (after fetchFilledOrdersPage API call)
-   * @listener FilledOrders index.tsx (via messageName prop)
-   */
-  SET_FILLED_ORDERS_PAGE_DATA = 'SET_FILLED_ORDERS_PAGE_DATA',
-
-  /**
    * Delivers the list of trading currency pairs for the Currency Pairs admin page.
    * @payload value: object — API response with currency pair rows and pagination meta
    * @sender CurrencyPairs/saga.ts (after fetchCurrencyPairs API call)
@@ -295,52 +207,12 @@ enum MessageNames {
   SET_CURRENCYPAIRS_DATA = 'SET_CURRENCYPAIRS_DATA',
 
   /**
-   * Delivers the list of external (third-party exchange) executed orders.
-   * @payload value: object — API response with external order rows
-   * @sender ExternalOrders/saga.ts (after fetchExternalOrders API call)
-   * @listener ExternalOrders/Executed.tsx (via messageName prop)
-   */
-  SET_EXTERNAL_ORDERS_DATA = 'SET_EXTERNAL_ORDERS_DATA',
-
-  /**
-   * Delivers the net (aggregated) queue records for the External Orders page.
-   * @payload value: object — API response with net queue rows
-   * @sender ExternalOrders/saga.ts (after fetchNetQueue API call)
-   * @listener ExternalOrders/NetQueue.tsx (via messageName prop)
-   */
-  SET_NET_QUEUE_DATA = 'SET_NET_QUEUE_DATA',
-
-  /**
-   * Delivers all raw queue records for the External Orders page.
-   * @payload value: object — API response with all queue rows
-   * @sender ExternalOrders/saga.ts (after fetchAllQueue API call)
-   * @listener ExternalOrders/AllQueue.tsx (via messageName prop)
-   */
-  SET_ALL_QUEUE_DATA = 'SET_ALL_QUEUE_DATA',
-
-  /**
    * Delivers the external exchange configuration list.
    * @payload value: object — API response with external exchange records
    * @sender ExternalExchange/saga.ts (after fetchExternalExchange API call)
    * @listener ExternalExchange index.tsx (via messageName prop)
    */
   SET_EXTERNAL_EXCHANGE_DATA = 'SET_EXTERNAL_EXCHANGE_DATA',
-
-  /**
-   * Delivers market tick data (live price/volume snapshots) for the Market Ticks page.
-   * @payload value: object — API response with market tick rows
-   * @sender MarketTicks/saga.ts (after fetchMarketTicks API call)
-   * @listener MarketTicks index.tsx (via messageName prop)
-   */
-  SET_MARKETTICKS_DATA = 'SET_MARKETTICKS_DATA',
-
-  /**
-   * Delivers the synchronization task list for the Market Ticks / Sync page.
-   * @payload value: object[] — array of sync task records
-   * @sender MarketTicks/saga.ts (after fetchSyncList API call)
-   * @listener MarketTicks index.tsx (via messageName prop)
-   */
-  SET_SYNC_LIST_DATA = 'SET_SYNC_LIST_DATA',
 
   /**
    * Delivers paginated deposit records for the main Deposits admin page.
@@ -359,68 +231,12 @@ enum MessageNames {
   SET_WITHDRAWALS_DATA = 'SET_WITHDRAWALS_DATA',
 
   /**
-   * Delivers the commissions/fee schedule data for the withdrawal commission modal.
-   * @payload value: object — commission configuration record
-   * @sender Billing/saga.ts (after fetchCommissions API call)
-   * @listener Billing/WithdrawModal.tsx
-   */
-  SET_COMMISSIONS_DATA = 'SET_COMMISSIONS_DATA',
-
-  /**
-   * Delivers detailed information for a specific withdrawal request.
-   * @payload value: object — withdrawal detail record
-   * @sender Billing/saga.ts (reserved; currently commented out)
-   * @listener (no active listener; reserved for future detail panel)
-   */
-  SET_WITHDRAW_DETAILS_DATA = 'SET_WITHDRAW_DETAILS_DATA',
-
-  /**
-   * Delivers per-user order history records (user-details context).
-   * @payload value: object — API response with order history rows
-   * @sender UserOrders/saga.ts (after fetchOrderHistory API call)
-   * @listener UserOrders/OrderHistory.tsx (via messageName prop)
-   */
-  SET_ORDER_HISTORY_DATA = 'SET_ORDER_HISTORY_DATA',
-
-  /**
-   * Delivers per-user trade history records (user-details context).
-   * @payload value: object — API response with trade history rows
-   * @sender UserOrders/saga.ts (after fetchTradeHistory API call)
-   * @listener UserOrders/TradeHistory.tsx (via messageName prop)
-   */
-  SET_TRADE_HISTORY_DATA = 'SET_TRADE_HISTORY_DATA',
-
-  /**
    * Delivers the list of finance methods (payment providers) for the Finance Methods page.
    * @payload value: object — API response with finance method rows and pagination meta
    * @sender FinanceMethods/saga.ts (after fetchFinanceMethods API call)
    * @listener FinanceMethods index.tsx (via messageName prop)
    */
   SET_FINANCEMETHODS_DATA = 'SET_FINANCEMETHODS_DATA',
-
-  /**
-   * Delivers the expanded detail rows for a specific net-queue entry.
-   * @payload value: object[] — array of queue detail records
-   * @sender ExternalOrders/saga.ts (after fetchNewQueueDetailList API call)
-   * @listener ExternalOrders/NetQueue.tsx (renders detail sub-rows)
-   */
-  SET_NEW_QUEUE_DETAIL_LIST = 'SET_NEW_QUEUE_DETAIL_LIST',
-
-  /**
-   * Delivers the list of admin comments on a withdrawal payment.
-   * @payload value: object[] — array of comment records
-   * @sender Reports/saga.ts (after fetchWithdrawalComments API call)
-   * @listener Reports/WithdrawalComments.tsx (via messageName prop)
-   */
-  SET_REPORTS_WITHDRAWAL_COMMENTS = 'SET_REPORTS_WITHDRAWAL_COMMENTS',
-
-  /**
-   * Delivers the list of liquidity provider orders for the Liquidity Orders page.
-   * @payload value: object — API response with liquidity order rows and pagination meta
-   * @sender LiquidityOrders/saga.ts (after fetchLiquidityOrders API call)
-   * @listener LiquidityOrders index.tsx (via messageName prop)
-   */
-  SET_LIQUIDITY_ORDERS = 'SET_LIQUIDITY_ORDERS',
 
   /**
    * Delivers the profile/account data for a specific user (user-details panel).
@@ -431,30 +247,6 @@ enum MessageNames {
   SET_USER_DATA = 'SET_USER_DATA',
 
   // ── User Verification panel events ──────────────────────────────────────
-
-  /**
-   * Delivers the KYC document images for a specific user.
-   * @payload value: object — image URLs keyed by document type
-   * @sender UserDetails/saga.ts (after fetchUserImages API call)
-   * @listener VerificationWindow/ImageAndInfo.tsx
-   */
-  SET_USER_IMAGES = 'SET_USER_IMAGES',
-
-  /**
-   * Delivers the login/session history for a specific user.
-   * @payload value: object — API response with login history rows
-   * @sender LoginHistory/saga.ts (after fetchLoginHistory API call)
-   * @listener LoginHistory index.tsx (via messageName prop)
-   */
-  SET_LOGIN_HISTORY_DATA = 'SET_LOGIN_HISTORY_DATA',
-
-  /**
-   * Signals that a new admin comment has been successfully added to a payment record.
-   * @payload value: object — the newly created comment record
-   * @sender Reports/saga.ts or Billing/saga.ts (after addComment API call)
-   * @listener (no active subscriber found; reserved for comment list refresh)
-   */
-  ADDED_COMMENT_TO_PAYMENT = 'ADDED_COMMENT_TO_PAYMENT',
 
   /**
    * Instructs NewWindowContainer to open and register a new popup window by ID.
