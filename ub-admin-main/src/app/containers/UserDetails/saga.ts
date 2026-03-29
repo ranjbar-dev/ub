@@ -1,6 +1,3 @@
-// import { take, call, put, select, takeLatest } from 'redux-saga/effects';
-// import { actions } from './slice';
-
 import { takeLatest } from 'redux-saga/effects';
 import { MessageService, MessageNames } from 'services/messageService';
 import {

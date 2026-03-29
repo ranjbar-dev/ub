@@ -161,21 +161,6 @@ function TransferModal(props: Props) {
 									<UBInput onChange={handleAmountChange} initialValue={'0'} />
 								</Content>
 							</RowWrapper>
-
-							{/* <RowWrapper>
-								<Title>{t(translations.CommonTitles.Fee())}:</Title>
-								<Content>
-									<input style={{ width: '60%' }} onChange={(e) => handleFeeChange(e.target.value)} />
-									<IsLoadingWithTextAuto
-										text={t(translations.CommonTitles.Estimate())}
-										className={Buttons.BlackButton}
-										loadingId={'EstimateFee'}
-										onClick={() => {
-											handleEstimateClick();
-										}}
-									/>
-								</Content>
-							</RowWrapper> */}
 						</AmountAndFeeWrapper>
 
 						<CancelAndSubmitWrapper>

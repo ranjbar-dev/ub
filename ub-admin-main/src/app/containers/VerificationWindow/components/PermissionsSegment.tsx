@@ -90,17 +90,6 @@ function PermissionsSegment(props: Props) {
                       index === Permissions.length - 1 ? 'last' : ''
                     }`}
                   >
-                    {/*<FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={item.userHasIt}
-                          onChange={(event, checked) =>
-                            handleChange(index, checked, item.id)
-                          }
-                        />
-                      }
-                      label={item.name}
-                    />*/}
                     <UbCheckbox
                       initialValue={item.userHasIt}
                       title={item.name}

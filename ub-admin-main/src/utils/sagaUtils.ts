@@ -88,7 +88,9 @@ export function* safeApiCall<T = unknown>(
 				type: 'error',
 			});
 		}
-		console.error('Saga API call failed:', error);
+		if (process.env.NODE_ENV !== 'production') {
+			console.error('Saga API call failed:', error);
+		}
 		return undefined;
 	} finally {
 		if (loadingId) {

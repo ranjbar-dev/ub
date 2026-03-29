@@ -143,10 +143,6 @@ export const Withdrawals = memo((props: Props) => {
 				headerName: t(translations.CommonTitles.ToAddress()),
 				field: 'toAddress',
 			},
-			//{
-			//	headerName: t(translations.CommonTitles.TransactionId()),
-			//	field: 'txId',
-			//},
 			{
 				headerName: t(translations.CommonTitles.CreationDate()),
 				field: 'createdAt',

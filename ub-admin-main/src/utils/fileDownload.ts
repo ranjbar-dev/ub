@@ -32,9 +32,11 @@ const fileDownloader = (data: BlobPart, filename: string): void => {
  * @param params.url - URL to fetch the file from
  * @param params.filename - Filename for the downloaded file
  */
+import { LocalStorageKeys } from 'services/constants';
+
 const downloadFile = async (params: { url: string; filename: string }): Promise<void> => {
   try {
-    const token = localStorage.getItem('access_token') || '';
+    const token = localStorage.getItem(LocalStorageKeys.ACCESS_TOKEN) || '';
     const response = await fetch(params.url, {
       headers: {
         Authorization: `Bearer ${token}`,

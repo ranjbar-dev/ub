@@ -134,10 +134,6 @@ useInjectSaga({ key: sliceKey, saga: userAccountsSaga });
 						name: t(translations.PageNames.LoginHistory()),
 						page: AppPages.LoginHistory,
 					},
-					//  {
-					//    name: 'placeholder',
-					//    page: AppPages.PlaceHolder,
-					//  },
 				],
 			},
 			{
@@ -214,12 +210,7 @@ useInjectSaga({ key: sliceKey, saga: userAccountsSaga });
 						name: t(translations.PageNames.Admins()),
 						page: AppPages.Admins,
 					},
-					{
-						name: t(translations.PageNames.AdminRules()),
-					},
-					{
-						name: t(translations.PageNames.Logs()),
-					},
+	
 				],
 			},
 		],
@@ -273,7 +264,6 @@ useInjectSaga({ key: sliceKey, saga: userAccountsSaga });
 				<PrivateRoute path={AppPages.Balances} component={Balances} />
 				<PrivateRoute path={AppPages.ScanBlock} component={ScanBlock} />
 				<PrivateRoute path={AppPages.LiquidityOrders} component={LiquidityOrders} />
-				{/*<PrivateRoute path={AppPages.PlaceHolder} component={PlaceHolder} />*/}
 				<PrivateRoute path={AppPages.Admins} component={Admins} allowedRoles={['superadmin']} />
 				<Route component={NotFoundPage} />
 			</Switch>
