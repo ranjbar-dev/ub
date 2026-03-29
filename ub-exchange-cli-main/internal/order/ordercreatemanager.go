@@ -360,7 +360,13 @@ func (cm *createManager) saveInDb() (*Order, error) {
 		tx.Rollback()
 		return nil, err
 	}
-	newFrozenAmount := frozenDecimal.Add(cm.data.payedBy).StringFixed(8)
+	newFrozenAmountDecimal := frozenDecimal.Add(cm.data.payedBy)
+	// Guard: frozen amount must never exceed total balance
+	if newFrozenAmountDecimal.GreaterThan(baAmountDecimal) {
+		tx.Rollback()
+		return nil, newOrderCreateValidationError("insufficient balance for freeze")
+	}
+	newFrozenAmount := newFrozenAmountDecimal.StringFixed(8)
 	ba.FrozenAmount = newFrozenAmount
 	err = tx.Omit(clause.Associations).Save(ba).Error
 	if err != nil {
