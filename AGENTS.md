@@ -63,7 +63,7 @@ This is a **cryptocurrency exchange platform** monorepo with 6 sub-projects:
 |---------|---------|---------|
 | **MariaDB** | 10.2 | Primary data store (users, orders, trades, balances, currencies) |
 | **Redis** | 6.2.2-alpine | Caching, order books (sorted sets), live data, session storage, pub/sub |
-| **RabbitMQ** | 3.7 | Async messaging: ub-server/ub-exchange-cli → ub-communicator |
+| **RabbitMQ** | 3.7 | Async messaging: ub-exchange-cli → ub-communicator (working); ub-server → ub-communicator (broken config) |
 | **EMQX** | 3.0 (prod) / 4.0 (dev) | Real-time WebSocket push (tickers, order updates) |
 | **MongoDB** | latest | Audit log for sent messages (ub-communicator only) |
 | **Sentry** | — | Error tracking across all services |
@@ -155,6 +155,42 @@ Key conventions:
 - Materialized path tree for hierarchical orders
 - MySQL JSON functions for flexible extra-info fields
 - 250+ Doctrine migrations (append-only — **never edit existing migrations**)
+
+### GORM Model Coverage (ub-exchange-cli-main)
+
+Go GORM models cover ~30 of ~45 Doctrine entities. Core shared tables include:
+`users`, `orders`, `trades`, `currencies`, `pair_currencies`, `user_balances`,
+`crypto_payments`, `transactions`, `user_withdraw_address`, `user_profiles`,
+`user_levels`, `user_configs`, `configurations`, `countries`, `app_version`,
+`external_exchanges`, `external_exchange_orders`.
+
+**Doctrine-only entities** (no GORM counterpart): `UserBalanceHistory`, `UserDevice`,
+`UserExchangeStatistic`, `UserAdminComment`, `UserGroup`, `AdminMenu`, `Action`,
+`CryptoNews`, `CryptoBalance`, `Ohlc`, `CryptoPaymentAdminComment`, `ExchangeAsset`,
+`AuditLog`, `CommunicationTemplate`.
+
+Go uses explicit `gorm:"column:X"` tags (e.g., `gorm:"column:creator_user_id"`) to match
+Doctrine column names. The `Money` embeddable is stored as direct string columns in Go.
+
+### Redis Data Layer
+
+Both ub-server (Predis) and ub-exchange-cli (go-redis) share the **same Redis instance** on `redis:6379` DB 0.
+
+| Key Pattern | Type | Written By | Read By | Purpose |
+|---|---|---|---|---|
+| `order:{orderId}` | String | PHP | PHP | Serialized order (pipe-delimited) |
+| `queue:order:{type}:{pairId}` | Sorted Set | PHP | PHP | Limit order queue (score=price) |
+| `queue:order:market:{type}:{pairId}` | Sorted Set | PHP | PHP | Market order queue |
+| `order-book:bid:{pairName}` | Sorted Set | Go | Go | Order book bids (JSON, score=price) |
+| `order-book:ask:{pairName}` | Sorted Set | Go | Go | Order book asks (JSON, score=price) |
+| `queue:stop:order:{type}:{pair}` | Sorted Set | PHP+Go | PHP+Go | Stop order queue ⚠️ shared |
+| `live_data:pair_currency:{pair}` | Hash | PHP+Go | PHP+Go | Market data (price, klines, depth) ⚠️ shared |
+| `phone-confirmation:{userId}` | Hash | PHP+Go | PHP+Go | SMS verification codes ⚠️ shared |
+| `forgot-password:{userId}` | Hash | PHP+Go | PHP+Go | Password reset tokens ⚠️ shared |
+| `withdraw-confirmation:{userId}` | Hash | PHP+Go | PHP+Go | Withdrawal confirmation ⚠️ shared |
+| `channel:ticker` etc. | Pub/Sub | PHP | PHP | Market data broadcast (Go does NOT subscribe) |
+
+⚠️ **Known risk:** No distributed locks on shared keys. See Gotcha #14.
 
 ## Code Style
 
@@ -268,6 +304,11 @@ cd ub-communicator-main
 docker-compose up -d    # Starts: MongoDB, Go consumer (connects to ub-server's RabbitMQ via external network)
 ```
 
+**Docker networks:** ub-server-main defines `rabbit`, `candle-grpc`, `candle-http` bridge networks.
+ub-communicator-main references external network `ub-server_rabbit` — this relies on Docker Compose
+auto-prefixing the project name (e.g., `docker-compose -p ub-server` makes `rabbit` → `ub-server_rabbit`).
+The Go inter-service gRPC communication uses the `candle-grpc` network.
+
 ### Key Ports (Local Dev)
 
 | Port | Service |
@@ -286,9 +327,21 @@ docker-compose up -d    # Starts: MongoDB, Go consumer (connects to ub-server's 
 ### Environment Variables
 
 - PHP: `app/config/parameters.yml` (Symfony), `.env` files
-- Go exchange-cli: environment variables or config files
+- Go exchange-cli: `config/config.yaml` + env vars
 - Go communicator: `config/config.yaml` + env vars with `UBCOMMUNICATOR_` prefix (Viper)
 - Frontend apps: `.env` files (see `.env.example` in each sub-project)
+
+#### Cross-Project Consistency Requirements
+
+| Variable | Must match across | Current status |
+|---|---|---|
+| MySQL DSN | ub-server + ub-exchange-cli | ✅ Both use `db:3306/exchange_db` |
+| Redis DSN | ub-server + ub-exchange-cli | ✅ Both use `redis:6379` DB 0 |
+| RabbitMQ credentials | ub-server + ub-exchange-cli + docker-compose | ⚠️ PHP has `guest:guest`, others have `rabbitmquser:some_password` |
+| MQTT credentials | ub-server + ub-exchange-cli | ✅ Both use `mqtt_abbas:mqtt_abbas` |
+| JWT key paths | ub-server + ub-exchange-cli | ✅ Both use `config/jwt/{private,public}.pem` |
+| API domain | all frontends | ✅ `app.unitedbit.com` / `admin.unitedbit.com` |
+| MQTT WSS | React + Flutter | ✅ `wss://{domain}:8443` |
 
 ## API Contract Summary
 
@@ -369,9 +422,11 @@ docker-compose -f docker-compose-prod.yml exec exchange-app php bin/console doct
 - 250+ Doctrine migrations (append-only, never edit existing)
 
 ### Real-time
-- MQTT topics follow `main/trade/{channel}/{pair}` pattern
+- MQTT topics follow `main/trade/{channel}/{pair}` pattern (some include `/{timeFrame}/` before pair)
+- Both PHP (EmqttManager) and Go (mqttmanager) publish to MQTT; both use same credentials
 - Authorized vs unauthorized MQTT clients for different data access
-- EMQX authenticates clients via HTTP callback to `/api/v1/emqtt/*`
+- EMQX authenticates clients via HTTP callback to `/api/v1/emqtt/*` (served by both PHP and Go)
+- Private topics use `user/{privateChannelName}/` (NOT userId directly)
 
 ### Security
 - Google reCAPTCHA v2 on auth endpoints
@@ -455,31 +510,55 @@ All `HttpClient` methods return `(body []byte, headers http.Header, statusCode i
 On connection errors, statusCode defaults to 0 (after fix) — don't trust
 statusCode unless error is nil.
 
-### 11. RabbitMQ Exchange/Queue Name Mismatch Between Producer and Consumer
-ub-server publishes to exchange `"email_exchange"` / queue `"email_queue_1"` (direct),
-while ub-communicator consumes from exchange `"messages"` / queue
-`"messages.command.send.consumer"` (topic). These must be reconciled via
-RabbitMQ config or both sides updated if changing messaging patterns.
+### 11. RabbitMQ Exchange/Queue Name Mismatch Between PHP Producer and Consumer
+ub-server publishes to exchange `"email_exchange"` / queue `"email_queue_1"` (direct, empty
+routing keys), while ub-communicator consumes from exchange `"messages"` / queue
+`"messages.command.send.consumer"` (topic, binding `"messages.command.send"`).
+**The PHP producer path is BROKEN** — messages will not reach the consumer. However,
+ub-exchange-cli-main (Go) also publishes to exchange `"messages"` with routing key
+`"messages.command.send"` which IS compatible. The Go CLI is the **working path** for
+email/SMS notifications. If fixing the PHP side, update `RabbitMQProducerService.php`
+to use topic exchange `"messages"` with routing key `"messages.command.send"`.
 
 ### 12. ub-server RabbitMQ Only Publishes in Production
 `RabbitMQProducerService` only publishes in `prod` environment. In dev/test,
 no messages reach ub-communicator. If testing the full email flow locally,
 you must either change this check or publish manually.
 
-### 13. Mailgun API Parameters Are Swapped (ub-communicator BUG)
+### 13. RabbitMQ Credentials Mismatch Across Configs
+`parameters.yml` configures RabbitMQ as `guest:guest`, but `docker-compose.yml` creates
+the broker with `rabbitmquser:some_password`, and ub-exchange-cli-main's `config.yaml`
+uses `rabbitmquser:some_password`. PHP will fail to connect unless `parameters.yml`
+is updated or overridden by environment variables.
+
+### 14. Redis Order Format Incompatibility Between PHP and Go
+PHP stores orders in Redis as **pipe-delimited strings** (`order:{id}` keys,
+`queue:order:{type}:{pairId}` sorted sets). Go stores order book entries as **JSON objects**
+in `order-book:bid:{pair}` / `order-book:ask:{pair}` sorted sets. These are separate key
+namespaces so they don't directly conflict, but they represent **parallel order storage
+systems**. Shared keys like `queue:stop:order:*` and `live_data:pair_currency:*` are
+accessed concurrently by both services without distributed locks — potential race conditions.
+
+### 15. Flutter App Missing Trade-Book MQTT Subscription
+ub-app-main (Flutter) subscribes to ticker, order-book, kline, and private user topics,
+but does NOT subscribe to `main/trade/trade-book/{pair}`. This means recent executed
+trades won't display in the mobile app's trade book view. The React client (ub-client-
+cabinet-main) does subscribe to this topic correctly.
+
+### 16. Mailgun API Parameters Are Swapped (ub-communicator BUG)
 In `pkg/platform/mail.go:59`, the code calls `mailgun.NewMailgun(apiKey, domain)`
 but the SDK signature is `NewMailgun(domain, apiKey string)`. The domain is used
 as the API key and vice versa. **All Mailgun emails fail with auth errors.**
 Fix: swap to `mailgun.NewMailgun(domain, apiKey)`.
 
-### 14. Sentry Is Silently Broken in Communicator Production
+### 17. Sentry Is Silently Broken in Communicator Production
 `platform.EnvConfigKey` reads `"wallet.environment"` but `config.yaml` uses
 `"communicator.environment"`. `GetEnv()` always returns `""`, so `captureError()`
 never sends to Sentry (the `env != "prod"` check always passes). Workaround:
 set `UBCOMMUNICATOR_WALLET_ENVIRONMENT=prod` as an env var. Fix: change
 the constant to `"communicator.environment"`.
 
-### 15. No Graceful Shutdown in Communicator
+### 18. No Graceful Shutdown in Communicator
 `main.go` passes `context.Background()` to `Consume()` — SIGTERM/SIGINT are
 ignored. Docker `stop` waits its timeout then SIGKILL's the process. Worker
 pool shutdown logic exists but is unreachable via OS signals.
