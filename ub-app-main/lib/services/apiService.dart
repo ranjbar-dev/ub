@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:connectivity/connectivity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart' hide Response, FormData;
 import 'package:get_storage/get_storage.dart';
 
@@ -28,6 +29,7 @@ class ApiService {
   static int _refreshRetryCount = 0;
   static const int _maxRefreshRetries = 3;
   static final isDebug = ENV == "DEV";
+  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   static final platform = (GetPlatform.isAndroid ? 'ubandroid' : 'ubandroid') +
       '-v' +
       Constants.appVersion.split("+")[0];
@@ -99,18 +101,20 @@ class ApiService {
                   _refreshRetryCount = 0;
                   return handler.next(err);
                 }
-                _isRefreshing = true;
                 _refreshCompleter = Completer<String>();
+                _isRefreshing = true;
                 try {
                   dio.interceptors.requestLock.lock();
                   dio.interceptors.responseLock.lock();
                   final refreshObj = await post(
                     url: "auth/refresh",
-                    data: {"refresh": storage.read(StorageKeys.refresh)},
+                    data: {"refresh": await _secureStorage.read(key: SecureStorageKeys.refresh)},
                   );
                   newToken = refreshObj["token"];
                   token = newToken;
-                  storage.write(StorageKeys.refresh, refreshObj["refreshToken"]);
+                  await _secureStorage.write(
+                      key: SecureStorageKeys.refresh,
+                      value: refreshObj["refreshToken"]);
                   dio.interceptors.requestLock.unlock();
                   dio.interceptors.responseLock.unlock();
                   _refreshRetryCount = 0;
@@ -156,7 +160,7 @@ class ApiService {
         onRequest:
             (RequestOptions options, RequestInterceptorHandler handler) async {
           if (token == null) {
-            token = storage.read(StorageKeys.token);
+            token = await _secureStorage.read(key: SecureStorageKeys.token);
           }
           if (token != null) {
             options.headers['Authorization'] = 'Bearer' + ' $token';
@@ -201,7 +205,7 @@ class ApiService {
   }
 
   bool _shouldRefreshToken(DioError err) {
-    return err.response != null && err.response.statusCode == 403;
+    return err.response != null && err.response.statusCode == 401;
   }
 
   Future get({

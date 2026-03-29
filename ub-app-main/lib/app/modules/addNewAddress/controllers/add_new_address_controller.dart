@@ -99,11 +99,13 @@ class AddNewAddressController extends GetxController with Toaster {
 
       final response = await addNewAddressProvider.addNewAddress(data: data);
       if (response['status'] == true) {
-        final code = response['data'][0]['code'];
+        final List responseData = response['data'];
+        if (responseData == null || responseData.length == 0) return;
+        final code = responseData[0]['code'];
         var model = {};
         for (var currency in currencyArray) {
           if (currency.name == code) {
-            model = response['data'][0];
+            model = responseData[0];
             model["icon"] = currency.image;
             break;
           }

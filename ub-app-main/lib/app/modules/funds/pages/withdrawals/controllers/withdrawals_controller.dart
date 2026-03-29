@@ -140,11 +140,17 @@ class WithdrawalsController extends GetxController
 
   void handleSubmitClick() async {
     var youWillGet;
-    final lfee = withdrawAndDepositData.value.balance.fee;
-    if (amount.value != '' && lfee != '') {
-      youWillGet =
-          (double.parse(amount.value.replaceAll(',', '')) - double.parse(lfee))
-              .toString();
+    final balance = withdrawAndDepositData.value.balance;
+    if (balance == null) return;
+    final lfee = balance.fee;
+    if (amount.value != '' && lfee != null && lfee != '') {
+      try {
+        youWillGet =
+            (double.parse(amount.value.replaceAll(',', '')) - double.parse(lfee))
+                .toString();
+      } catch (e) {
+        youWillGet = null;
+      }
     }
 
     openWithdrawSubmitPopup(

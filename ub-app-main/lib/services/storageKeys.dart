@@ -37,4 +37,6 @@ class SecureStorageKeys {
 
   static final email = 'se';
   static final password = 'sp';
+  static final token = 'st';
+  static final refresh = 'sr';
 }
