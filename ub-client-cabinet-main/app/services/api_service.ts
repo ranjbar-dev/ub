@@ -6,6 +6,7 @@ import { MessageService, MessageNames } from './message_service';
 import { cookies, CookieKeys, cookieConfig } from './cookie';
 export class ApiService {
   private static instance: ApiService;
+  private isRefreshing = false;
   private constructor () {}
   public static getInstance (): ApiService {
     if (!ApiService.instance) {
@@ -58,16 +59,19 @@ export class ApiService {
   handleRawResponse (rawResponse: Response, params: RequestParameters) {
     if (!rawResponse.ok) {
       //if user-pass is wrong or token is expired
-      if (rawResponse.status === 401 || rawResponse.status === 403) {
+      if (rawResponse.status === 401) {
+        MessageService.send({ name: MessageNames.SETLOADING, payload: false });
+        MessageService.send({ name: MessageNames.AUTH_ERROR_EVENT });
+      } else if (rawResponse.status === 403) {
+        if (!this.isRefreshing) {
+          return this.retryWithNewToken(params);
+        }
         MessageService.send({ name: MessageNames.SETLOADING, payload: false });
         MessageService.send({ name: MessageNames.AUTH_ERROR_EVENT });
       } else if (rawResponse.status === 500) {
         toast.error('Something Went Wrong!');
       }
 
-      //  else if (rawResponse.status === 403) {
-      //   return this.retryWithNewToken(params);
-      // }
       else {
         return rawResponse.json();
       }
@@ -115,20 +119,28 @@ export class ApiService {
   }
 
   private async retryWithNewToken (params: RequestParameters) {
-    const refreshResponse = await this.fetchData({
-      data: { refresh: cookies.get(CookieKeys.RefreshToken) },
-      url: 'auth/refresh',
-      requestType: RequestTypes.POST,
-    });
-    if (refreshResponse?.token.length > 0) {
-      this.token = refreshResponse.token;
-      cookies.set(CookieKeys.Token, refreshResponse.token, cookieConfig());
-      cookies.set(
-        CookieKeys.RefreshToken,
-        refreshResponse.refreshToken,
-        cookieConfig(),
-      );
-      return await this.fetchData(params);
+    this.isRefreshing = true;
+    try {
+      const refreshResponse = await this.fetchData({
+        data: { refresh: cookies.get(CookieKeys.RefreshToken) },
+        url: 'auth/refresh',
+        requestType: RequestTypes.POST,
+      });
+      if (refreshResponse?.token.length > 0) {
+        this.token = refreshResponse.token;
+        cookies.set(CookieKeys.Token, refreshResponse.token, cookieConfig());
+        cookies.set(
+          CookieKeys.RefreshToken,
+          refreshResponse.refreshToken,
+          cookieConfig(),
+        );
+        return await this.fetchData(params);
+      }
+      MessageService.send({ name: MessageNames.AUTH_ERROR_EVENT });
+    } catch {
+      MessageService.send({ name: MessageNames.AUTH_ERROR_EVENT });
+    } finally {
+      this.isRefreshing = false;
     }
   }
 }

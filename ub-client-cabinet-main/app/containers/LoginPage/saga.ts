@@ -49,12 +49,11 @@ export function* login(action: { type: string; payload: LoginData }) {
     if (response.token && response.token.length > 0) {
       //@ts-ignore
       cookies.set(CookieKeys.Token, response.token, cookieConfig());
-      // !Remove to use refresh token
-      // cookies.set(
-      //   CookieKeys.RefreshToken,
-      //   response.refreshToken,
-      //   cookieConfig(),
-      // );
+      cookies.set(
+        CookieKeys.RefreshToken,
+        response.refreshToken,
+        cookieConfig(),
+      );
 
       const email = censor({ value: action.payload.username, from: 1, to: 5 });
       //@ts-ignore
