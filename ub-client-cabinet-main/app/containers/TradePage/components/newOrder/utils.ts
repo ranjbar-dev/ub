@@ -84,5 +84,6 @@ export const toFix = (value: string | number, to: number) => {
   return Number(value).toFixed(to); //(Math.floor(Number(Number(value)*(10*to)))/(10*to))+''
 };
 export const toFixFloor = (value: string | number, to: number) => {
-  return Math.floor(Number(Number(value) * (10 * to))) / (10 * to) + '';
+  const factor = Math.pow(10, to);
+  return String(Math.floor(Number(value) * factor) / factor);
 };

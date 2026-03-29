@@ -89,7 +89,7 @@ export const mqttServer = `${MqttProtocol}://${mainUrl}:8443`;
 
 export const MqttAdditionalConfig: IClientOptions = {
   protocol: MqttProtocol,
-  connectTimeout: 30 * 60 * 1000,
+  connectTimeout: 30 * 1000,    // 30 seconds — fail fast, trigger reconnect
   reconnectPeriod: 2 * 1000,
-  keepalive: 0,
+  keepalive: 60,                 // 60-second PING interval — detect silent drops
 };

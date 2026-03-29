@@ -24,6 +24,7 @@ export class RegisteredMqttService {
   private static mqttCl: MqttClient;
   private static cipher;
   private static clId;
+  private static activeSubscriptions: Set<string> = new Set();
   public static Encoder;
   private constructor () {
     let TEncoder;
@@ -60,11 +61,13 @@ export class RegisteredMqttService {
       RegisteredMqttService.mqttCl.on('reconnect', function () {
         if (process.env.NODE_ENV !== 'production') {
           console.log(
-            `%cRegistered mqtt Reconnected1 ${new Date().toISOString()}`,
+            `%cRegistered mqtt Reconnected ${new Date().toISOString()}`,
             'color:magenta;font-size:16px;',
           );
         }
-        // MessageService.send({ name: MessageNames.RECONNECT_EVENT });
+        RegisteredMqttService.activeSubscriptions.forEach(topic => {
+          RegisteredMqttService.mqttCl.subscribe(topic);
+        });
       });
       RegisteredMqttService.mqttCl.on('close', () => {
         if (process.env.NODE_ENV !== 'production') {
@@ -85,6 +88,7 @@ export class RegisteredMqttService {
       });
     } else if (updatedToken) {
       RegisteredMqttService.mqttCl.end(true);
+      RegisteredMqttService.activeSubscriptions.clear();
       //@ts-ignore
       delete RegisteredMqttService.mqttCl;
       //@ts-ignore
@@ -116,11 +120,13 @@ export class RegisteredMqttService {
       RegisteredMqttService.mqttCl.on('reconnect', function () {
         if (process.env.NODE_ENV !== 'production') {
           console.log(
-            `%cRegistered mqtt Reconnected2 ${new Date().toISOString()}`,
+            `%cRegistered mqtt Reconnected ${new Date().toISOString()}`,
             'color:magenta;font-size:18px;',
           );
         }
-        // MessageService.send({ name: MessageNames.RECONNECT_EVENT });
+        RegisteredMqttService.activeSubscriptions.forEach(topic => {
+          RegisteredMqttService.mqttCl.subscribe(topic);
+        });
       });
       RegisteredMqttService.mqttCl.on('close', () => {
         if (process.env.NODE_ENV !== 'production') {
@@ -147,19 +153,24 @@ export class RegisteredMqttService {
     if (process.env.NODE_ENV !== 'production') {
       console.log('connecting', data);
     }
-    data.subject !== undefined &&
+    if (data.subject !== undefined) {
+      RegisteredMqttService.activeSubscriptions.add(data.subject);
       RegisteredMqttService.mqttCl.subscribe(data.subject);
+    }
   }
   public DisconnectFromSubject (data: { subject: string }) {
     if (process.env.NODE_ENV !== 'production') {
       console.log('disConnecting', data);
     }
+    RegisteredMqttService.activeSubscriptions.delete(data.subject);
     RegisteredMqttService.mqttCl.unsubscribe(data.subject);
   }
   public ConnectToNewSubject (data: {
     oldsubject: string;
     newSubject: string;
   }) {
+    RegisteredMqttService.activeSubscriptions.delete(data.oldsubject);
+    RegisteredMqttService.activeSubscriptions.add(data.newSubject);
     RegisteredMqttService.mqttCl
       .unsubscribe(data.oldsubject)
       .subscribe(data.newSubject);

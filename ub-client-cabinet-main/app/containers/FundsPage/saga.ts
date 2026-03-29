@@ -136,16 +136,16 @@ function* getRawDepositAndWithdraws(action: {
         payload: response.data,
       });
       yield all([
-        setDepositAndWithDrawDataAction(response.data),
+        put(setDepositAndWithDrawDataAction(response.data)),
         ...(fromCoinChange !== true
           ? [
-              getInfiniteDWAction({
+              put(getInfiniteDWAction({
                 // code: code,
                 type: type,
                 page: 0,
                 page_size: infinitePageSize,
                 silent: silent,
-              }),
+              })),
             ]
           : []),
       ]);
@@ -165,24 +165,33 @@ function* getInfiniteDw(action: { type: string; payload: InfiniteDwModel }) {
       payload: true,
     });
   }
-  const response: StandardResponse = yield call(
-    getTransactionHistoryAPI,
-    action.payload,
-  );
-  if (action.payload.page === 0) {
+  try {
+    const response: StandardResponse = yield call(
+      getTransactionHistoryAPI,
+      action.payload,
+    );
+    if (action.payload.page === 0) {
+      MessageService.send({
+        name: MessageNames.SET_INITIAL_INFINITE_DW_PAGE_DATA_LOADING,
+        payload: false,
+      });
+      MessageService.send({
+        name: MessageNames.SET_INITIAL_INFINITE_DW_PAGE_DATA,
+        payload: response.data.payments,
+      });
+    } else {
+      MessageService.send({
+        name: MessageNames.SET_DATA_TO_INFINITE_BOTTOM,
+        payload: response.data.payments,
+      });
+    }
+  } catch (error) {
+    // Always clear the loading state so the UI doesn't freeze
     MessageService.send({
       name: MessageNames.SET_INITIAL_INFINITE_DW_PAGE_DATA_LOADING,
       payload: false,
     });
-    MessageService.send({
-      name: MessageNames.SET_INITIAL_INFINITE_DW_PAGE_DATA,
-      payload: response.data.payments,
-    });
-  } else {
-    MessageService.send({
-      name: MessageNames.SET_DATA_TO_INFINITE_BOTTOM,
-      payload: response.data.payments,
-    });
+    toast.error('Error loading transaction history');
   }
 }
 

@@ -29,6 +29,7 @@ export class MqttService {
 	private static mqttCl;
 	private static cipher;
 	private static clId;
+	private static activeSubscriptions: Set<string> = new Set();
 	public static Encoder;
 	private constructor() {
 		let TEncoder;
@@ -60,6 +61,11 @@ export class MqttService {
 				if(process.env.NODE_ENV!=='production') {
 					console.log(params);
 				}
+			});
+			MqttService.mqttCl.on('reconnect', function() {
+				MqttService.activeSubscriptions.forEach(topic => {
+					MqttService.mqttCl.subscribe(topic);
+				});
 			});
 
 			MqttService.mqttCl.on('message',function(topic: string,message) {
@@ -98,15 +104,19 @@ export class MqttService {
 	}
 
 	public ConnectToSubject(data: {subject: string}) {
+		MqttService.activeSubscriptions.add(data.subject);
 		MqttService.mqttCl.subscribe(data.subject);
 	}
 	public DisconnectFromSubject(data: {subject: string}) {
+		MqttService.activeSubscriptions.delete(data.subject);
 		MqttService.mqttCl.unsubscribe(data.subject);
 	}
 	public ConnectToNewSubject(data: {
 		oldsubject: string;
 		newSubject: string;
 	}) {
+		MqttService.activeSubscriptions.delete(data.oldsubject);
+		MqttService.activeSubscriptions.add(data.newSubject);
 		MqttService.mqttCl.unsubscribe(data.oldsubject).subscribe(data.newSubject);
 	}
 }

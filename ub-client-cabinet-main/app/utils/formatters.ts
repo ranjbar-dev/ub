@@ -24,7 +24,7 @@ export const CurrencyFormater = (val: string) => {
   }
   let trail = '';
   if (value.includes(' ')) {
-    if (+value.split[0] < 1) {
+    if (+value.split(' ')[0] < 1) {
       return value;
     }
     value = +value.split(' ')[0] + ' ' + value.split(' ')[1];
@@ -64,21 +64,11 @@ export const commaSeparatedInput = (value: any) => {
 export function Format (value: number | string) {
   const v = value ? Number(value) : 0;
   if (v > 0) {
-    return Intl.NumberFormat('de-DE')
-      .format(v)
-      .split('.')
-      .join(',');
+    return Intl.NumberFormat('en-US').format(v);
   } else if (v === 0) {
     return '';
   } else {
-    return (
-      '(' +
-      Intl.NumberFormat('de-DE')
-        .format(-1 * v)
-        .split('.')
-        .join(',') +
-      ')'
-    );
+    return '(' + Intl.NumberFormat('en-US').format(-1 * v) + ')';
   }
 }
 
