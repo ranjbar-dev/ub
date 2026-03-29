@@ -39,7 +39,8 @@
 31. [Platform Configuration](#31-platform-configuration)
 32. [Testing](#32-testing)
 33. [Known Issues & Bugs](#33-known-issues--bugs)
-34. [Upgrade Roadmap](#34-upgrade-roadmap)
+34. [Deep Audit Findings Summary](#34-deep-audit-findings-summary)
+35. [Upgrade Roadmap](#35-upgrade-roadmap)
 
 ---
 
@@ -440,7 +441,7 @@ Startup sequence:
 Used by `TradeController` to subscribe to:
 - `main/trade/ticker` — live price ticker for all pairs
 - `main/trade/order-book/{pair}` — live order book for specific pair
-- `main/trade/kline/{pair}` — live OHLC candle updates
+- `main/trade/kline/{timeframe}/{pair}` — live OHLC candle updates
 
 ---
 
@@ -475,11 +476,13 @@ Used by `TradeController` to subscribe to:
 
 Interceptors execute in this order on every request:
 
-| Order | Interceptor | File | Behavior |
-|---|---|---|---|
-| 1 | **Connection Retry** | `connection_retry_interceptor.dart` | On `SocketException`, schedule retry via `DioConnectivityRequestRetrier` |
-| 2 | **Token Refresh** | (inline in apiService) | On 403 response, POST `auth/refresh` with refresh token; lock interceptors during refresh |
-| 3 | **Auth Header** | (inline in apiService) | Attach `Bearer {token}` from storage/memory |
+| Order | Interceptor | File | Status | Behavior |
+|---|---|---|---|---|
+| 1 | **Connection Retry** | `connection_retry_interceptor.dart` | ✅ Active | On `SocketException`, schedule retry via `DioConnectivityRequestRetrier` |
+| 2 | **Token Refresh** | (inline in apiService) | ✅ Active | On 403 response, POST `auth/refresh` with refresh token; lock interceptors during refresh |
+| 3 | **Auth Header** | (inline in apiService) | ✅ Active | Attach `Bearer {token}` from storage/memory |
+| 4 | **Timeout Retry** | `timeout_retry_interceptor.dart` | ❌ Commented out | Would retry on `connectTimeout` errors (1 retry, 5s interval) |
+| 5 | **Pretty Dio Logger** | (inline) | ❌ Commented out | Would log requests/responses in debug mode |
 
 ### Retry Configuration (`options.dart`)
 
@@ -1277,7 +1280,7 @@ Configuration in `pubspec.yaml` under `flutter_gen:` section.
 |---|---|---|---|
 | `main/trade/ticker` | Live price ticker for all pairs | Default | `TradeController`, `HomeController`, `MarketController`, `ExchangeController` |
 | `main/trade/order-book/{pair}` | Live order book for specific pair | Default | `TradeController` |
-| `main/trade/kline/{pair}` | Live OHLC candle updates | Default | `TradeController` |
+| `main/trade/kline/{timeframe}/{pair}` | Live OHLC candle updates | Default | `TradeController` |
 
 ### Private Topics (AuthorizedMqttController)
 
@@ -1446,23 +1449,142 @@ flutter build <target> \
 
 ## 33. Known Issues & Bugs
 
+> **Last deep audit:** 2025-07-25 (line-by-line source audit)
+
+### 33.1 — Critical Issues
+
+| # | Severity | Issue | Location | Details |
+|---|---|---|---|---|
+| 1 | **CRITICAL** | Pre-null-safety (Dart 2.11) — entire codebase needs null safety migration | `pubspec.yaml` SDK constraint | Blocks all modern Dart/Flutter features |
+| 2 | **CRITICAL** | NPE in `_shouldRefreshToken()` — `err.response` can be null | `lib/services/apiService.dart:177` | Any network error without HTTP response (timeout, DNS failure) crashes here: `err.response.statusCode` on null |
+| 3 | **CRITICAL** | Race condition in token refresh interceptor | `lib/services/apiService.dart:82-111` | Concurrent 403 responses both enter the refresh handler; first consumes refresh token, second may fail or corrupt state. Dio locks only queue new requests, not concurrent error handlers |
+| 4 | **CRITICAL** | Hardcoded reCAPTCHA API keys in commented-out code | `lib/app/modules/login/views/login_view.dart:145-146` | `apiKey` and `apiSecret` visible in source/version control |
+| 5 | **CRITICAL** | Storage key collision: `savedWithdrawalCoins` = `'savedDepositCoins'` | `lib/services/storageKeys.dart:26` | Deposit and withdrawal coin history overwrite each other |
+
+### 33.2 — High Severity Issues
+
+| # | Severity | Issue | Location | Details |
+|---|---|---|---|---|
+| 6 | **HIGH** | JWT token stored in unencrypted `GetStorage` | `apiService.dart`, `login_controller.dart` | Token readable by any app with file access on rooted devices; should use `FlutterSecureStorage` |
+| 7 | **HIGH** | `ENV` hardcoded to `"PRODUCTION"` — ignores `--dart-define=ENV` | `lib/utils/environment/ubEnv.dart:4` | `const ENV = "PRODUCTION";` — build scripts pass ENV but it's never read |
+| 8 | **HIGH** | `_timer.cancel()` without null check in `onClose()` | `lib/app/global/controller/authorizedMqttController.dart:79` | `_timer` can be null if `onInit()` fails — crash on dispose |
+| 9 | **HIGH** | Platform header always `'ubandroid'` — copy-paste bug | `lib/services/apiService.dart:26` | `(GetPlatform.isAndroid ? 'ubandroid' : 'ubandroid')` — both branches identical |
+| 10 | **HIGH** | `async void handleLoggedOut()` — fire-and-forget | `lib/app/global/controller/globalController.dart` | Exceptions in async void are uncatchable |
+| 11 | **HIGH** | Uncancelled stream subscriptions in `OHLCChartController` | `lib/app/modules/trade/controllers/ohlcChart_controller.dart` | 3 `.listen()` calls in `onInit()`, empty `onClose()` → memory leak |
+| 12 | **HIGH** | Memory leak: `StreamController` never closed in `alphabeticListView` | `lib/app/common/custom/alphabeticListView.dart:70` | `_pixelUpdates` StreamController and `_callback` listener never disposed |
+| 13 | **HIGH** | Hardcoded `UserAgentInfo` in order creation | `tradeProvider.dart`, `exchangeProvider.dart` | Always sends `{"browser":"Chrome","device":"web","os":"Win32"}` regardless of platform |
+| 14 | **HIGH** | Raw RSA encryption without padding | `lib/utils/cryptography/rsa_encryption.dart:243-250` | `RSAEngine()` used without OAEP/PKCS1 padding — vulnerable to padding oracle attacks |
+| 15 | **HIGH** | Race condition in autoExchange stream listener | `lib/app/modules/funds/pages/autoExchange/controllers/auto_exchange_controller.dart:38-42` | Async callback modifies shared state without synchronization |
+
+### 33.3 — Medium Severity Issues
+
 | # | Severity | Issue | Location |
 |---|---|---|---|
-| 1 | **CRITICAL** | Pre-null-safety (Dart 2.11) — entire codebase needs null safety migration | `pubspec.yaml` SDK constraint |
-| 2 | **HIGH** | `ENV` hardcoded to `"PRODUCTION"` — ignores `--dart-define=ENV` | `lib/utils/environment/ubEnv.dart` |
-| 3 | **HIGH** | `savedWithdrawalCoins` uses same storage key as `savedDepositCoins` | `lib/services/storageKeys.dart` |
-| 4 | **MEDIUM** | `'lightMode'` key in `main.dart` not defined in `StorageKeys` class | `lib/main.dart` |
-| 5 | **MEDIUM** | `connectivity` package deprecated → should use `connectivity_plus` | `pubspec.yaml` |
-| 6 | **MEDIUM** | `flutter_appavailability` — unmaintained, no null-safe version | `pubspec.yaml` |
-| 7 | **LOW** | Hardcoded MQTT/API URLs in `constants.dart` (not environment-driven) | `lib/services/constants.dart` |
-| 8 | **LOW** | Docker pinned to Flutter 2.10.5 — blocks Flutter 3.x upgrade | `Dockerfile*` |
-| 9 | **LOW** | `AuthMiddleware` is placeholder (`isAuthenticated` always `false`) | `lib/utils/middleWares/authMiddleware.dart` |
-| 10 | **LOW** | Platform header always `'ubandroid'` even on iOS | `lib/services/apiService.dart` |
-| 11 | **LOW** | Many test files are empty placeholders | `test/` directory |
+| 16 | **MEDIUM** | `'lightMode'` key in `main.dart` not in `StorageKeys` class; conflicts with `darkMode` key | `lib/main.dart` |
+| 17 | **MEDIUM** | `connectivity` package deprecated → use `connectivity_plus` | `pubspec.yaml` |
+| 18 | **MEDIUM** | `flutter_appavailability` unmaintained, no null-safe version | `pubspec.yaml` |
+| 19 | **MEDIUM** | `async void onInit()` in multiple controllers | Various controllers |
+| 20 | **MEDIUM** | Missing null check on `networksConfigsAndAddresses.length` | `withdrawals_controller.dart` |
+| 21 | **MEDIUM** | No `onError` handler on MQTT stream subscriptions | `trade_controller.dart` |
+| 22 | **MEDIUM** | Mixed `print()` / `debugPrint()` / `log.e()` logging | Various files |
+| 23 | **MEDIUM** | No retry limit on token refresh — infinite loop risk | `apiService.dart:82-111` |
+| 24 | **MEDIUM** | Zero error handling in all 26 provider files | All providers return raw response; no try/catch |
+| 25 | **MEDIUM** | `Future.wait` without `eagerError: false` in balance controller | `balance_controller.dart` |
+| 26 | **MEDIUM** | Route typo: `/depost-details` (missing 'i') | `app_routes.dart`, `app_pages.dart` |
+| 27 | **MEDIUM** | No certificate pinning for HTTPS/WSS | All network communication |
+
+### 33.4 — Low Severity Issues
+
+| # | Severity | Issue | Location |
+|---|---|---|---|
+| 28 | **LOW** | Hardcoded MQTT/API URLs in `constants.dart` (not environment-driven) | `lib/services/constants.dart` |
+| 29 | **LOW** | Docker pinned to Flutter 2.10.5 | `Dockerfile*` |
+| 30 | **LOW** | `AuthMiddleware` placeholder (`isAuthenticated` always `false`) | `lib/utils/middleWares/authMiddleware.dart` |
+| 31 | **LOW** | Empty test placeholders (64% of test files) | `test/` directory |
+| 32 | **LOW** | `genarateEnc()` function name misspelled | `lib/utils/cryptography/encoding.dart` |
+| 33 | **LOW** | `veiws/` directory typo in popups | `lib/app/popups/veiws/` |
+| 34 | **LOW** | `TwoFactorAuthenticationProviderProvider` — double "Provider" | Provider file |
+| 35 | **LOW** | Unused flags: `priceTopicInitialized`, `ohlcTopicInitialized`, `orderBookTopicInitialized` | `trade_controller.dart` |
+| 36 | **LOW** | Request retrier has no timeout — hangs indefinitely | `lib/services/interceptors/request_retrier.dart` |
+| 37 | **LOW** | Duplicate provider methods across files | `getAppVerion()` in CommonDataProvider + AfterSplashProvider |
+| 38 | **LOW** | Commented-out code blocks (10+ locations) | Various files |
 
 ---
 
-## 34. Upgrade Roadmap
+## 34. Deep Audit Findings Summary
+
+> Added by deep line-by-line audit (2025-07-25). See full report in session artifacts.
+
+### 34.1 — Security Assessment
+
+| Area | Grade | Key Finding |
+|---|---|---|
+| **Token Storage** | D | JWT in plain `GetStorage`; email/password correctly in `FlutterSecureStorage` |
+| **Cryptography** | C | RSA 2048-bit (OK), but no padding scheme, hardcoded public key |
+| **Network** | C+ | WSS for MQTT (good), HTTPS for API (good), but no cert pinning |
+| **Credentials** | D | Hardcoded reCAPTCHA keys in comments; UserAgentInfo hardcoded |
+| **Input Validation** | B | Email/password validators exist; currency formatters proper |
+
+### 34.2 — Undocumented Items Found
+
+| Item | Details |
+|---|---|
+| OHLC topic includes timeframe | Actual: `main/trade/kline/{timeframe}/{pair}`, not `main/trade/kline/{pair}` |
+| Hardcoded popular pairs | 9 pairs in `home_controller.dart:39-49`: BTC-USDT, ETH-USDT, BCH-USDT, DASH-USDT, DOGE-USDT, MKR-USDT, LTC-USDT, ETH-BTC, TRX-USDT |
+| Duplicate providers | `getAppVerion()` in CommonDataProvider AND AfterSplashProvider; `getTransactionHistory()` in TransactionHistoryProvider AND MarketProvider |
+| TimeoutRetryInterceptor commented out | Listed in interceptor chain but actually disabled (apiService.dart:113-125) |
+| Total API endpoints | 40 (37 internal + 1 external CMS + 1 TradingView + 1 token refresh) |
+| Provider count | 26 files (25 module providers + 1 commonDataProvider) |
+
+### 34.3 — Test Coverage Assessment
+
+| Category | Coverage | Notes |
+|---|---|---|
+| API Service / Interceptors | **0%** | No tests for token refresh, retry logic, error handling |
+| MQTT Controllers | **0%** | No tests for message parsing, reconnection, topic management |
+| GlobalController | **0%** | Empty placeholder test |
+| Trade Module | **~1%** | Basic placeholder only |
+| UI Components (119 widgets) | **0%** | Zero tests for UBButton, UBInput, OrderBook, CoinList, etc. |
+| Cryptography | **~50%** | RSA round-trip tested; encoding.dart untested |
+| Providers (26 files) | **~5%** | Only accountProvider has mock test |
+| **Overall Estimated** | **~5%** | Critical gap for a financial trading application |
+
+### 34.4 — Interceptor Chain (Corrected)
+
+| Order | Interceptor | Status | Trigger |
+|---|---|---|---|
+| 1 | Connection Retry (`RetryOnConnectionChangeInterceptor`) | ✅ Active | `SocketException` |
+| 2 | Token Refresh (inline `InterceptorsWrapper`) | ✅ Active | HTTP 403 |
+| 3 | Auth Header + Logging (inline `InterceptorsWrapper`) | ✅ Active | Every request |
+| 4 | Timeout Retry (`TimeoutRetryInterceptor`) | ❌ **Commented out** | — |
+| 5 | Pretty Dio Logger | ❌ **Commented out** | — |
+
+### 34.5 — MQTT Topic Reference (Corrected)
+
+| Topic | Exact Pattern | QoS | Controller |
+|---|---|---|---|
+| Price Ticker | `main/trade/ticker` | exactlyOnce (2) | UnAuthorized → TradeController |
+| Order Book | `main/trade/order-book/{pair}` | exactlyOnce (2) | UnAuthorized → TradeController |
+| **OHLC/Klines** | **`main/trade/kline/{timeframe}/{pair}`** | exactlyOnce (2) | UnAuthorized → TradeController |
+| Open Orders | `main/trade/user/{channel}/open-orders/` | exactlyOnce (2) | AuthorizedMqttController |
+| Crypto Payments | `main/trade/user/{channel}/crypto-payments/` | exactlyOnce (2) | AuthorizedMqttController |
+
+> **Correction**: OHLC topic includes `{timeframe}` segment between `kline/` and `{pair}`.
+
+---
+
+## 35. Upgrade Roadmap
+
+### Phase 0 — Critical Bug Fixes (NEW — from deep audit)
+
+- [ ] Fix NPE in `_shouldRefreshToken()` — add null check on `err.response` (`apiService.dart:177`)
+- [ ] Remove hardcoded reCAPTCHA keys from `login_view.dart:145-146`
+- [ ] Fix `savedWithdrawalCoins` key collision (`storageKeys.dart:26` → change to `'savedWithdrawalCoins'`)
+- [ ] Add null check for `_timer.cancel()` in `authorizedMqttController.dart:79`
+- [ ] Fix platform header copy-paste bug (`apiService.dart:26`)
+- [ ] Add token refresh race condition guard (mutex/flag)
+- [ ] Move JWT token to `FlutterSecureStorage`
+- [ ] Fix `ENV` to read from `String.fromEnvironment('ENV', defaultValue: 'DEV')`
 
 ### Phase 1 — Infrastructure (COMPLETED ✅)
 
