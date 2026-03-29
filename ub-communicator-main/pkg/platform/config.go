@@ -15,9 +15,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-const AllowedIpsConfigKey = "wallet.allowed_ips"
+const AllowedIpsConfigKey = "communicator.allowed_ips"
 const SentryDsnKey = "sentry.dsn"
-const EnvConfigKey = "wallet.environment"
+const EnvConfigKey = "communicator.environment"
 const EnvProd = "prod"
 const EnvTest = "test"
 const EnvDev = "dev"
