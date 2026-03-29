@@ -19,16 +19,19 @@ const OpenOrder = (props: {
   const dispatch = useDispatch();
   useEffect(() => {
     localStorage[LocalStorageKeys.VISIBLE_ORDER_SECTION] = OrderPage.OpenOrders;
+    let rafId: number;
     if (props.openOrders.length === 0 && isAuthed === true) {
-      requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
         dispatch(getOpenOrdersAction());
       });
     } else if (isAuthed === true) {
-      requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
         dispatch(getOpenOrdersAction({ silent: true }));
       });
     }
-    return () => {};
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [isAuthed]);
   if (isLoadingData) {
     return <GridLoading className={`${props.isMini ? 'contained' : ''}`} />;

@@ -23,14 +23,17 @@ const OrderHistory = (props: {
   useEffect(() => {
     localStorage[LocalStorageKeys.VISIBLE_ORDER_SECTION] =
       OrderPage.OrderHistory;
+    let rafId: number;
     if (props.orderHistory.length === 0) {
       dispatch(getOrderHistoryAction());
     } else {
-      requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
         dispatch(getOrderHistoryAction({ silent: true }));
       });
     }
-    return () => {};
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
   const onSearchClick = (data: any) => {
     searchCalled = true;
