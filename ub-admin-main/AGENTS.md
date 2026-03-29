@@ -695,7 +695,7 @@ Recommended for new saga code. Handles:
 | `adminReportsService.ts` | Admin comments, config updates | `POST user/admin-comment/*`, `POST currency/update*`, `GET statistic/user-statistic` |
 | `globalDataService.ts` | Reference data (cached 1hr) | `GET [webApp]/main-data/country-list`, `GET [webApp]/currencies`, `GET admin/user/admins` |
 | `profileImageService.ts` | Profile image review | `POST user/profile-image/update` |
-| `messageService.ts` | RxJS pub/sub event bus | (67 event types — not HTTP) |
+| `messageService.ts` | RxJS pub/sub event bus | (60 MessageNames + 7 GridNames = 67 total — not HTTP; **26 MessageNames are unused dead code**) |
 | `toastService.ts` | Toast notification helpers | (UI-only — not HTTP) |
 
 ### `globalDataService.ts` Caching
@@ -877,7 +877,18 @@ import { mySaga } from './saga';
 - **AG Grid 23.x** has known CVEs — upgrade path blocked by major API changes
 - **`internals/startingTemplate/`** excluded from tsconfig — template code for generator only
 - **ScanBlock** is the only container missing `Loadable.tsx`
-- **Some known typos in codebase:** `commitions` (commissions), `Rejectedd` (Rejected), `ALLPY_PARAMS_TO_GRID` (APPLY)
+- **Some known typos in codebase:** `commitions` (commissions), `Rejectedd` (Rejected), `ALLPY_PARAMS_TO_GRID` (APPLY), `RepaySubscriber3` (ReplaySubscriber3)
+- **`Orders/saga.ts` bug:** `GetOrderHistoryAction` reuses `GetOpenOrdersAPI` instead of a dedicated history endpoint
+- **`Admins/saga.ts`** is an empty stub (8 lines, no implementation)
+- **German translations 99% incomplete** — only 3 of 241 keys translated in `de/translation.json`
+- **26 unused MessageNames** defined in `messageService.ts` (43% dead code) — see deep audit report
+- **14 of 25 containers have no tests** — actual coverage likely below 90% threshold
+- **9 of 11 service files have no tests** (only `apiService` and `securityService` are tested)
+- **`rowHeight`** is `35` in `app/constants.ts`, used consistently across SimpleGrid and custom grids
+- **🚨 `.gitlab-ci.yml` contains a hardcoded Telegram bot token and chat ID** — must be rotated and moved to CI/CD secret variables
+- **No Content-Security-Policy** header or meta tag configured
+- **Auth tokens stored in localStorage** — vulnerable to XSS attacks; consider httpOnly cookies
+- **Docker build is not multi-stage** — build tools remain in production image
 
 ## Upgrade Roadmap
 

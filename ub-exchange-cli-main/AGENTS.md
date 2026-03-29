@@ -47,7 +47,7 @@
 
 **Startup sequence (`exchange-httpd`):**
 ```
-di.NewContainer()           ← builds ~121 services lazily
+di.NewContainer()           ← builds ~109 services lazily
   ├─ Config, Logger, DB, Redis, MQTT, RabbitMQ
   ├─ 26 Repositories (GORM)
   ├─ Domain services (business logic)
@@ -180,7 +180,7 @@ internal/
 - **Dependencies**: DB, Redis (live data), gRPC (candle service)
 
 #### `internal/di/` — Dependency Injection Container
-- **Purpose**: Wire all ~121 services into a single `sarulabs/di` App-scoped container
+- **Purpose**: Wire all ~109 services into a single `sarulabs/di` App-scoped container
 - **Files**: `container.go` (constants + factory), `di_commands.go`, `di_http.go`, `di_repositories.go`, `di_services.go`, `di_trading.go`, `di_external.go`, `doc.go`
 - **Registration**: All `builder.Add()` calls use string constants; registration order reflects dependency order
 - **See**: §DI Container for complete service list
@@ -556,7 +556,7 @@ globalRecover (panic recovery)
 
 ---
 
-## DI Container — Complete Service Registry (~121 services)
+## DI Container — Complete Service Registry (~109 services)
 
 ### Infrastructure Layer (no app dependencies)
 
@@ -757,16 +757,17 @@ Registered in `di_commands.go`: `SetUserLevelCommand`, `InitializeBalanceCommand
 
 ### Redis Data Structures
 
-| Key Pattern | Type | Purpose |
-|-------------|------|---------|
-| `engine:queue:orders` | List | Order queue (RPUSH submit, BLPop consume, LPush priority) |
-| `order-book:bid:<pair>` | Sorted Set | Bid orderbook (score=price, member=JSON Order) |
-| `order-book:ask:<pair>` | Sorted Set | Ask orderbook (score=price, member=JSON Order) |
-| `live_data:pair_currency:<pair>` | Hash | All live market data fields (price, volume, kline, depth, trades) |
-| `wallet:auth:<token>` | String | Cached wallet service JWT |
-| `withdraw:confirm:<userId>` | String+TTL | Withdrawal email confirmation OTP |
-| `forgot_password:<token>` | String+TTL | Password reset token |
-| `phone_confirm:<userId>` | String+TTL | Phone verification OTP |
+| Key Pattern | Type | Purpose | TTL |
+|-------------|------|---------|-----|
+| `engine:queue:orders` | List | Order queue (RPUSH submit, BLPop consume, LPush priority) | None |
+| `order-book:bid:<pair>` | Sorted Set | Bid orderbook (score=price, member=JSON Order) | None |
+| `order-book:ask:<pair>` | Sorted Set | Ask orderbook (score=price, member=JSON Order) | None |
+| `queue:stop:order:<type>:<pair>` | Sorted Set | Stop orders by price trigger (score=stop-price) | None |
+| `live_data:pair_currency:<pair>` | Hash | All live market data (price, volume, kline, depth, trades) | None |
+| `wallet:auth` | Hash | Wallet service JWT (fields: token, expiredAt) | 5 hours |
+| `withdraw-confirmation:<userId>` | Hash+Expire | Withdrawal email OTP (fields: code, expiredAt, coin, amount, address) | 3 hours |
+| `forgot-password:<userId>` | Hash+Expire | Password reset (fields: userId, code, expiredAt) | 3 hours |
+| `phone-confirmation:<userId>` | Hash+Expire | Phone verification OTP (fields: userId, code, expiredAt, phone) | 3 hours |
 
 ---
 
@@ -951,13 +952,20 @@ go test ./... --failfast
 - SMS OTP via Redis-stored codes + RabbitMQ → ub-communicator
 
 ### Known Security Concerns
-- ⚠️ `config/config.yaml` contains hardcoded credentials (DB, RabbitMQ, MQTT, JWT passphrase, Sentry DSN)
+- ⚠️ `config/config.yaml` contains hardcoded credentials (DB, RabbitMQ, MQTT, JWT passphrase `123456789`, Sentry DSN)
 - ⚠️ RSA keys committed to `config/jwt/` and `config/ub-captcha/` — should use secrets manager
-- ⚠️ No rate limiting on any API endpoints (login brute-force, order spam)
+- ⚠️ No rate limiting on any API endpoints (login brute-force, order spam, SMS flood)
 - ⚠️ CORS allows all origins in non-production (`*`)
 - ⚠️ JWT TTL is 30 days — unusually long for a financial application
 - ⚠️ No CSRF protection (relies on CORS + Bearer token)
 - ⚠️ Admin API on separate port (:8001) but no IP whitelisting
+- 🔴 MQTT login endpoint always returns success — no actual authentication (handler/mqtt.go)
+- 🔴 Test email backdoor bypasses recaptcha in production (auth/service.go:516)
+- 🔴 No JWT algorithm enforcement — RS256/HS256 confusion attack possible (platform/jwt.go:77)
+- 🔴 Admin auth missing 2FA change check (auth/service.go:747)
+- 🔴 Balance race condition — TOCTOU in postmatch_balance.go, no negative balance check
+- 🔴 Binance API keys stored plaintext in database
+- 🔴 Payment webhook callback has no signature/HMAC validation
 
 ---
 
@@ -983,9 +991,12 @@ go test ./... --failfast
 
 ### Redis Key Patterns
 - Order books: `order-book:bid:<pair>` / `order-book:ask:<pair>` (sorted sets)
+- Stop orders: `queue:stop:order:<type>:<pair>` (sorted sets, score=stop-price)
 - Engine queue: `engine:queue:orders` (list)
-- Live data: `live_data:pair_currency:<pair>` (hash)
-- Cache: `<entity>:<id>` pattern
+- Live data: `live_data:pair_currency:<pair>` (hash with fields: price, volume, kline_*, depth_snapshot, etc.)
+- Wallet auth: `wallet:auth` (hash, TTL 5h)
+- Confirmations: `withdraw-confirmation:<userId>`, `forgot-password:<userId>`, `phone-confirmation:<userId>` (hash, TTL 3h)
+- Cache: `<entity>:<id>` pattern (via go-redis/cache)
 
 ### MQTT Topic Patterns
 - Public: `main/trade/<data-type>/<pair>`
@@ -1043,7 +1054,7 @@ go build -o ws     cmd/exchange-ws/main.go
 ## Known Issues & Upgrade Roadmap
 
 ### Active Issues
-1. **DI error suppression**: All 121 `builder.Add()` calls discard errors via `_ = builder.Add(...)` — silent startup failures
+1. **DI error suppression**: All 109 `builder.Add()` calls use `mustAdd()` wrapper — but 318 `ctn.Get()` type assertions are unchecked (panic on wrong type)
 2. **No graceful shutdown**: `exchange-httpd` uses `panic()` on fatal, no SIGTERM handling
 3. **Variable shadowing**: Local vars shadow DI constants throughout di files
 4. **Magic strings**: HTTP headers repeated as string literals across handlers
@@ -1077,3 +1088,154 @@ go build -o ws     cmd/exchange-ws/main.go
 | 011 | LOW | Add test file documentation |
 | 012 | MEDIUM | Create ARCHITECTURE.md ✓ (completed) |
 | 013 | MEDIUM | Document DI registration order |
+
+---
+
+## Deep Audit Findings (Line-by-Line Code Review)
+
+> Comprehensive audit performed by reading every source file. Full details in
+> `deep-exchange-report.md`.
+
+### DI Container Correction
+
+**Actual service count: 109** (not ~121). Breakdown by file:
+| File | `mustAdd()` Calls |
+|------|------------------|
+| `di_infrastructure.go` | 13 |
+| `di_repositories.go` | 28 (27 repos + 1 Redis manager) |
+| `di_services.go` | 32 |
+| `di_order_services.go` | 21 |
+| `di_commands.go` | 15 |
+| `di_http.go` | 1 |
+| **Total** | **109** |
+
+**318 unchecked type assertions** across all DI files — `ctn.Get(x).(Type)` without comma-ok pattern.
+
+### Engine Bugs Found
+
+| ID | File:Area | Severity | Description |
+|----|-----------|----------|-------------|
+| E-1 | `redisorderbookprovider.go:46` | **CRITICAL** | Bid limit order price range inverted — sets `min=price` instead of `max=price`, matches only MORE expensive asks |
+| E-2 | `queue.go:91` | **HIGH** | `exists()` returns `pos > 0` but `LPos` is 0-based — order at head falsely reported as "not exists" |
+| E-3 | `orderbook.go:121` | **MEDIUM** | Market order remainder divides by original marketPrice, not actual trade price |
+| E-4 | `orderbook.go:243-286` | **MEDIUM** | Same-price sort uses array index `i < j` as primary — unstable price-time priority |
+| E-5 | `redisorderbookprovider.go:183-193` | **LOW** | `Exists()` checks `score > 0` — fails for price=0 edge case (should check `err == nil`) |
+| E-6 | `callbackmanager.go:10-14` | **HIGH** | Single global mutex serializes ALL 10 worker callbacks — bottleneck |
+| E-7 | `worker.go:24-38` | **HIGH** | No `recover()` in worker goroutine — single panic permanently kills a worker |
+| E-8 | `redisorderbookprovider.go:73-104` | **HIGH** | `RewriteOrderBook` early return on marshal error leaves TxPipeline unexecuted → orphaned orders |
+| E-9 | `engine.go:159-188` | **MEDIUM** | `HandleInQueueOrders` fire-and-forget goroutine — errors swallowed |
+
+### Security Vulnerabilities Found
+
+| ID | Location | Severity | Description |
+|----|----------|----------|-------------|
+| S-1 | `handler/mqtt.go:10-16` | **CRITICAL** | `MqttLogin()` always returns success — no actual authentication |
+| S-2 | `auth/service.go:516` | **CRITICAL** | Test email `behkamegit@gmail.com` bypasses recaptcha in production |
+| S-3 | `postmatch_balance.go:15-75` | **CRITICAL** | TOCTOU race in balance updates — no pessimistic lock, no negative check |
+| S-4 | `platform/jwt.go:77` | **HIGH** | No explicit RS256 algorithm enforcement — HS256 confusion attack possible |
+| S-5 | `auth/service.go:747-763` | **HIGH** | Admin auth skips `TwoFaChangedAt` check — old tokens survive 2FA toggle |
+| S-6 | `config/config.yaml` | **HIGH** | 7 hardcoded secrets (JWT passphrase `123456789`, DB, MQTT, RabbitMQ, Wallet credentials) |
+| S-7 | `adminhandler/payment.go` | **HIGH** | Payment webhook callback has no HMAC/signature validation |
+| S-8 | All endpoints | **HIGH** | No rate limiting middleware (login brute-force, SMS flood, withdrawal spam) |
+| S-9 | `handler/userprofileimage.go` | **MEDIUM** | KYC image upload has no file size validation in handler |
+| S-10 | `auth/service.go:737 vs 759` | **MEDIUM** | Inconsistent time comparison: user auth uses `.Sub() > 0`, admin uses `.After()` |
+
+### Concurrency Issues Found
+
+| ID | Location | Severity | Description |
+|----|----------|----------|-------------|
+| C-1 | `auth/service.go:145-156` | **HIGH** | 4+ goroutines on login — no WaitGroup, no context, no error handling |
+| C-2 | `payment/service.go` | **HIGH** | 8+ notification goroutines — fire-and-forget, no tracking |
+| C-3 | `processor/dataprocessor.go` | **MEDIUM** | Package-level `sync.Mutex` — potential deadlock under load |
+| C-4 | `engine/engine.go:78-80` | **MEDIUM** | `Stop()` sends on quit channel — double `Stop()` call deadlocks |
+| C-5 | `pool.go:32` | **MEDIUM** | 1000-item buffered channel — blocks dispatcher if workers stall |
+| C-6 | All goroutines | **MEDIUM** | No `context.WithTimeout()` on external API calls (wallet, Binance) |
+
+### Binance Integration Issues
+
+| ID | Area | Severity | Description |
+|----|------|----------|-------------|
+| B-1 | All REST API calls | **CRITICAL** | Zero retry logic — network timeout = immediate failure, no backoff |
+| B-2 | `externalexchangews/binance/ws.go` | **CRITICAL** | `os.Exit(1)` on ANY WebSocket error — no graceful shutdown or reconnection |
+| B-3 | `ratelimithandler.go` | **HIGH** | Rate limit map updated via goroutine without mutex — race condition |
+| B-4 | `handler/binance/service.go` | **HIGH** | API keys stored plaintext in database, no encryption at rest |
+| B-5 | `ws_health_check.go` | **MEDIUM** | 20-second gap before restart detected; no message buffering during reconnect |
+| B-6 | `submit_bot_aggregated_order.go` | **HIGH** | Deletes Redis aggregation data regardless of Binance submission success |
+
+### CLI Command Issues
+
+| Command | Issue | Severity |
+|---------|-------|----------|
+| `submit-bot-orders` | Deletes Redis data even on Binance failure — lost bot orders | **HIGH** |
+| `ws-health-check` | No auth on `supervisorctl` call; 20s detection gap | **MEDIUM** |
+| `check-withdrawals` | No retry on Binance API failure | **MEDIUM** |
+| `sync-kline` | 407-line monolith, hard to maintain | **LOW** |
+
+### Binance REST API Endpoints (Complete Reference)
+
+| Method | URI | Purpose | Weight |
+|--------|-----|---------|--------|
+| POST | `api.binance.com/api/v3/order` | Place order | 1 |
+| POST | `api.binance.com/api/v3/order/test` | Test order (test env) | 1 |
+| GET | `api.binance.com/api/v3/klines` | OHLC candles | 1 |
+| GET | `sapi/v1/capital/withdraw/history` | Withdrawal status | 1 |
+| GET | `api.binance.com/api/v3/allOrders` | All orders | 10 |
+| GET | `api.binance.com/api/v3/myTrades` | Trade history | 10 |
+| GET | `api.binance.com/api/v3/exchangeInfo` | Symbol metadata | 10 |
+| POST | `sapi/v1/capital/withdraw/apply` | Initiate withdrawal | N/A |
+
+### MQTT Trade Throttling
+`ProcessTrade()` in `processor/dataprocessor.go` publishes only **1 in every 10 Binance trades** to reduce MQTT load. Counter is mutex-protected per-pair.
+
+---
+
+## Wave 4: Matching Engine Deep Audit (30 bugs found)
+
+### CRITICAL — Price-Time Priority Broken
+
+| # | Bug | File:Line | Impact |
+|---|-----|-----------|--------|
+| C1 | Float64 precision loss in Redis sorted set scores | redisorderbookprovider.go:90-94 | Orders at same price may execute out of FIFO sequence |
+| C2 | Bid price sorting compares INDICES not PRICES (`return i < j`) | orderbook.go:281 | Highest-price bids NOT matched first — PTP violation |
+| C3 | Ask orders never sorted after fetch | orderbook.go:262-263 | Lowest-price asks NOT matched first — PTP violation |
+| C4 | Global variables (orderbookProvider, cbm, etc.) without synchronization | engine.go:12-15 | Data race per Go memory model |
+| C5 | Zero/negative order amounts accepted — no validation | order.go:36-42 | Division by zero, negative-quantity trades |
+| C6 | Market orders persist as partial fills instead of cancel | orderbook.go:173-212 | Market orders violate IOC semantics |
+| C7 | Unbuffered channel deadlock in worker.stop() | worker.go:71-75 | Goroutine leak on shutdown |
+| C8 | Unbuffered channel deadlock in engine.Stop() | engine.go:77-82 | Engine shutdown hangs |
+
+### HIGH — Concurrency, Validation, Error Handling
+
+| # | Bug | File:Line | Impact |
+|---|-----|-----------|--------|
+| H1 | No self-trade detection (wash trading possible) | orderbook.go:83-171 | Illegal in most jurisdictions |
+| H2 | Queue position check off-by-one (`pos > 0` should be `>= 0`) | queue.go:92-96 | First order in queue invisible |
+| H3 | ZScore comparison broken for zero prices | redisorderbookprovider.go:195-199 | Incorrect existence checks |
+| H4 | Market order infinite loop on zero quantity | orderbook.go:203 | Worker thread permanently blocked |
+| H5 | HandleInQueueOrders spawns goroutine that races with workers | engine.go:159-188 | Concurrent order book corruption |
+| H6 | Worker continues processing after error | worker.go:41-68 | Corrupted state from failed matching |
+| H7 | dispatchOrder infinite retry without backoff | engine.go:102-130 | 100% CPU during Redis outage |
+| H8 | StringFixed(16) truncates partial fill precision | orderbook.go:124-127 | Micro amounts lost |
+| H9 | MarshalForOrderbook errors silently swallowed | redisorderbookprovider.go:90-92 | Partial orders fail to persist |
+| H10 | Pool buffer overflow — hardcoded 1000, no backpressure | pool.go:31-37 | System freeze under load |
+| H11 | ParseInt errors silently ignored in sort | orderbook.go:276-277 | Sort corruption on invalid IDs |
+| H12 | No timeout on any context (all use context.Background()) | Multiple files | Goroutines hang indefinitely |
+
+### MEDIUM — Edge Cases
+
+| # | Bug | File:Line | Impact |
+|---|-----|-----------|--------|
+| M1 | No minPrice <= maxPrice validation | orderbook.go:178 | Unfillable orders accepted |
+| M2 | bestOrder mutates asks/bids arrays directly | orderbook.go:216-230 | Thread-unsafe |
+| M3 | String price equality comparison | orderbook.go:270 | `"9" != "09"` but same price |
+| M4 | Market bid value calc uses wrong price | orderbook.go:94-104 | Wrong quantity on market buys |
+| M5 | BLPOP timeout hardcoded 1s | engine.go:116 | No perf tuning |
+| M6 | loadOrders error continues silently | orderbook.go:252-260 | Silent failures |
+| M7 | Error log says wrong method name | orderbook.go:254 | Misleading logs |
+| M8 | RemoveOrder continues after queue error | engine.go:137-157 | Orphaned orders |
+| M9 | rewriteOrderBook errors not propagated | orderbook.go:233-241 | Silent persistence failure |
+| M10 | Integer overflow on large order IDs | orderbook.go:276 | Sort corruption |
+
+### Architectural Recommendation
+
+The matching engine has **fundamental Price-Time Priority violations** (C2+C3) — the most basic rule of fair exchange matching. Combined with float64 precision loss (C1), no input validation (C5), and unsafe concurrency (C4+H5), the engine requires a **significant refactor** before production use. Every trade executed could be at a suboptimal price.

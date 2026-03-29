@@ -308,3 +308,43 @@ func TestRedisOrderBookProvider_Exists(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, true, exists)
 }
+
+func TestRedisOrderBookProvider_GetOrders_BidPriceRange(t *testing.T) {
+	rc := new(mocks.RedisClient)
+
+	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT",
+		mock.MatchedBy(func(opt *redis.ZRangeBy) bool {
+			return opt.Min == "50000" && opt.Max == "+inf"
+		}),
+	).Once().Return([]redis.Z{}, nil)
+
+	robp := engine.NewRedisOrderBookProvider(rc)
+	params := engine.OrderBookProviderParams{
+		Pair:  "BTC-USDT",
+		Side:  "bid",
+		Price: "50000",
+	}
+	_, err := robp.GetOrders(context.Background(), params)
+	assert.Nil(t, err)
+	rc.AssertExpectations(t)
+}
+
+func TestRedisOrderBookProvider_GetOrders_AskPriceRange(t *testing.T) {
+	rc := new(mocks.RedisClient)
+
+	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT",
+		mock.MatchedBy(func(opt *redis.ZRangeBy) bool {
+			return opt.Min == "0" && opt.Max == "50000"
+		}),
+	).Once().Return([]redis.Z{}, nil)
+
+	robp := engine.NewRedisOrderBookProvider(rc)
+	params := engine.OrderBookProviderParams{
+		Pair:  "BTC-USDT",
+		Side:  "ask",
+		Price: "50000",
+	}
+	_, err := robp.GetOrders(context.Background(), params)
+	assert.Nil(t, err)
+	rc.AssertExpectations(t)
+}
