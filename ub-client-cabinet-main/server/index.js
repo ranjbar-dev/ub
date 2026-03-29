@@ -1,6 +1,8 @@
 /* eslint consistent-return:0 import/order:0 */
 
 const express = require('express');
+const helmet = require('helmet');
+const morgan = require('morgan');
 const logger = require('./logger');
 
 const argv = require('./argv');
@@ -13,6 +15,14 @@ const ngrok =
     false;
 const { resolve } = require('path');
 const app = express();
+
+// Security headers
+app.use(helmet({
+    contentSecurityPolicy: false, // CSP managed separately for React app
+}));
+
+// Request logging
+app.use(morgan(isDev ? 'dev' : 'combined'));
 
 // Set up a whitelist and check against it:
 // var whitelist = ['http://example1.com', 'http://example2.com']
@@ -46,6 +56,12 @@ app.get('*.js', (req, res, next) => {
     req.url = req.url + '.gz'; // eslint-disable-line
     res.set('Content-Encoding', 'gzip');
     next();
+});
+
+// Global error handler
+app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+    logger.error(err.stack || err.message || err);
+    res.status(500).send('Internal Server Error');
 });
 
 // Start your app.
