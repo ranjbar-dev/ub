@@ -76,8 +76,10 @@ class AuthorizedMqttController extends GetxController with Toaster {
       topicStream: authorizedPaymentSubscription,
       topic: paymentsTopic,
     );
-    _timer.cancel();
-    _timer = null;
+    if (_timer != null) {
+      _timer.cancel();
+      _timer = null;
+    }
     authorizedClient.disconnect();
     // await disconnectFromTopics();
 

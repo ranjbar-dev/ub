@@ -68,7 +68,7 @@ class WithdrawalsController extends GetxController
     isLoadingWithdrawAndDepositData.value = true;
     try {
       final response = await depositProvider.getUserDepositData(code: code);
-      if (response["status"] == true) {
+      if (response["status"] == true && response["data"] != null) {
         withdrawAndDepositData.value =
             WithdrawDepositDataModel.fromJson(response["data"]);
         if (withdrawAndDepositData.value.networksConfigsAndAddresses.length >
@@ -208,7 +208,9 @@ class WithdrawalsController extends GetxController
   }
 
   void handleSearchAddressClick() async {
-    Get.put(WithdrawAddressManagementController());
+    if (!Get.isRegistered<WithdrawAddressManagementController>()) {
+      Get.put(WithdrawAddressManagementController());
+    }
     final result = await Get.to(
       () => WithdrawAddressManagementView(
           selectAddress: true, code: selectedCoin.value.code),

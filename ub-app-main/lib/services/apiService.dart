@@ -30,16 +30,14 @@ class ApiService {
   static const int _maxRefreshRetries = 3;
   static final isDebug = ENV == "DEV";
   static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
-  static final platform = (GetPlatform.isAndroid ? 'ubandroid' : 'ubandroid') +
+  static final platform =
+      (GetPlatform.isAndroid
+          ? 'ubandroid'
+          : GetPlatform.isIOS
+              ? 'ubios'
+              : 'ubweb') +
       '-v' +
       Constants.appVersion.split("+")[0];
-
-  factory ApiService() {
-    if (_apiService == null) {
-      _apiService = ApiService._internal();
-    }
-    return _apiService;
-  }
 
   ApiService._internal() {
     if (storage == null) {
@@ -54,6 +52,7 @@ class ApiService {
           contentType: 'application/json',
           connectTimeout: 10000,
           receiveTimeout: 10000,
+          sendTimeout: 10000,
           headers: {if (!(GetPlatform.isWeb)) 'platform': platform});
     }
     if (dio == null) {
@@ -293,4 +292,4 @@ class ApiService {
   // }
 }
 
-final apiService = ApiService();
+final apiService = ApiService._internal();

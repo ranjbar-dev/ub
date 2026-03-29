@@ -61,6 +61,11 @@ class AutoCompleteItem {
 
   String toJson() => json.encode(toMap());
 
-  factory AutoCompleteItem.fromJson(String source) =>
-      AutoCompleteItem.fromMap(json.decode(source));
+  factory AutoCompleteItem.fromJson(String source) {
+    try {
+      return AutoCompleteItem.fromMap(json.decode(source));
+    } catch (e) {
+      return AutoCompleteItem(name: '');
+    }
+  }
 }

@@ -37,23 +37,28 @@ class OrderModel {
       isDetailsOpen});
 
   OrderModel.fromJson(Map<String, dynamic> json) {
-    mainType = json['mainType'];
-    type = json['type'];
-    id = json['id'];
-    pair = json['pair'];
-    side = json['side'];
-    price = json['price'];
-    subUnit = json['subUnit'];
-    averagePrice = json['averagePrice'];
-    amount = json['amount'];
-    executed = json['executed'];
-    total = json['total'];
-    createdAt = json['createdAt'];
-    triggerCondition = json['triggerCondition'];
-    status = json['status'];
+    mainType = json['mainType'] as String;
+    type = json['type'] as String;
+    final rawId = json['id'];
+    id = rawId == null ? null : (rawId is int ? rawId : int.tryParse(rawId.toString()));
+    pair = json['pair'] as String;
+    side = json['side'] as String;
+    price = json['price'] as String;
+    final rawSubUnit = json['subUnit'];
+    subUnit = rawSubUnit == null
+        ? null
+        : (rawSubUnit is int ? rawSubUnit : int.tryParse(rawSubUnit.toString()));
+    averagePrice = json['averagePrice'] as String;
+    amount = json['amount'] as String;
+    executed = json['executed'] as String;
+    total = json['total'] as String;
+    createdAt = json['createdAt'] as String;
+    triggerCondition = json['triggerCondition'] as String;
+    status = json['status'] as String;
     details = json['details'];
-    createdAtToFilter = json['createdAtToFilter'];
-    isDetailsOpen = json['isDetailsOpen'];
+    createdAtToFilter = json['createdAtToFilter'] as String;
+    final rawIsOpen = json['isDetailsOpen'];
+    isDetailsOpen = rawIsOpen == null ? false : (rawIsOpen as bool);
   }
 
   Map<String, dynamic> toJson() {

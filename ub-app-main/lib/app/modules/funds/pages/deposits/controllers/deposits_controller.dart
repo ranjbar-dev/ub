@@ -55,7 +55,7 @@ class DepositsController extends GetxController with Popups, Toaster {
     isLoadingWithdrawAndDepositData.value = true;
     try {
       final response = await depositProvider.getUserDepositData(code: code);
-      if (response["status"] == true) {
+      if (response["status"] == true && response["data"] != null) {
         withdrawAndDepositData.value =
             WithdrawDepositDataModel.fromJson(response["data"]);
         if (withdrawAndDepositData.value.networksConfigsAndAddresses.length >
@@ -68,7 +68,6 @@ class DepositsController extends GetxController with Popups, Toaster {
       toastDioError(e);
     } catch (e) {
       log.e('error while getting depositData');
-    } finally {
       isLoadingWithdrawAndDepositData.value = false;
     }
   }

@@ -1,3 +1,5 @@
+import 'package:get/get.dart' show GetPlatform;
+
 class NewTradeOrderModel {
   String amount;
   String exchangeType;
@@ -5,9 +7,41 @@ class NewTradeOrderModel {
   String price;
   String stopPointPrice;
   String type;
-  UserAgentInfo userAgentInfo = UserAgentInfo.fromJson(
-      {"browser": "Chrome", "device": "web", "os": "Win32"});
+  UserAgentInfo userAgentInfo = _buildUserAgentInfo();
   bool isFastExchange;
+
+  static UserAgentInfo _buildUserAgentInfo() {
+    String browser;
+    String device;
+    String os;
+
+    if (GetPlatform.isAndroid) {
+      browser = 'WebView';
+      device = 'mobile';
+      os = 'Android';
+    } else if (GetPlatform.isIOS) {
+      browser = 'WebView';
+      device = 'mobile';
+      os = 'iOS';
+    } else if (GetPlatform.isWeb) {
+      browser = 'Browser';
+      device = 'web';
+      os = 'Web';
+    } else if (GetPlatform.isDesktop) {
+      browser = 'App';
+      device = 'desktop';
+      os = GetPlatform.isWindows
+          ? 'Windows'
+          : GetPlatform.isMacOS
+              ? 'macOS'
+              : 'Linux';
+    } else {
+      browser = 'Unknown';
+      device = 'unknown';
+      os = 'Unknown';
+    }
+    return UserAgentInfo(browser: browser, device: device, os: os);
+  }
 
   NewTradeOrderModel(
       {this.amount,
@@ -30,8 +64,7 @@ class NewTradeOrderModel {
       this.stopPointPrice = json['stop_point_price'];
     }
     this.type = json['type'];
-    this.userAgentInfo = UserAgentInfo.fromJson(
-        {"browser": "Chrome", "device": "web", "os": "Win32"});
+    this.userAgentInfo = _buildUserAgentInfo();
     this.isFastExchange = json['is_fast_exchange'];
   }
 
@@ -50,11 +83,7 @@ class NewTradeOrderModel {
 
     data['type'] = this.type;
     if (this.userAgentInfo != null) {
-      data['user_agent_info'] = {
-        "browser": "Chrome",
-        "device": "web",
-        "os": "Win32"
-      };
+      data['user_agent_info'] = this.userAgentInfo.toJson();
     }
     data['is_fast_exchange'] = this.isFastExchange;
     return data;

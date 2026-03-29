@@ -64,6 +64,7 @@ class UniversalMqttClient {
   bool get tryingToReconnect => autoReconnect && !_stopReconnect;
 
   final Map<String, BehaviorSubject<Uint8List>> _subscriptions = {};
+  StreamSubscription _updatesSubscription;
 
   final _brokerStatus = BehaviorSubject<UniversalMqttClientStatus>.seeded(
     UniversalMqttClientStatus.disconnected,
@@ -197,7 +198,11 @@ class UniversalMqttClient {
       _subscriptions.forEach((topic, _) {
         _mqtt.subscribe(topic, MqttQos.atLeastOnce);
       });
-      _mqtt.updates.listen((messages) {
+      if (_updatesSubscription != null) {
+        _updatesSubscription.cancel();
+        _updatesSubscription = null;
+      }
+      _updatesSubscription = _mqtt.updates.listen((messages) {
         messages.forEach((message) {
           final MqttPublishMessage publishMessage = message.payload;
           final payload = publishMessage.payload.message.buffer.asUint8List();
@@ -231,6 +236,10 @@ class UniversalMqttClient {
   /// enabled.
   void disconnect() {
     _stopReconnect = true;
+    if (_updatesSubscription != null) {
+      _updatesSubscription.cancel();
+      _updatesSubscription = null;
+    }
     _mqtt.disconnect();
   }
 
