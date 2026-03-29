@@ -82,7 +82,7 @@ func (s *service) Consume(ctx context.Context) error {
 	// from RabbitMQ, not after successful processing. This trades at-least-once
 	// delivery for throughput. To prevent message loss on crash, change to
 	// autoAck=false and call d.Ack(false) after successful Send().
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
+	msgs, err := ch.Consume(q.Name, "", false, false, false, false, nil)
 	if err != nil {
 		return fmt.Errorf("failed to start consuming from queue %q: %w", q.Name, err)
 	}
@@ -105,9 +105,13 @@ func (s *service) Consume(ctx context.Context) error {
 			message, err := s.ms.CreateMessage(d.Body)
 			if err != nil {
 				s.logger.Error("failed to parse message", zap.Error(err))
+				// Nack with requeue=false — malformed body will never parse successfully.
+				if nackErr := d.Nack(false, false); nackErr != nil {
+					s.logger.Error("failed to nack unparseable message", zap.Error(nackErr))
+				}
 				continue
 			}
-			collector.Work <- Work{Message: message}
+			collector.Work <- Work{Message: message, Delivery: d}
 		case <-ctx.Done():
 			s.logger.Info("shutdown signal received, stopping consumer")
 			collector.End <- true

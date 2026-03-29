@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"context"
 	"fmt"
 	"ub-communicator/pkg/messaging"
 )
@@ -31,12 +32,14 @@ func (p *pool) StartDispatcher(workerCount int) Collector {
 
 	for i := 1; i <= workerCount; i++ {
 		fmt.Printf("starting worker: %d\n", i)
+		ctx, cancel := context.WithCancel(context.Background())
 		worker := Worker{
 			ID:            i,
 			Channel:       make(chan Work),
 			WorkerChannel: p.workerChannel,
-			End:           make(chan bool),
 			Ms:            p.ms,
+			ctx:           ctx,
+			cancel:        cancel,
 		}
 		worker.Start()
 		workers = append(workers, worker)

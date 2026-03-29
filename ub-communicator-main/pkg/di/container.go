@@ -16,7 +16,6 @@ import (
 	"ub-communicator/pkg/repository"
 
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/zap"
 )
 
 // Container provides access to application services.
@@ -94,7 +93,7 @@ func (c *container) getMailerClient() platform.MailerClient {
 		logger := c.getLogger()
 		mailerClient := platform.NewMailerClient(configs, logger)
 		if mailerClient == nil {
-			logger.Error("failed to instantiate mailer client: check mailer_broker config value")
+			panic("failed to instantiate mailer client: check mailer_broker config value")
 		}
 		c.mailerClient = mailerClient
 	}
@@ -146,11 +145,13 @@ func (c *container) getMessageRepository() messaging.Repository {
 		configs := c.getConfigs()
 		db, err := c.getDb()
 		if err != nil {
-			logger := c.getLogger()
-			logger.Error("failed to get database connection for message repository", zap.Error(err))
-			return nil
+			panic(fmt.Sprintf("failed to get database connection for message repository: %v", err))
 		}
-		c.messageRepository = repository.NewMessageRepository(db, configs)
+		repo := repository.NewMessageRepository(db, configs)
+		if repo == nil {
+			panic("NewMessageRepository returned nil: check database configuration")
+		}
+		c.messageRepository = repo
 	}
 	return c.messageRepository
 }
