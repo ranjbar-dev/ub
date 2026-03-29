@@ -1,0 +1,38 @@
+{
+  "client": {
+    "token": {
+      "hmac_secret_key": "your-secret-key"
+    },
+    "allowed_origins": [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://app.unitedbit.com",
+      "https://admin.unitedbit.com"
+    ]
+  },
+  "http_api": {
+    "key": "your-api-key"
+  },
+  "admin": {
+    "enabled": true,
+    "password": "admin",
+    "secret": "admin-secret"
+  },
+  "channel_namespaces": [
+    {
+      "name": "trade",
+      "presence": false,
+      "history_size": 1,
+      "history_ttl": "60s",
+      "allow_subscribe_for_client": true
+    },
+    {
+      "name": "user",
+      "presence": true,
+      "history_size": 5,
+      "history_ttl": "300s",
+      "allow_subscribe_for_client": true
+    }
+  ],
+  "log_level": "info"
+}

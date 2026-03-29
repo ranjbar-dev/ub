@@ -1,0 +1,344 @@
+# ═══════════════════════════════════════════════════════════════
+# UnitedBit Exchange Platform — Unified Development Compose
+# ═══════════════════════════════════════════════════════════════
+#
+# Usage:
+#   cp .env.dev .env                      # First time only
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml logs -f exchange-app  # Tail logs
+#
+# First-time setup (after infra is healthy):
+#   docker compose -f docker-compose.dev.yml exec exchange-app bash -c \
+#     "composer install --no-interaction && \
+#      php bin/console doctrine:schema:create --no-interaction && \
+#      php bin/console cache:clear"
+#
+# Ports exposed to host:
+#   8080  — Nginx (public API + PHP)     http://localhost:8080/api/v1/...
+#   8082  — Nginx (admin API + PHP)      http://localhost:8082/api/v1/...
+#   8000  — Go exchange-httpd (direct)   http://localhost:8000/api/v1/...
+#   8001  — Go exchange-httpd admin      http://localhost:8001/api/v1/...
+#   3000  — Admin panel (React)          http://localhost:3000
+#   3001  — Client cabinet (React)       http://localhost:3001
+#   3308  — MariaDB                      mysql -h 127.0.0.1 -P 3308
+#   6379  — Redis
+#   5672  — RabbitMQ (AMQP)
+#   15672 — RabbitMQ Management UI       http://localhost:15672
+#   8800  — Centrifugo (HTTP API + WebSocket)
+#   27017 — MongoDB
+# ═══════════════════════════════════════════════════════════════
+
+services:
+
+  # ─────────────────────────────────────────────────────────────
+  # INFRASTRUCTURE
+  # ─────────────────────────────────────────────────────────────
+
+  db:
+    image: mariadb:10.2
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-exchange_db}
+      MYSQL_USER: ${MYSQL_USER:-exchange_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-exchange_pass}
+    ports:
+      - "3308:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:6.2.2-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.7-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-rabbitmquser}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-some_password}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-/}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  centrifugo:
+    image: centrifugo/centrifugo:v6
+    container_name: centrifugo
+    command: centrifugo -c config.json
+    restart: unless-stopped
+    ports:
+      - "8800:8000"
+    environment:
+      - CENTRIFUGO_TOKEN_HMAC_SECRET_KEY=${CENTRIFUGO_TOKEN_HMAC_SECRET_KEY:-your-secret-key}
+      - CENTRIFUGO_API_KEY=${CENTRIFUGO_API_KEY:-your-api-key}
+      - CENTRIFUGO_ADMIN=true
+      - CENTRIFUGO_ADMIN_PASSWORD=${CENTRIFUGO_ADMIN_PASSWORD:-admin}
+      - CENTRIFUGO_ADMIN_SECRET=${CENTRIFUGO_ADMIN_SECRET:-admin-secret}
+    volumes:
+      - ./centrifugo-config.json:/centrifugo/config.json
+    networks:
+      - backend
+
+  mongodb:
+    image: mongo:6
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ubMessages
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-mongoadmin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-mongopass}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ./ub-communicator-main/.docker/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - backend
+
+  # ─────────────────────────────────────────────────────────────
+  # NGINX — Reverse proxy routing to PHP-FPM + Go HTTP API
+  # ─────────────────────────────────────────────────────────────
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8082:8082"
+    volumes:
+      - ./.docker/nginx/nginx-main.conf:/etc/nginx/nginx.conf:ro
+      - ./.docker/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ub-server-main:/home/exchange/project:ro
+    networks:
+      - backend
+    depends_on:
+      exchange-app:
+        condition: service_started
+      exchange-httpd:
+        condition: service_started
+
+  # ─────────────────────────────────────────────────────────────
+  # PHP-FPM — Symfony backend API
+  # ─────────────────────────────────────────────────────────────
+  #
+  # Uses the existing PHP 8.2-FPM Dockerfile from ub-server-main.
+  # A Docker-specific php-fpm.conf is mounted (listen = 0.0.0.0:9000)
+  # and parameters.docker.yml overrides DB/Redis/RabbitMQ hostnames
+  # to use Docker service names instead of localhost.
+  #
+  # First-time setup:
+  #   docker compose -f docker-compose.dev.yml exec exchange-app bash -c \
+  #     "composer install && php bin/console doctrine:schema:create"
+
+  exchange-app:
+    build:
+      context: ./ub-server-main/.docker/php/
+      args:
+        IMAGE: fpm
+    restart: unless-stopped
+    environment:
+      COMPOSER_MEMORY_LIMIT: "-1"
+      APP_ENV: dev
+    volumes:
+      - ./ub-server-main:/home/exchange/project
+      - ./.docker/php/php-fpm-docker.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./ub-server-main/app/config/parameters.docker.yml:/home/exchange/project/app/config/parameters.yml:ro
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────────────────────
+  # GO SERVICES — Exchange HTTP API, Matching Engine, WebSocket
+  # ─────────────────────────────────────────────────────────────
+  #
+  # All Go services share the same Dockerfile.dev and mount the
+  # exchange-cli source at /app. The Docker-specific config.docker.yaml
+  # is mounted over config.yaml so service names (db, redis, rabbitmq,
+  # centrifugo) resolve within the Docker network.
+
+  exchange-httpd:
+    build:
+      context: ./ub-exchange-cli-main
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    working_dir: /app
+    command: ["bash", "-c", "cp /app/config/config.docker.yaml /app/config/config.yaml && go build -mod=vendor -o /tmp/httpd ./cmd/exchange-httpd/ && /tmp/httpd"]
+    volumes:
+      - ./ub-exchange-cli-main:/app
+      - go-mod-cache:/go/pkg/mod
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    networks:
+      - backend
+      - candle-grpc
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  exchange-engine:
+    build:
+      context: ./ub-exchange-cli-main
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    working_dir: /app
+    command: ["bash", "-c", "cp /app/config/config.docker.yaml /app/config/config.yaml && go build -mod=vendor -o /tmp/engine ./cmd/exchange-engine/ && /tmp/engine"]
+    volumes:
+      - ./ub-exchange-cli-main:/app
+      - go-mod-cache:/go/pkg/mod
+    networks:
+      - backend
+      - candle-grpc
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  exchange-ws:
+    build:
+      context: ./ub-exchange-cli-main
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    working_dir: /app
+    command: ["bash", "-c", "cp /app/config/config.docker.yaml /app/config/config.yaml && apt-get update -qq && apt-get install -y -qq supervisor > /dev/null 2>&1 && go build -mod=vendor -o /app/ws ./cmd/exchange-ws/ && go build -mod=vendor -o /app/cli ./cmd/exchange-cli/ && /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf"]
+    volumes:
+      - ./ub-exchange-cli-main:/app
+      - ./ub-exchange-cli-main/.docker/supervisor/go-supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+      - go-mod-cache:/go/pkg/mod
+    networks:
+      - backend
+      - candle-grpc
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────────────────────
+  # GO COMMUNICATOR — RabbitMQ consumer for email/SMS
+  # ─────────────────────────────────────────────────────────────
+
+  communicator:
+    build:
+      context: ./ub-communicator-main
+      dockerfile: .docker/go/Dockerfile.dev
+    restart: unless-stopped
+    working_dir: /app
+    command: ["bash", "-c", "go build -mod=vendor -o /tmp/rabbit-consumer ./cmd/rabbit-consumer/ && /tmp/rabbit-consumer"]
+    environment:
+      UBCOMMUNICATOR_RABBITMQ_DSN: "amqp://${RABBITMQ_DEFAULT_USER:-rabbitmquser}:${RABBITMQ_DEFAULT_PASS:-some_password}@rabbitmq:5672/"
+      UBCOMMUNICATOR_MONGODB_DSN: "mongodb://${MONGO_ROOT_USERNAME:-mongoadmin}:${MONGO_ROOT_PASSWORD:-mongopass}@mongodb:27017/ubMessages?authSource=admin"
+      UBCOMMUNICATOR_COMMUNICATOR_ENVIRONMENT: dev
+    volumes:
+      - ./ub-communicator-main:/app
+    networks:
+      - backend
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+
+  # ─────────────────────────────────────────────────────────────
+  # FRONTEND — React dev servers with hot-reload
+  # ─────────────────────────────────────────────────────────────
+
+  admin:
+    image: node:20-slim
+    restart: unless-stopped
+    working_dir: /app
+    command: ["bash", "-c", "yarn install --ignore-engines 2>/dev/null || yarn install --ignore-engines && yarn start"]
+    environment:
+      PORT: "3000"
+      BROWSER: "none"
+      REACT_APP_API_URL: "http://localhost:8080"
+      REACT_APP_API_ADMIN_URL: "http://localhost:8082"
+    volumes:
+      - ./ub-admin-main:/app
+      - admin-node-modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - frontend
+    stdin_open: true
+
+  client-cabinet:
+    image: node:18-bullseye-slim
+    restart: unless-stopped
+    working_dir: /app
+    command: ["bash", "-c", "apt-get update -qq && apt-get install -y -qq python3 make g++ > /dev/null 2>&1 && ln -sf /usr/bin/python3 /usr/bin/python && yarn install 2>/dev/null || yarn install && node craConfig/scripts/start.js"]
+    environment:
+      PORT: "3001"
+      BROWSER: "none"
+      NODE_OPTIONS: "--openssl-legacy-provider"
+      REACT_APP_API_URL: "http://localhost:8080"
+      REACT_APP_MQTT_URL: "ws://localhost:8083/mqtt"
+    volumes:
+      - ./ub-client-cabinet-main:/app
+      - cabinet-node-modules:/app/node_modules
+    ports:
+      - "3001:3001"
+    networks:
+      - frontend
+    stdin_open: true
+
+# ─────────────────────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────────────────────
+
+networks:
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge
+  candle-grpc:
+    driver: bridge
+
+# ─────────────────────────────────────────────────────────────
+# VOLUMES — Named volumes for data persistence & caching
+# ─────────────────────────────────────────────────────────────
+
+volumes:
+  db-data:
+  redis-data:
+  rabbitmq-data:
+  mongo-data:
+  go-mod-cache:
+  admin-node-modules:
+  cabinet-node-modules:
