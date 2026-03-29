@@ -14,6 +14,9 @@ export function* GetOpenOrders(action: { type: string; payload: Record<string, u
   }
 }
 export function* GetOrderHistory(action: { type: string; payload: Record<string, unknown> }) {
+  // TODO: BUG - GetOrderHistory currently calls GetOpenOrdersAPI (open orders endpoint 'order/')
+  // instead of an order history endpoint. Need backend confirmation of correct endpoint.
+  // See: fix-plan-admin.md BUG 3
   const response = yield* safeApiCall(GetOpenOrdersAPI, action.payload);
   if (response) {
     yield put(OrdersActions.setOrderHistoryData(response.data as Record<string, unknown>));
