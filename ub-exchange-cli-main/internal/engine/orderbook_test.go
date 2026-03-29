@@ -1346,11 +1346,8 @@ func TestOrderBook_processOrder_Market_Ask_NoMatch_OnlyPartial(t *testing.T) {
 	}
 	doneOrders, partial, err := ob.processOrder(o)
 	assert.Nil(t, err)
-	assert.NotNil(t, partial)
-	assert.Equal(t, "1", partial.ID)
-	assert.Equal(t, "", partial.Price)
-	assert.Equal(t, "0.3", partial.Quantity)
-	assert.Equal(t, "ask", partial.Side)
+	// C6: Market orders are IOC — unfilled market orders are cancelled (nil partial)
+	assert.Nil(t, partial)
 	assert.Equal(t, 0, len(doneOrders))
 
 	rc.AssertExpectations(t)
@@ -2689,11 +2686,8 @@ func TestOrderBook_processOrder_Market_Bid_NoMatch_OnlyPartial(t *testing.T) {
 	}
 	doneOrders, partial, err := ob.processOrder(o)
 	assert.Nil(t, err)
-	assert.NotNil(t, partial)
-	assert.Equal(t, "1", partial.ID)
-	assert.Equal(t, "", partial.Price)
-	assert.Equal(t, "0.3", partial.Quantity)
-	assert.Equal(t, "bid", partial.Side)
+	// C6: Market orders are IOC — unfilled market orders are cancelled (nil partial)
+	assert.Nil(t, partial)
 	assert.Equal(t, 0, len(doneOrders))
 
 	rc.AssertExpectations(t)

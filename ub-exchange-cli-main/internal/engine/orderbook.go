@@ -2,8 +2,10 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -13,6 +15,8 @@ import (
 const (
 	SideBid = "bid"
 	SideAsk = "ask"
+	// redisTimeout is the maximum time to wait for a Redis operation before giving up.
+	redisTimeout = 5 * time.Second
 )
 
 type OrderBookProviderParams struct {
@@ -204,6 +208,10 @@ func (ob *orderBook) processMarketOrder(o Order) (doneOrders []Order, partialOrd
 		return done, partialOrder, err
 	}
 
+	if minPrice.GreaterThan(maxPrice) {
+		return done, &o, fmt.Errorf("minPrice (%s) must be <= maxPrice (%s)", minPrice, maxPrice)
+	}
+
 	quantityToTrade, err := o.GetQuantity()
 	if err != nil {
 		return done, &o, err
@@ -243,6 +251,12 @@ func (ob *orderBook) processMarketOrder(o Order) (doneOrders []Order, partialOrd
 		bestOrderPrice, _ = bestOrder.GetPrice()
 	}
 
+	// C6: Market orders are IOC (Immediate Or Cancel) — if no trades executed,
+	// return nil partial to signal cancellation instead of returning the unfilled order
+	if len(done) == 0 {
+		return done, nil, nil
+	}
+
 	return done, partial, nil
 }
 
@@ -265,7 +279,8 @@ func (ob *orderBook) bestOrder(sideToLoad string) (order Order, found bool) {
 }
 
 func (ob *orderBook) rewriteOrderBook(doneOrders []Order, partialOrder *Order) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), redisTimeout)
+	defer cancel()
 	err := ob.orderbookProvider.RewriteOrderBook(ctx, doneOrders, partialOrder)
 	if err != nil {
 		logHandler.Warn("error in engine:rewriteOrderBook",
@@ -276,7 +291,8 @@ func (ob *orderBook) rewriteOrderBook(doneOrders []Order, partialOrder *Order) e
 }
 
 func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxPrice string) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), redisTimeout)
+	defer cancel()
 	params := OrderBookProviderParams{
 		Pair:     ob.pair,
 		Side:     side,
@@ -344,12 +360,14 @@ func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxP
 }
 
 func (ob *orderBook) removeOrder(o Order) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), redisTimeout)
+	defer cancel()
 	return ob.orderbookProvider.RemoveOrder(ctx, o)
 }
 
 func (ob *orderBook) getInQueueOrder(price string) (orders []Order, error error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), redisTimeout)
+	defer cancel()
 
 	bidParams := OrderBookProviderParams{
 		Pair:     ob.pair,
@@ -383,7 +401,44 @@ func (ob *orderBook) getInQueueOrder(price string) (orders []Order, error error)
 	return orders, nil
 }
 
+// popInQueueOrders atomically reads and removes in-queue orders, preventing race conditions
+// where workers could match against orders being processed by HandleInQueueOrders.
+func (ob *orderBook) popInQueueOrders(price string) (orders []Order, error error) {
+	ctx, cancel := context.WithTimeout(context.Background(), redisTimeout)
+	defer cancel()
+
+	bidParams := OrderBookProviderParams{
+		Pair:     ob.pair,
+		Side:     SideBid,
+		Price:    price,
+		MinPrice: "",
+		MaxPrice: "",
+	}
+	bidOrders, err := ob.orderbookProvider.PopOrders(ctx, bidParams)
+	if err != nil {
+		return orders, err
+	}
+	orders = append(orders, bidOrders...)
+
+	askParams := OrderBookProviderParams{
+		Pair:     ob.pair,
+		Side:     SideAsk,
+		Price:    price,
+		MinPrice: "",
+		MaxPrice: "",
+	}
+	askOrders, err := ob.orderbookProvider.PopOrders(ctx, askParams)
+	if err != nil {
+		return orders, err
+	}
+	orders = append(orders, askOrders...)
+
+	return orders, nil
+}
+
 func (ob *orderBook) orderExists(ctx context.Context, o Order) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, redisTimeout)
+	defer cancel()
 	return ob.orderbookProvider.Exists(ctx, o)
 }
 

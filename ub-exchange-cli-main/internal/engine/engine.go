@@ -10,6 +10,8 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+const engineRedisTimeout = 5 * time.Second
+
 var logHandler Logger
 
 // ResultHandler is a callback interface for processing matched trades.
@@ -140,12 +142,14 @@ func (e *engine) dispatchOrder() {
 }
 
 func (e *engine) SubmitOrder(order Order) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), engineRedisTimeout)
+	defer cancel()
 	return e.queue.rPush(ctx, order)
 }
 
 func (e *engine) RemoveOrder(order Order) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), engineRedisTimeout)
+	defer cancel()
 	ob := newOrderBook(order.Pair, e.obp)
 	err := e.queue.remove(ctx, order)
 	if err != nil {
@@ -169,7 +173,9 @@ func (e *engine) RemoveOrder(order Order) error {
 func (e *engine) HandleInQueueOrders(pair string, price string) error {
 	ob := newOrderBook(pair, e.obp)
 
-	orders, err := ob.getInQueueOrder(price)
+	// H5: Use PopOrders (atomic read+remove) instead of GetOrders to prevent
+	// race condition where workers match against orders being processed here.
+	orders, err := ob.popInQueueOrders(price)
 	if err != nil {
 		return err
 	}
@@ -185,13 +191,15 @@ func (e *engine) HandleInQueueOrders(pair string, price string) error {
 					zap.String("method", "HandleInQueueOrders"),
 					zap.String("orderId", o.ID),
 				)
+				// Put the order back since callback failed
+				ob.rewriteOrderBook(nil, &orders[i])
 				continue
 			}
-			if engineMatchingResult.RemainingPartialOrder == nil {
-				//here it means the order is filled so we remove it
-				removingOrders := []Order{o}
-				ob.rewriteOrderBook(removingOrders, nil)
+			if engineMatchingResult.RemainingPartialOrder != nil {
+				// Order not fully filled — put remaining partial back into the orderbook
+				ob.rewriteOrderBook(nil, engineMatchingResult.RemainingPartialOrder)
 			}
+			// If RemainingPartialOrder is nil, order is fully filled — already removed by PopOrders
 		}
 	}()
 	return nil
@@ -203,7 +211,8 @@ func (e *engine) HandleInQueueOrders(pair string, price string) error {
  * order to queue to give them priority since we have lPop in our order dispatch
  */
 func (e *engine) RetrieveOrder(order Order) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), engineRedisTimeout)
+	defer cancel()
 	if order.Price != "" {
 		//it means limit order
 		ob := newOrderBook(order.Pair, e.obp)
