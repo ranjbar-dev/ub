@@ -7,6 +7,7 @@ import { cookies, CookieKeys, cookieConfig } from './cookie';
 export class ApiService {
   private static instance: ApiService;
   private isRefreshing = false;
+  private refreshSubscribers: Array<(token: string) => void> = [];
   private constructor () {}
   public static getInstance (): ApiService {
     if (!ApiService.instance) {
@@ -66,8 +67,12 @@ export class ApiService {
         if (!this.isRefreshing) {
           return this.retryWithNewToken(params);
         }
-        MessageService.send({ name: MessageNames.SETLOADING, payload: false });
-        MessageService.send({ name: MessageNames.AUTH_ERROR_EVENT });
+        // Refresh already in-flight — queue this request to retry once the new token arrives
+        return new Promise(resolve => {
+          this.refreshSubscribers.push((_token: string) => {
+            resolve(this.fetchData(params));
+          });
+        });
       } else if (rawResponse.status === 500) {
         toast.error('Something Went Wrong!');
       }
@@ -134,10 +139,16 @@ export class ApiService {
           refreshResponse.refreshToken,
           cookieConfig(),
         );
+        // Resolve all queued requests with the new token
+        this.refreshSubscribers.forEach(cb => cb(this.token));
+        this.refreshSubscribers = [];
         return await this.fetchData(params);
       }
+      // Refresh endpoint returned no token — real auth failure
+      this.refreshSubscribers = [];
       MessageService.send({ name: MessageNames.AUTH_ERROR_EVENT });
     } catch {
+      this.refreshSubscribers = [];
       MessageService.send({ name: MessageNames.AUTH_ERROR_EVENT });
     } finally {
       this.isRefreshing = false;

@@ -453,6 +453,6 @@ export default function * ordersPageSaga () {
   yield takeEvery(ActionTypes.GET_PAYMENT_DETAIL_ACTION, getOrderDetail);
   ////trade new order
   yield takeLatest(ActionTypes.GET_CURRENCY_PAIR_INFO, getCurrencyPairInfo);
-  yield takeEvery(ActionTypes.CREATE_NEW_ORDER_ACTION, createNewOrder);
+  yield takeLatest(ActionTypes.CREATE_NEW_ORDER_ACTION, createNewOrder);
   yield takeEvery(ActionTypes.CANCEL_ORDER_ACTION, cancelOrder);
 }

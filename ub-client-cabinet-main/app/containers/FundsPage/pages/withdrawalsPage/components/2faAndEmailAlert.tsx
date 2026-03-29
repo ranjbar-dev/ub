@@ -57,6 +57,10 @@ export default function G2fa (props: {
       setCanSubmit(false);
       return;
     }
+    if (IsWithdrawing) return;
+
+    setIsWithdrawing(true);
+
     const sendingData: WithdrawModel = {
       code,
       amount,
@@ -142,7 +146,7 @@ export default function G2fa (props: {
       </StepsWrapper>
       <div className='buttonWrapper'>
         <Button
-          disabled={!CanSubmit}
+          disabled={!CanSubmit || IsWithdrawing}
           onClick={handleSubmitClick}
           variant='contained'
           color='primary'

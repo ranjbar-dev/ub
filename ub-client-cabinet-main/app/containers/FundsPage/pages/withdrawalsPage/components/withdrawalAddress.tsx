@@ -208,6 +208,8 @@ const WithdrawalAddress = ({ intl }) => {
       return;
     }
 
+    setIsWithdrawing(true);
+
     const sendingData: WithdrawModel = {
       label: '',
       code: currencies[SelectedIndex].code,
@@ -589,7 +591,7 @@ const WithdrawalAddress = ({ intl }) => {
         <div className='submitWrapper'>
           <Button
             fullWidth
-            disabled={!CanSubmit || SelectedAddress.length == 0}
+            disabled={!CanSubmit || SelectedAddress.length == 0 || IsWithdrawing}
             onClick={handleSubmit}
             color='primary'
             variant='contained'
