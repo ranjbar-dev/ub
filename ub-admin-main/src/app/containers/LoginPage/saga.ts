@@ -13,17 +13,31 @@ import { globalActions } from 'store/slice';
 
 import { actions } from './slice';
 
+/** Strip characters that have no place in a username/password before
+ *  they ever reach the network. Defence-in-depth — does NOT replace
+ *  server-side validation. */
+function sanitizeCredential(value: string): string {
+  return value.replace(/[\x00<>"'`]/g, '').trim();
+}
+
 export function* Login(action: {
   type: string;
   payload: { username: string; password: string };
 }) {
   yield put(actions.setIsLoadingAction(true));
   try {
-    const response: StandardResponse = yield call(loginAPI, action.payload);
+    const sanitizedPayload = {
+      username: sanitizeCredential(action.payload.username),
+      password: sanitizeCredential(action.payload.password),
+    };
+    const response: StandardResponse = yield call(loginAPI, sanitizedPayload);
     if (response.token) {
-      localStorage[LocalStorageKeys.ACCESS_TOKEN] = response.token;
+      localStorage.setItem(LocalStorageKeys.ACCESS_TOKEN, response.token);
       if (response.data && (response.data as Record<string, unknown>).refresh_token) {
-        localStorage[LocalStorageKeys.REFRESH_TOKEN] = (response.data as Record<string, unknown>).refresh_token as string;
+        localStorage.setItem(
+          LocalStorageKeys.REFRESH_TOKEN,
+          (response.data as Record<string, unknown>).refresh_token as string,
+        );
       }
 
       const countriesResponse: StandardResponse = yield call(GetCountriesAPI);

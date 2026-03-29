@@ -46,15 +46,29 @@ export class ApiService {
 		return ApiService.instance;
 	}
 
-	public baseUrl=BaseUrl;
-	public token: string='';
+	public baseUrl = BaseUrl;
+	public token: string = '';
+
+	/** True while a token-refresh request is already in flight. */
+	private isRefreshing = false;
+	/** Pending resolvers waiting for the refreshed token. */
+	private refreshSubscribers: Array<(newToken: string) => void> = [];
+
+	/** Queue a callback to be called once the in-flight refresh completes. */
+	private subscribeTokenRefresh(cb: (newToken: string) => void): void {
+		this.refreshSubscribers.push(cb);
+	}
+
+	/** Notify all queued subscribers with the new token and clear the queue. */
+	private onRefreshed(newToken: string): void {
+		this.refreshSubscribers.forEach(cb => cb(newToken));
+		this.refreshSubscribers = [];
+	}
 
 	public async fetchData<T = unknown>(
 		params: RequestParameters,
 	): Promise<StandardResponse<T>> {
-		this.token=localStorage[LocalStorageKeys.ACCESS_TOKEN]
-			? localStorage[LocalStorageKeys.ACCESS_TOKEN]
-			:'';
+		this.token = localStorage.getItem(LocalStorageKeys.ACCESS_TOKEN) ?? '';
 
 		const baseUrl = params.isRawUrl ? BaseUrl : BaseUrl + 'admin/';
 		const url = params.requestType === RequestTypes.GET
@@ -154,7 +168,17 @@ export class ApiService {
 				throw new ApiError('Authentication required', 401);
 			}
 
-			// Attempt token refresh
+			// If a refresh is already in flight, queue this request instead of
+			// firing a second parallel refresh call.
+			if (this.isRefreshing) {
+				return new Promise<StandardResponse<T>>((resolve, reject) => {
+					this.subscribeTokenRefresh((newToken: string) => {
+						void this.fetchData<T>(params).then(resolve).catch(reject);
+					});
+				});
+			}
+
+			this.isRefreshing = true;
 			try {
 				const refreshToken = localStorage.getItem(LocalStorageKeys.REFRESH_TOKEN) || '';
 				if (refreshToken) {
@@ -172,13 +196,18 @@ export class ApiService {
 								localStorage.setItem(LocalStorageKeys.REFRESH_TOKEN, refreshJson.refresh_token);
 							}
 							this.token = refreshJson.token;
-							// Retry original request with new token
+							// Wake all queued requests with the new token, then
+							// retry the original request that triggered the refresh.
+							this.onRefreshed(refreshJson.token);
 							return this.fetchData<T>(params);
 						}
 					}
 				}
 			} catch {
-				// Refresh failed — fall through to auth error
+				// Refresh failed — clear queue and fall through to auth error
+				this.refreshSubscribers = [];
+			} finally {
+				this.isRefreshing = false;
 			}
 
 			MessageService.send({name: MessageNames.SETLOADING, payload: false});

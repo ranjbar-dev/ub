@@ -30,6 +30,7 @@ function TransferModal(props: Props) {
 	const {t}=useTranslation()
 
 	const [PopupData,setPopupData]=useState<IWallet>(data);
+	const [amountError, setAmountError]=useState<string>('');
 	const dataToSend=useRef<{
 		loaderId: string;
 		code: string;
@@ -52,24 +53,47 @@ function TransferModal(props: Props) {
 	);
 
 
+	/** Validates amount string and updates error state.
+	 *  Returns true when the value is safe to submit. */
+	const validateAmount = (raw: string): boolean => {
+		if (!raw || raw.trim() === '') {
+			setAmountError('Amount is required');
+			return false;
+		}
+		const num = parseFloat(raw);
+		if (isNaN(num)) {
+			setAmountError('Amount must be a number');
+			return false;
+		}
+		if (num <= 0) {
+			setAmountError('Amount must be greater than zero');
+			return false;
+		}
+		const maxBalance = parseFloat(PopupData.free ?? '0');
+		if (!isNaN(maxBalance) && num > maxBalance) {
+			setAmountError(`Amount exceeds available balance (${PopupData.free})`);
+			return false;
+		}
+		setAmountError('');
+		return true;
+	};
+
 	const handleAmountChange = (e: string) => {
-		dataToSend.current.amount=e
+		dataToSend.current.amount = e;
+		validateAmount(e);
 	}
 
-
-
 	const handleSubmit=() => {
-		if(dataToSend.current.amount==='0'||!dataToSend.current.amount) {
-			toast.warn('amount is Reqired')
-			return
+		if (!validateAmount(dataToSend.current.amount)) {
+			toast.warn(amountError || 'Invalid amount');
+			return;
 		}
 		if(dataToSend.current.from===dataToSend.current.to) {
 			if(!dataToSend.current.to_custom_address) {
-				toast.warn('from and to Wallets cant be the same Wallet')
+				toast.warn('From and To wallets cannot be the same');
 				return
 			}
 		}
-		//console.log(dataToSend.current)
 		onSubmit(dataToSend.current)
 	}
 
@@ -167,10 +191,16 @@ function TransferModal(props: Props) {
 								text={t(translations.CommonTitles.Submit())}
 								className={Buttons.SkyBlueButton}
 								loadingId={'AllBalancesTransferButton'+data.code}
+								disabled={!!amountError}
 								onClick={() => {
 									handleSubmit();
 								}}
 							/>
+							{amountError && (
+								<div style={{ color: 'red', fontSize: '12px', textAlign: 'right', paddingRight: '12px' }}>
+									{amountError}
+								</div>
+							)}
 						</CancelAndSubmitWrapper>
 					</EditableWrapper>
 

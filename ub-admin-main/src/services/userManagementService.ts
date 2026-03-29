@@ -190,6 +190,21 @@ export const GetOpenOrdersAPI = (parameters: PaginationParams): Promise<Standard
 };
 
 /**
+ * Fetch paginated order history (closed/filled orders).
+ *
+ * @param parameters - Pagination and sorting options
+ * @returns Promise with order history records
+ * @endpoint GET order/history
+ */
+export const GetOrderHistoryAPI = (parameters: PaginationParams): Promise<StandardResponse> => {
+	return apiService.fetchData({
+		data: parameters as unknown as Record<string, unknown>,
+		url: 'order/history',
+		requestType: RequestTypes.GET,
+	});
+};
+
+/**
  * Fetch paginated trade history.
  *
  * @param parameters - Pagination and sorting options
