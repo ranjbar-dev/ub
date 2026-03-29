@@ -449,7 +449,7 @@ func (s *service) FetchKlines(params handler.FetchKlinesParams) ([]handler.Fetch
 
 	url := APIHost + FetchKlineURI + paramsString
 	header := make(map[string]string)
-	resp, respHeader, statusCode, err := s.httpClient.HTTPGet(ctx, url, header)
+	resp, respHeader, statusCode, err := s.getWithRetry(ctx, url, header)
 	if err != nil {
 		return result, err
 	}
@@ -497,6 +497,30 @@ func (s *service) FetchKlines(params handler.FetchKlinesParams) ([]handler.Fetch
 
 	return result, nil
 }
+// getWithRetry performs an HTTP GET with up to 3 attempts (exponential backoff: 500ms, 1s).
+// Use only for idempotent read requests; never call for writes.
+func (s *service) getWithRetry(ctx context.Context, url string, header map[string]string) ([]byte, http.Header, int, error) {
+	const maxAttempts = 3
+	backoff := 500 * time.Millisecond
+	var (
+		resp       []byte
+		respHeader http.Header
+		statusCode int
+		err        error
+	)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		if attempt > 0 {
+			time.Sleep(backoff)
+			backoff *= 2
+		}
+		resp, respHeader, statusCode, err = s.httpClient.HTTPGet(ctx, url, header)
+		if err == nil && statusCode == http.StatusOK {
+			return resp, respHeader, statusCode, nil
+		}
+	}
+	return resp, respHeader, statusCode, err
+}
+
 func (s *service) getTimestamp() int64 {
 	serverTime := s.exchangeInfo.getServerTime() //in milliseconds
 	fetchedAt := s.exchangeInfo.getFetchedAt()   //in milliseconds
@@ -534,7 +558,7 @@ func (s *service) FetchWithdrawals(params handler.FetchWithdrawalsParams) ([]han
 
 	url := APIHost + FetchWithdrawalsURI + finalParamsString
 	header := getHeader(s.metadata.APIKey, http.MethodGet)
-	resp, respHeader, statusCode, err := s.httpClient.HTTPGet(ctx, url, header)
+	resp, respHeader, statusCode, err := s.getWithRetry(ctx, url, header)
 	if err != nil {
 		return result, err
 	}
@@ -609,7 +633,7 @@ func (s *service) FetchOrders(params handler.FetchOrdersParams) ([]handler.Fetch
 
 	url := APIHost + FetchOrdersURI + finalParamsString
 	header := getHeader(s.metadata.APIKey, http.MethodGet)
-	resp, respHeader, statusCode, err := s.httpClient.HTTPGet(ctx, url, header)
+	resp, respHeader, statusCode, err := s.getWithRetry(ctx, url, header)
 	if err != nil {
 		return result, err
 	}
@@ -693,7 +717,7 @@ func (s *service) FetchTrades(params handler.FetchTradesParams) ([]handler.Fetch
 
 	url := APIHost + FetchTradesURI + finalParamsString
 	header := getHeader(s.metadata.APIKey, http.MethodGet)
-	resp, respHeader, statusCode, err := s.httpClient.HTTPGet(ctx, url, header)
+	resp, respHeader, statusCode, err := s.getWithRetry(ctx, url, header)
 	if err != nil {
 		return result, err
 	}
