@@ -77,6 +77,14 @@ func (ob *orderBook) processLimitOrder(o Order) (done []Order, partialOrder *Ord
 
 	partial = &o
 	for quantityToTrade.Sign() > 0 && bestPriceFound && comparator(bestOrderPrice) {
+		// Self-trade prevention: skip orders from the same user
+		if o.UserID != "" && bestOrder.UserID != "" && o.UserID == bestOrder.UserID {
+			bestOrder, bestPriceFound = ob.bestOrder(sideToLoad)
+			if bestPriceFound {
+				bestOrderPrice, _ = bestOrder.GetPrice()
+			}
+			continue
+		}
 		prevQuantity := quantityToTrade
 		doneOrders, newPartial, remaining := ob.tradeOrders(*partial, bestOrder)
 		done = append(done, doneOrders...)
@@ -135,7 +143,7 @@ func (ob *orderBook) tradeOrders(order Order, bestOrder Order) (doneOrders []Ord
 			if remaining.IsPositive() {
 				quantity := remaining.StringFixed(16)
 				partialOrder := newOrder(order.Pair, order.ID, order.Side, quantity, order.Price,
-					order.MarketPrice, order.Timestamp)
+					order.MarketPrice, order.Timestamp, order.UserID)
 				partial = &partialOrder
 			}
 		}
@@ -157,7 +165,7 @@ func (ob *orderBook) tradeOrders(order Order, bestOrder Order) (doneOrders []Ord
 		bestOrder.TradePrice = finalPrice
 
 		po := newOrder(ob.pair, bestOrder.ID, bestOrder.Side, partialQuantityString, bestOrder.Price,
-			bestOrder.MarketPrice, bestOrder.Timestamp)
+			bestOrder.MarketPrice, bestOrder.Timestamp, bestOrder.UserID)
 		po.IsAlreadyInOrderBook = true
 		doneOrders := append(doneOrders, order, bestOrder)
 		return doneOrders, &po, decimal.Zero
@@ -177,7 +185,7 @@ func (ob *orderBook) tradeOrders(order Order, bestOrder Order) (doneOrders []Ord
 	//bestOrder.TradePrice = order.Price
 	bestOrder.TradePrice = finalPrice
 
-	po := newOrder(ob.pair, order.ID, order.Side, partialQuantityString, order.Price, order.MarketPrice, order.Timestamp)
+	po := newOrder(ob.pair, order.ID, order.Side, partialQuantityString, order.Price, order.MarketPrice, order.Timestamp, order.UserID)
 	doneOrders = append(doneOrders, order, bestOrder)
 	return doneOrders, &po, partialQuantity
 }
@@ -215,6 +223,14 @@ func (ob *orderBook) processMarketOrder(o Order) (doneOrders []Order, partialOrd
 	bestOrderPrice, _ := bestOrder.GetPrice()
 	partial = &o
 	for quantityToTrade.Sign() > 0 && bestPriceFound && comparator(bestOrderPrice) {
+		// Self-trade prevention: skip orders from the same user
+		if o.UserID != "" && bestOrder.UserID != "" && o.UserID == bestOrder.UserID {
+			bestOrder, bestPriceFound = ob.bestOrder(sideToLoad)
+			if bestPriceFound {
+				bestOrderPrice, _ = bestOrder.GetPrice()
+			}
+			continue
+		}
 		prevQuantity := quantityToTrade
 		doneOrders, newPartial, remaining := ob.tradeOrders(*partial, bestOrder)
 		done = append(done, doneOrders...)

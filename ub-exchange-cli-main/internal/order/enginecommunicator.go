@@ -80,6 +80,7 @@ func (ec *engineCommunicator) getEngineOrder(o Order) (engine.Order, error) {
 		MarketPrice:       marketPrice,
 		MinThresholdPrice: minPrice,
 		MaxThresholdPrice: maxPrice,
+		UserID:            fmt.Sprint(o.UserID),
 	}
 
 	return engineOrder, nil

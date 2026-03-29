@@ -21,6 +21,7 @@ type Order struct {
 	MarketPrice          string `json:"marketPrice"`
 	MinThresholdPrice    string `json:"minPrice"`
 	MaxThresholdPrice    string `json:"maxPrice"`
+	UserID               string `json:"userId,omitempty"`
 }
 
 func (o Order) GetPrice() (decimal.Decimal, error) {
@@ -88,7 +89,7 @@ func (o Order) MarshalForOrderbook() ([]byte, error) {
 	})
 }
 
-func newOrder(pair string, id string, side string, quantity string, price string, marketPrice string, timestamp int64) Order {
+func newOrder(pair string, id string, side string, quantity string, price string, marketPrice string, timestamp int64, userID string) Order {
 	return Order{
 		Pair:        pair,
 		ID:          id,
@@ -97,5 +98,6 @@ func newOrder(pair string, id string, side string, quantity string, price string
 		Price:       price,
 		MarketPrice: marketPrice,
 		Timestamp:   timestamp,
+		UserID:      userID,
 	}
 }
