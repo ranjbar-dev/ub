@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"sync"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
@@ -46,29 +47,38 @@ func (r *rabbitMqClient) GetChannel() (*amqp.Channel, error) {
 }
 
 func (r *rabbitMqClient) connect() error {
-	// Check if existing connection is still alive
 	if r.isConnected && r.connection != nil && !r.connection.IsClosed() {
 		return nil
 	}
-
-	// Connection is dead or doesn't exist — (re)connect
 	r.isConnected = false
 	rabbitMqDsn := r.configs.GetString("rabbitmq.dsn")
 
 	var conn *amqp.Connection
 	var err error
-	if r.configs.GetBool("rabbitmq.tls") {
-		tlsCfg := &tls.Config{
-			InsecureSkipVerify: false,
-			MinVersion:         tls.VersionTLS12,
+	maxRetries := 3
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
+			r.logger.Warn("retrying rabbitmq connection", zap.Int("attempt", attempt+1), zap.Duration("backoff", backoff))
+			time.Sleep(backoff)
 		}
-		conn, err = amqp.DialTLS(rabbitMqDsn, tlsCfg)
-	} else {
-		conn, err = amqp.Dial(rabbitMqDsn)
+		cfg := amqp.Config{
+			Dial: amqp.DefaultDial(10 * time.Second),
+		}
+		if r.configs.GetBool("rabbitmq.tls") {
+			cfg.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: false,
+				MinVersion:         tls.VersionTLS12,
+			}
+		}
+		conn, err = amqp.DialConfig(rabbitMqDsn, cfg)
+		if err == nil {
+			break
+		}
+		r.logger.Error("rabbitmq dial failed", zap.Int("attempt", attempt+1), zap.Error(err))
 	}
 	if err != nil {
-		r.logger.Error("failed to dial rabbitmq", zap.Error(err))
-		return fmt.Errorf("failed to dial rabbitmq: %w", err)
+		return fmt.Errorf("failed to dial rabbitmq after %d attempts: %w", maxRetries, err)
 	}
 	r.connection = conn
 	r.isConnected = true

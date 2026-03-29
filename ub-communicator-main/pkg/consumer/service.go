@@ -40,6 +40,10 @@ func (s *service) Consume(ctx context.Context) error {
 	}
 	defer ch.Close()
 
+	if err := ch.Qos(10, 0, false); err != nil {
+		return fmt.Errorf("failed to set QoS: %w", err)
+	}
+
 	exchange := s.configs.GetString("rabbitmq.exchange")
 	if exchange == "" {
 		exchange = "email_exchange"
