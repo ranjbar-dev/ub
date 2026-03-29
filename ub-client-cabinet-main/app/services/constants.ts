@@ -1,5 +1,3 @@
-import { IClientOptions } from 'mqtt';
-
 export enum RequestTypes {
   PUT = 'PUT',
   POST = 'POST',
@@ -50,16 +48,6 @@ export interface StandardResponse {
 export enum UploadUrls {
   USER_PROFILE_IMAGE = 'user-profile-image/upload',
 }
-export const MqttProtocol:
-  | 'wss'
-  | 'ws'
-  | 'mqtt'
-  | 'mqtts'
-  | 'tcp'
-  | 'ssl'
-  | 'wx'
-  | 'wxs'
-  | undefined = 'wss';
 const productionAddress = 'app.unitedbit.com';
 const devAddress = 'dev-app.unitedbit.com';
 
@@ -83,12 +71,7 @@ export const BaseUrl = appUrl + '/api/v1/';
 export const tradingView = `${appUrl}/tv/api/v1/main-route`;
 export const ChartApiPrefix = `${appUrl}/tv/api/v1/js/`;
 export const jsAPI = `${appUrl}/tv/api/v1/js`;
-//TODO: change next line "productionAddress" to "mainUrl" when dev-mqtt is fixed
-export const mqttServer = `${MqttProtocol}://${mainUrl}:8443`;
-
-export const MqttAdditionalConfig: IClientOptions = {
-  protocol: MqttProtocol,
-  connectTimeout: 30 * 1000,    // 30 seconds — fail fast, trigger reconnect
-  reconnectPeriod: 2 * 1000,
-  keepalive: 60,                 // 60-second PING interval — detect silent drops
-};
+export const centrifugoUrl =
+  process.env.IS_LOCAL === 'true'
+    ? 'ws://localhost:8800/connection/websocket'
+    : `wss://${mainUrl}/connection/websocket`;

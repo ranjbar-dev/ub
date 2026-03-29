@@ -6,11 +6,11 @@ import {
   Subscriber,
   TradeChartSubscriber,
 } from 'services/message_service';
-import { MqttTopicsPrefixes, Themes } from 'containers/App/constants';
+import { CentrifugoChannels, Themes } from 'containers/App/constants';
 import React, { memo, useEffect, useMemo, useRef } from 'react';
 
 import { ChartingLibraryWidgetOptions } from 'charting_library/charting_library.min';
-import { MqttService } from 'services/MqttService2';
+import { CentrifugoPublicService } from 'services/CentrifugoPublicService';
 import axios from 'axios';
 import { prepareSymbolName } from './utils/methods';
 import { savedPairName } from 'utils/sharedData';
@@ -39,7 +39,7 @@ const TVChartContainer = () => {
 
   const selectedPair = useRef(savedPairName());
 
-  const mqtt2 = useRef(MqttService.getInstance());
+  const mqtt2 = useRef(CentrifugoPublicService.getInstance());
 
   const tInterval = useRef(
     localStorage[LocalStorageKeys.TIME_FRAME]
@@ -92,7 +92,7 @@ const TVChartContainer = () => {
           }, 0);
         }
         mqtt2.current.ConnectToSubject({
-          subject: `${MqttTopicsPrefixes.TradeChartAddress}${timeFrame()}/${
+          subject: `${CentrifugoChannels.TradeChartPrefix}${timeFrame()}:${
             selectedPair.current
           }`,
         });
@@ -303,7 +303,7 @@ const TVChartContainer = () => {
         if (
           //!document.hidden &&
           message.name.includes(
-            `${MqttTopicsPrefixes.TradeChartAddress}${timeFrame()}/${
+            `${CentrifugoChannels.TradeChartPrefix}${timeFrame()}:${
               selectedPair.current
             }`,
           )
@@ -337,7 +337,7 @@ const TVChartContainer = () => {
         .onIntervalChanged()
         .subscribe(null, function (interval, obj) {
           mqtt2.current.DisconnectFromSubject({
-            subject: `${MqttTopicsPrefixes.TradeChartAddress}${timeFrame()}/${
+            subject: `${CentrifugoChannels.TradeChartPrefix}${timeFrame()}:${
               selectedPair.current
             }`,
           });
@@ -346,7 +346,7 @@ const TVChartContainer = () => {
 
           localStorage[LocalStorageKeys.TIME_FRAME] = interval;
           mqtt2.current.ConnectToSubject({
-            subject: `${MqttTopicsPrefixes.TradeChartAddress}${timeFrame()}/${
+            subject: `${CentrifugoChannels.TradeChartPrefix}${timeFrame()}:${
               selectedPair.current
             }`,
           });
@@ -358,13 +358,13 @@ const TVChartContainer = () => {
           const symbol = newSymbol.name;
           const [symbolDependent, symbolBase] = prepareSymbolName(symbol);
           mqtt2.current.DisconnectFromSubject({
-            subject: `${MqttTopicsPrefixes.TradeChartAddress}${timeFrame()}/${
+            subject: `${CentrifugoChannels.TradeChartPrefix}${timeFrame()}:${
               selectedPair.current
             }`,
           });
           selectedPair.current = symbolDependent + '-' + symbolBase;
           mqtt2.current.ConnectToSubject({
-            subject: `${MqttTopicsPrefixes.TradeChartAddress}${timeFrame()}/${
+            subject: `${CentrifugoChannels.TradeChartPrefix}${timeFrame()}:${
               selectedPair.current
             }`,
           });
@@ -373,7 +373,7 @@ const TVChartContainer = () => {
 
     return () => {
       mqtt2.current.DisconnectFromSubject({
-        subject: `${MqttTopicsPrefixes.TradeChartAddress}${timeFrame()}/${
+        subject: `${CentrifugoChannels.TradeChartPrefix}${timeFrame()}:${
           selectedPair.current
         }`,
       });

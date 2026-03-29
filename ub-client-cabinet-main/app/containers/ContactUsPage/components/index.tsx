@@ -1,25 +1,25 @@
 import { ColDef } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
-import { MqttTopicsPrefixes } from 'containers/App/constants';
+import { CentrifugoChannels } from 'containers/App/constants';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRef } from 'react';
 import { MarketWatchSubscriber } from 'services/message_service';
-import { MqttService } from 'services/MqttService2';
+import { CentrifugoPublicService } from 'services/CentrifugoPublicService';
 import styled from 'styles/styled-components';
 import { zeroFixer } from 'utils/formatters';
 
 const OrderList = () => {
-  const mqtt2 = useRef(MqttService.getInstance());
+  const mqtt2 = useRef(CentrifugoPublicService.getInstance());
 
   const receivedParData = useRef({});
 
   useEffect(() => {
     mqtt2.current.ConnectToSubject({
-      subject: MqttTopicsPrefixes.MarketWatchAddress,
+      subject: CentrifugoChannels.TickerChannel,
     });
     return () => {
       mqtt2.current.DisconnectFromSubject({
-        subject: MqttTopicsPrefixes.MarketWatchAddress,
+        subject: CentrifugoChannels.TickerChannel,
       });
     };
   }, []);

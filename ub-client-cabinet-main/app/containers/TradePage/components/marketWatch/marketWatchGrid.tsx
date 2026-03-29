@@ -12,7 +12,7 @@ import { ColDef, CellClickedEvent } from 'ag-grid-community';
 import {
   GridHeaderNames,
   GridFilterTypes,
-  MqttTopicsPrefixes,
+  CentrifugoChannels,
 } from 'containers/App/constants';
 import { Translator, vw, PairFormat, zeroFixer } from 'utils/formatters';
 import {
@@ -33,7 +33,7 @@ import FilledStar from 'images/themedIcons/filledStar';
 import EmptyStar from 'images/themedIcons/emptyStar';
 import { LocalStorageKeys } from 'services/constants';
 import Anime from 'react-anime';
-import { MqttService } from 'services/MqttService2';
+import { CentrifugoPublicService } from 'services/CentrifugoPublicService';
 import { useInjectReducer } from 'utils/injectReducer';
 import { useInjectSaga } from 'utils/injectSaga';
 import reducer from 'containers/TradePage/reducer';
@@ -59,7 +59,7 @@ const MarketWatchGrid = (props: {
   useInjectSaga({ key: 'tradePage', saga: saga });
   const dispatch = useDispatch();
 
-  const mqtt2 = useRef(MqttService.getInstance());
+  const mqtt2 = useRef(CentrifugoPublicService.getInstance());
 
   const gridApi: any = useRef();
   const columnApi: any = useRef();
@@ -67,7 +67,7 @@ const MarketWatchGrid = (props: {
   useEffect(() => {
     if (props.enabled === true) {
       mqtt2.current.ConnectToSubject({
-        subject: MqttTopicsPrefixes.MarketWatchAddress,
+        subject: CentrifugoChannels.TickerChannel,
       });
     }
     const Subscription = Subscriber.subscribe((message: any) => {
@@ -98,7 +98,7 @@ const MarketWatchGrid = (props: {
     });
     return () => {
       mqtt2.current.DisconnectFromSubject({
-        subject: MqttTopicsPrefixes.MarketWatchAddress,
+        subject: CentrifugoChannels.TickerChannel,
       });
       Subscription.unsubscribe();
     };

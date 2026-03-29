@@ -3,7 +3,7 @@ import { injectIntl } from 'react-intl';
 import styled from 'styles/styled-components';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, CellClickedEvent } from 'ag-grid-community';
-import { GridHeaderNames, MqttTopicsPrefixes } from 'containers/App/constants';
+import { GridHeaderNames, CentrifugoChannels } from 'containers/App/constants';
 import { Translator, vw } from 'utils/formatters';
 
 import {
@@ -21,7 +21,7 @@ import {
 } from 'containers/TradePage/utils/tradeUtilities';
 import { CellRenderer } from 'components/renderer';
 import PrecisionSelect from 'containers/TradePage/components/orderBook/precisionSelect';
-import { MqttService } from 'services/MqttService2';
+import { CentrifugoPublicService } from 'services/CentrifugoPublicService';
 import { LayoutContainers } from '../layout/layout';
 import { savedPairName } from 'utils/sharedData';
 
@@ -47,7 +47,7 @@ const OrderBookGrid = (props: {
   let sellMax = 0;
   let buyMax = 0;
 
-  const mqtt2 = useRef(MqttService.getInstance());
+  const mqtt2 = useRef(CentrifugoPublicService.getInstance());
 
   const selectedPair = useRef(savedPairName());
   const gridApi: any = useRef();
@@ -59,7 +59,7 @@ const OrderBookGrid = (props: {
     if (props.enabled === true) {
       drawDepth({ sell: [], buy: [] });
       mqtt2.current.ConnectToSubject({
-        subject: `${MqttTopicsPrefixes.OrderBookAddress}${selectedPair.current}`,
+        subject: `${CentrifugoChannels.OrderBookPrefix}${selectedPair.current}`,
       });
     }
     const Subscription = Subscriber.subscribe((message: any) => {
@@ -111,8 +111,8 @@ const OrderBookGrid = (props: {
         requestAnimationFrame(() => {
           mqtt2.current.ConnectToNewSubject({
             oldsubject:
-              MqttTopicsPrefixes.OrderBookAddress + selectedPair.current,
-            newSubject: `${MqttTopicsPrefixes.OrderBookAddress}${message.payload.name}`,
+              CentrifugoChannels.OrderBookPrefix + selectedPair.current,
+            newSubject: `${CentrifugoChannels.OrderBookPrefix}${message.payload.name}`,
           });
           selectedPair.current = message.payload.name;
           clearChart();
@@ -175,7 +175,7 @@ const OrderBookGrid = (props: {
       OrderBookSubscription.unsubscribe();
       mqtt2.current &&
         mqtt2.current.DisconnectFromSubject({
-          subject: MqttTopicsPrefixes.OrderBookAddress + selectedPair.current,
+          subject: CentrifugoChannels.OrderBookPrefix + selectedPair.current,
         });
     };
   }, []);

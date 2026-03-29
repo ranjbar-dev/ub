@@ -1,5 +1,5 @@
 import { LanguageCode } from '../charting_library/charting_library.min';
-import { MqttTopicsPrefixes } from 'containers/App/constants';
+import { CentrifugoChannels } from 'containers/App/constants';
 
 export const getLanguageFromURL = (): LanguageCode | null => {
   const regex = new RegExp('[\\?&]lang=([^&#]*)');
@@ -40,7 +40,7 @@ export const prepareTopic = () => {
     default:
       itervalStr = '1minute';
   }
-  return `${MqttTopicsPrefixes.TradeChartAddress}${itervalStr}/${symbol.replace(
+  return `${CentrifugoChannels.TradeChartPrefix}${itervalStr}:${symbol.replace(
     '/',
     '-',
   )}`;

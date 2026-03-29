@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { LocalStorageKeys } from 'services/constants';
 import { CookieKeys, cookies } from 'services/cookie';
-import { RegisteredMqttService } from 'services/RegisteredMqttService';
+import { CentrifugoAuthService } from 'services/CentrifugoAuthService';
 import { storage } from 'utils/storage';
 
-export const useConnectToAuthorizedMqtt2 = () => {
-  const mqtt2 = useRef<any>(null);
+export const useConnectToCentrifugoAuth = () => {
+  const serviceRef = useRef<CentrifugoAuthService | null>(null);
   const [token, setToken] = useState(() => cookies.get(CookieKeys.Token));
 
   const currentToken = cookies.get(CookieKeys.Token);
@@ -14,30 +14,30 @@ export const useConnectToAuthorizedMqtt2 = () => {
   }
 
   useEffect(() => {
-    let channel;
+    let channel: string | undefined;
     if (token) {
-      mqtt2.current = RegisteredMqttService.getInstance(token);
+      serviceRef.current = CentrifugoAuthService.getInstance(token);
       channel = storage.read(LocalStorageKeys.CHANNEL);
-      mqtt2.current.ConnectToSubject({
-        subject: `main/trade/user/${channel}/open-orders/`,
+      serviceRef.current.ConnectToSubject({
+        subject: `user:${channel}:open-orders`,
       });
 
-      mqtt2.current.ConnectToSubject({
-        subject: `main/trade/user/${channel}/crypto-payments/`,
+      serviceRef.current.ConnectToSubject({
+        subject: `user:${channel}:crypto-payments`,
       });
     }
     return () => {
-      mqtt2.current &&
-        mqtt2.current.DisconnectFromSubject({
-          subject: `main/trade/user/${channel}/open-orders/`,
+      serviceRef.current &&
+        serviceRef.current.DisconnectFromSubject({
+          subject: `user:${channel}:open-orders`,
         });
 
-      mqtt2.current &&
-        mqtt2.current.DisconnectFromSubject({
-          subject: `main/trade/user/${channel}/crypto-payments/`,
+      serviceRef.current &&
+        serviceRef.current.DisconnectFromSubject({
+          subject: `user:${channel}:crypto-payments`,
         });
 
-      mqtt2.current && (mqtt2.current = null);
+      serviceRef.current && (serviceRef.current = null);
     };
   }, [token]);
 };

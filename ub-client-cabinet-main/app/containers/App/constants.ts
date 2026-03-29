@@ -61,11 +61,11 @@ export enum GridFilterTypes {
   In_Range = 'inRange',
   Empty = 'empty',
 }
-export enum MqttTopicsPrefixes {
-  MarketTradeAddress = 'main/trade/trade-book/',
-  OrderBookAddress = 'main/trade/order-book/',
-  MarketWatchAddress = 'main/trade/ticker',
-  TradeChartAddress = 'main/trade/kline/',
+export enum CentrifugoChannels {
+  MarketTradePrefix = 'trade:trade-book:',
+  OrderBookPrefix = 'trade:order-book:',
+  TickerChannel = 'trade:ticker',
+  TradeChartPrefix = 'trade:kline:',
 }
 export const GlobalTranslateScope = 'app.globalTitles';
 export const GridHeaderNames = 'GridHeaderNames';

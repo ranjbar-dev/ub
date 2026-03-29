@@ -3,7 +3,7 @@ import { injectIntl } from 'react-intl';
 import styled from 'styles/styled-components';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, GridApi } from 'ag-grid-community';
-import { GridHeaderNames, MqttTopicsPrefixes } from 'containers/App/constants';
+import { GridHeaderNames, CentrifugoChannels } from 'containers/App/constants';
 import { Translator, vw, CurrencyFormater, zeroFixer } from 'utils/formatters';
 import {
   SideSubscriber,
@@ -16,7 +16,7 @@ import {
 import ReactDOMServer from 'react-dom/server';
 import AnimatedNoRows from 'components/noRows/AnimatedNoRows';
 import { ResizeGridHeigth } from '../utils/tradeUtilities';
-import { MqttService } from 'services/MqttService2';
+import { CentrifugoPublicService } from 'services/CentrifugoPublicService';
 import { savedPairName } from 'utils/sharedData';
 import { useDispatch } from 'react-redux';
 import { getInitialMarketTradeDataAction } from '../actions';
@@ -36,7 +36,7 @@ const MarketTradeGrid = (props: {
   //  let gridApi: GridApi;
   const selectedPair = useRef(savedPairName());
   const gridApi: any = useRef();
-  const mqtt2 = useRef(MqttService.getInstance());
+  const mqtt2 = useRef(CentrifugoPublicService.getInstance());
   const initialDataLoaded = useRef(false);
 
   const dispatch = useDispatch();
@@ -51,7 +51,7 @@ const MarketTradeGrid = (props: {
   useEffect(() => {
     if (props.enabled) {
       mqtt2.current.ConnectToSubject({
-        subject: `${MqttTopicsPrefixes.MarketTradeAddress}${selectedPair.current}`,
+        subject: `${CentrifugoChannels.MarketTradePrefix}${selectedPair.current}`,
       });
     }
     const Subscription = Subscriber.subscribe((message: any) => {
@@ -90,9 +90,9 @@ const MarketTradeGrid = (props: {
     const SideSubscription = SideSubscriber.subscribe((message: any) => {
       if (message.name === MessageNames.SET_TRADE_PAGE_CURRENCY_PAIR) {
         mqtt2.current.ConnectToNewSubject({
-          newSubject: `${MqttTopicsPrefixes.MarketTradeAddress}${message.payload.name}`,
+          newSubject: `${CentrifugoChannels.MarketTradePrefix}${message.payload.name}`,
           oldsubject:
-            MqttTopicsPrefixes.MarketTradeAddress + selectedPair.current,
+            CentrifugoChannels.MarketTradePrefix + selectedPair.current,
         });
         selectedPair.current = message.payload.name;
 
@@ -159,7 +159,7 @@ const MarketTradeGrid = (props: {
       dataInjectSubscription.unsubscribe();
 
       mqtt2.current.DisconnectFromSubject({
-        subject: MqttTopicsPrefixes.MarketTradeAddress + selectedPair.current,
+        subject: CentrifugoChannels.MarketTradePrefix + selectedPair.current,
       });
     };
   }, []);

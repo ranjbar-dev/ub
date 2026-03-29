@@ -62,7 +62,7 @@ import { CookieKeys, cookies } from 'services/cookie';
 import PrivateRoute from './PrivateRoute';
 import RegisteredToastContainer from 'components/registeredToastContainer/registeredToastContainer';
 import { useResizeAndThemeHook } from './hooks/resizeAndThemeHook';
-import { useConnectToAuthorizedMqtt2 } from './hooks/connectToMqtt2';
+import { useConnectToCentrifugoAuth } from './hooks/connectToMqtt2';
 import { useCheckForAuthErrors } from './hooks/checkForAuthErrors';
 // import { OnlineStatusProvider } from 'hooks/onlineStatusHook/provider';
 import { useGetInitialData } from './hooks/useGetInitialData';
@@ -134,7 +134,7 @@ export default function App() {
   }, []);
 
   useResizeAndThemeHook();
-  useConnectToAuthorizedMqtt2();
+  useConnectToCentrifugoAuth();
   useCheckForAuthErrors({ dispatch, loggedInAction, replace });
   useGetInitialData();
   const firstLoad = useRef<boolean>(false);

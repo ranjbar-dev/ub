@@ -33,7 +33,7 @@ import TradeChart from 'containers/TradePage/components/TradeChart';
 import PopupModal from 'components/materialModal/modal';
 import LoginPage from 'containers/LoginPage/Loadable';
 import { layout, LayoutContainers } from './layout';
-import { MqttTopicsPrefixes } from 'containers/App/constants';
+import { CentrifugoChannels } from 'containers/App/constants';
 
 let canSave = true;
 let dragTimeout;
@@ -143,7 +143,7 @@ const TradeLayout = () => {
         <MarketWatchGrid
           enabled={enable}
           uniqueId={LayoutContainers.MARKETWATCH}
-          subject={MqttTopicsPrefixes.MarketWatchAddress}
+          subject={CentrifugoChannels.TickerChannel}
         />
       </MiniTitledComponent>
     </div>,
@@ -157,7 +157,7 @@ const TradeLayout = () => {
         <MarketTradeGrid
           enabled={enable}
           uniqueId={LayoutContainers.MARKETTRADE}
-          subject={MqttTopicsPrefixes.MarketTradeAddress}
+          subject={CentrifugoChannels.MarketTradePrefix}
         />
       </MiniTitledComponent>
     </div>,
@@ -171,7 +171,7 @@ const TradeLayout = () => {
         <OrderBookGrid
           enabled={enable}
           uniqueId={LayoutContainers.ORDERBOOK}
-          subject={MqttTopicsPrefixes.OrderBookAddress}
+          subject={CentrifugoChannels.OrderBookPrefix}
         />
       </MiniTitledComponent>
     </div>,
@@ -179,7 +179,7 @@ const TradeLayout = () => {
 
   const Tradeheader = useRef(
     <div key={LayoutContainers.TRADEHEADER} id='TRADEHEADERContainer'>
-      <TradeHeader subject={MqttTopicsPrefixes.MarketWatchAddress} />
+      <TradeHeader subject={CentrifugoChannels.TickerChannel} />
     </div>,
   );
 
