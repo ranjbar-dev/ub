@@ -74,8 +74,7 @@ class LoginController extends GetxController with Toaster, Popups {
             }
           }
           storage.write(StorageKeys.token, token.token);
-          //!uncomment when refresh token is handled
-          // storage.write(StorageKeys.refresh, token.refreshToken);
+          storage.write(StorageKeys.refresh, token.refreshToken);
 
           storage.write(StorageKeys.lastLoginDate, DateTime.now().toString());
           Get.put(AccountController(), permanent: true);
