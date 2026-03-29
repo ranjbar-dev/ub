@@ -13,3 +13,7 @@ export const selectLoading = createSelector(
   [selectDomain],
   loginPageState => loginPageState.isLoading,
 );
+export const selectLoginError = createSelector(
+  [selectDomain],
+  loginPageState => loginPageState.error,
+);

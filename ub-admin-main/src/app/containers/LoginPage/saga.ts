@@ -26,6 +26,7 @@ export function* Login(action: {
 }) {
   yield put(actions.setIsLoadingAction(true));
   try {
+    yield put(actions.setErrorAction(null));
     const sanitizedPayload = {
       username: sanitizeCredential(action.payload.username),
       password: sanitizeCredential(action.payload.password),
@@ -38,6 +39,14 @@ export function* Login(action: {
           LocalStorageKeys.REFRESH_TOKEN,
           (response.data as Record<string, unknown>).refresh_token as string,
         );
+      }
+
+      try {
+        const payloadB64 = response.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        const jwtPayload: { role?: string } = JSON.parse(atob(payloadB64));
+        yield put(globalActions.setRole(jwtPayload.role ?? null));
+      } catch {
+        yield put(globalActions.setRole(null));
       }
 
       const countriesResponse: StandardResponse = yield call(GetCountriesAPI);
@@ -76,7 +85,8 @@ export function* Login(action: {
       yield put(replace(AppPages.HomePage));
     }
   } catch (error) {
-    console.error('Login failed:', error);
+    const message = error instanceof Error ? error.message : 'Login failed. Please try again.';
+    yield put(actions.setErrorAction(message));
   } finally {
     yield put(actions.setIsLoadingAction(false));
   }

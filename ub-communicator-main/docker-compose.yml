@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       - MONGO_INITDB_DATABASE=ubMessages
-      - MONGO_INITDB_ROOT_USERNAME=myukelele
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
     ports:
       - "27017:27017"

@@ -8,7 +8,9 @@
 package di
 
 import (
+	"context"
 	"fmt"
+	"time"
 	"ub-communicator/config"
 	"ub-communicator/pkg/consumer"
 	"ub-communicator/pkg/messaging"
@@ -16,6 +18,7 @@ import (
 	"ub-communicator/pkg/repository"
 
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 )
 
 // Container provides access to application services.
@@ -23,6 +26,7 @@ import (
 type Container interface {
 	GetConsumer() consumer.Service
 	GetLogger() platform.Logger
+	Close(ctx context.Context) error
 }
 
 type container struct {
@@ -55,7 +59,8 @@ func (c *container) GetConsumer() consumer.Service {
 func (c *container) getPool() consumer.Pool {
 	if c.pool == nil {
 		ms := c.getMessagingService()
-		c.pool = consumer.NewPool(ms)
+		logger := c.getLogger()
+		c.pool = consumer.NewPool(ms, logger)
 	}
 	return c.pool
 }
@@ -156,6 +161,12 @@ func (c *container) getMessageRepository() messaging.Repository {
 		if repo == nil {
 			panic("NewMessageRepository returned nil: check database configuration")
 		}
+		dbName := configs.GetString("mongodb.name")
+		idxCtx, idxCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer idxCancel()
+		if err := repository.EnsureIndexes(idxCtx, db, dbName); err != nil {
+			c.getLogger().Warn("failed to ensure mongodb indexes", zap.Error(err))
+		}
 		c.messageRepository = repo
 	}
 	return c.messageRepository
@@ -168,6 +179,15 @@ func (c *container) getRabbitMq() platform.RabbitMqClient {
 		c.rabbitMq = platform.NewRabbitMqClient(configs, logger)
 	}
 	return c.rabbitMq
+}
+
+func (c *container) Close(ctx context.Context) error {
+	if c.db != nil {
+		if err := c.db.Disconnect(ctx); err != nil {
+			return fmt.Errorf("mongodb disconnect failed: %w", err)
+		}
+	}
+	return nil
 }
 
 // NewContainer creates and returns the application DI container.

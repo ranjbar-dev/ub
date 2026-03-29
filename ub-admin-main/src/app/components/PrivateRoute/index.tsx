@@ -1,11 +1,14 @@
 import React from 'react';
 import { Route, Redirect, RouteProps } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { LocalStorageKeys } from 'services/constants';
 import { AppPages } from 'app/constants';
+import { selectRole } from 'store/slice';
 
 interface PrivateRouteProps extends RouteProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: React.ComponentType<any>;
+  allowedRoles?: string[];
 }
 
 /** Returns true only when a non-expired JWT is present in localStorage. */
@@ -36,17 +39,19 @@ function isAuthenticated(): boolean {
   }
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ component: Component, ...rest }) => (
-  <Route
-    {...rest}
-    render={(props) =>
-      isAuthenticated() ? (
-        <Component {...props} />
-      ) : (
-        <Redirect to={AppPages.RootPage} />
-      )
-    }
-  />
-);
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ component: Component, allowedRoles, ...rest }) => {
+  const role = useSelector(selectRole);
+  return (
+    <Route
+      {...rest}
+      render={(props) => {
+        if (!isAuthenticated()) return <Redirect to={AppPages.RootPage} />;
+        if (allowedRoles && role && !allowedRoles.includes(role))
+          return <Redirect to={AppPages.HomePage} />;
+        return <Component {...props} />;
+      }}
+    />
+  );
+};
 
 export default PrivateRoute;

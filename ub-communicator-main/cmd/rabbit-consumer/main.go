@@ -46,4 +46,10 @@ func main() {
 			log.Fatalf("Consumer failed: %v", err)
 		}
 	}
+
+	closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer closeCancel()
+	if err := container.Close(closeCtx); err != nil {
+		log.Printf("container close error: %v", err)
+	}
 }

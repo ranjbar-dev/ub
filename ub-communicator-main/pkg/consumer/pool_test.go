@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"ub-communicator/pkg/messaging"
+	"ub-communicator/pkg/platform"
+
+	"go.uber.org/zap"
 )
 
 // mockMessagingService counts Send calls and optionally delays.
@@ -27,9 +30,20 @@ func (m *mockMessagingService) CreateMessage(data []byte) (messaging.Message, er
 	return messaging.Message{Type: "EMAIL", Receiver: "test@test.com"}, nil
 }
 
+// mockLogger is a no-op logger for tests.
+type mockLogger struct{}
+
+func (l *mockLogger) Info(msg string, fields ...zap.Field)          {}
+func (l *mockLogger) Warn(msg string, fields ...zap.Field)          {}
+func (l *mockLogger) Error(msg string, fields ...zap.Field)         {}
+func (l *mockLogger) Fatal(msg string, fields ...zap.Field)         {}
+func (l *mockLogger) Shutdown(timeout time.Duration)                {}
+
+var _ platform.Logger = (*mockLogger)(nil)
+
 func TestPool_ProcessesAllMessages(t *testing.T) {
 	ms := &mockMessagingService{}
-	pool := NewPool(ms)
+	pool := NewPool(ms, &mockLogger{})
 	collector := pool.StartDispatcher(3)
 
 	const messageCount = 50
@@ -61,7 +75,7 @@ func TestPool_ProcessesAllMessages(t *testing.T) {
 func TestPool_WorkDistribution(t *testing.T) {
 	// With slow workers, work should distribute across multiple goroutines
 	ms := &mockMessagingService{delay: 10 * time.Millisecond}
-	pool := NewPool(ms)
+	pool := NewPool(ms, &mockLogger{})
 	collector := pool.StartDispatcher(5)
 
 	const messageCount = 20
@@ -90,7 +104,7 @@ func TestPool_WorkDistribution(t *testing.T) {
 
 func TestPool_StopsOnEnd(t *testing.T) {
 	ms := &mockMessagingService{}
-	pool := NewPool(ms)
+	pool := NewPool(ms, &mockLogger{})
 	collector := pool.StartDispatcher(3)
 
 	// Send some work first

@@ -38,6 +38,7 @@ func (s *service) Consume(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get rabbitmq channel: %w", err)
 	}
+	defer ch.Close()
 
 	exchange := s.configs.GetString("rabbitmq.exchange")
 	if exchange == "" {
@@ -143,7 +144,13 @@ func (s *service) Consume(ctx context.Context) error {
 				}
 				continue
 			}
-			collector.Work <- Work{Message: message, Delivery: d}
+			select {
+			case collector.Work <- Work{Message: message, Delivery: d}:
+			case <-ctx.Done():
+				s.logger.Info("shutdown while queuing work, stopping consumer")
+				collector.End <- true
+				return ctx.Err()
+			}
 		case <-ctx.Done():
 			s.logger.Info("shutdown signal received, stopping consumer")
 			collector.End <- true

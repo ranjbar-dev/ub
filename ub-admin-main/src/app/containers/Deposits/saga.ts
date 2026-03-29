@@ -43,6 +43,9 @@ export function* UpdateDepositOrder(action: {
           txId: action.payload.tx_id,
         },
       });
+      MessageService.send({
+        name: MessageNames.CLOSE_POPUP,
+      });
     }
   } finally {
     MessageService.send({
@@ -52,9 +55,6 @@ export function* UpdateDepositOrder(action: {
           ? 'DepositModalSaveAndDepositButton'
           : 'DepositModalSaveButton',
       payload: false,
-    });
-    MessageService.send({
-      name: MessageNames.CLOSE_POPUP,
     });
   }
 }

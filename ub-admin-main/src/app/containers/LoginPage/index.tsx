@@ -19,7 +19,7 @@ import { StyleConstants } from 'styles/StyleConstants';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { loginPageSaga } from './saga';
-import { selectLoading } from './selectors';
+import { selectLoading, selectLoginError } from './selectors';
 import { reducer, sliceKey, actions } from './slice';
 import { EmailValidator } from './validators/emailValidator';
 import { PasswordValidator } from './validators/passwordValidator';
@@ -36,6 +36,7 @@ export const LoginPage = memo((props: Props) => {
   const [CanSubmit, setCanSubmit] = useState(false);
 
   const isLoading = useSelector(selectLoading);
+  const loginError = useSelector(selectLoginError);
   const dispatch = useDispatch();
 
   const { t } = useTranslation();
@@ -140,6 +141,9 @@ export const LoginPage = memo((props: Props) => {
           }}
           uniqueName="loginPassword"
         />
+        {loginError && (
+          <p style={{ color: 'red', fontSize: 12, marginTop: -10 }}>{loginError}</p>
+        )}
         <Button
           color="primary"
           onClick={() => {

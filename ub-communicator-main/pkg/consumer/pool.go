@@ -2,8 +2,10 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"ub-communicator/pkg/messaging"
+	"ub-communicator/pkg/platform"
+
+	"go.uber.org/zap"
 )
 
 // Collector holds the channels used to send work to the pool and signal shutdown.
@@ -22,6 +24,7 @@ type Pool interface {
 type pool struct {
 	ms            messaging.Service
 	workerChannel chan chan Work
+	logger        platform.Logger
 }
 
 func (p *pool) StartDispatcher(workerCount int) Collector {
@@ -31,7 +34,7 @@ func (p *pool) StartDispatcher(workerCount int) Collector {
 	collector := Collector{Work: input, End: end}
 
 	for i := 1; i <= workerCount; i++ {
-		fmt.Printf("starting worker: %d\n", i)
+		p.logger.Info("starting worker", zap.Int("id", i))
 		ctx, cancel := context.WithCancel(context.Background())
 		worker := Worker{
 			ID:            i,
@@ -69,9 +72,10 @@ func (p *pool) StartDispatcher(workerCount int) Collector {
 }
 
 // NewPool creates a new worker pool that dispatches messages via the given service.
-func NewPool(ms messaging.Service) Pool {
+func NewPool(ms messaging.Service, logger platform.Logger) Pool {
 	return &pool{
 		ms:            ms,
 		workerChannel: make(chan chan Work),
+		logger:        logger,
 	}
 }

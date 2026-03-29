@@ -91,19 +91,24 @@ useInjectSaga({ key: sliceKey, saga: userAccountsSaga });
 		return () => {
 			subscription.unsubscribe()
 		}
-	}, [])
+	}, [dispatch])
 
-
-
-	window.onresize = (e: UIEvent) => {
-		clearTimeout(timeOut);
-		timeOut = setTimeout(() => {
-			MessageService.send({
-				name: MessageNames.RESIZE,
-				payload: (e.target as Window).innerWidth,
-			});
-		}, 150);
-	};
+	useEffect(() => {
+		const handleResize = (e: UIEvent) => {
+			clearTimeout(timeOut);
+			timeOut = setTimeout(() => {
+				MessageService.send({
+					name: MessageNames.RESIZE,
+					payload: (e.target as Window).innerWidth,
+				});
+			}, 150);
+		};
+		window.addEventListener('resize', handleResize);
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			clearTimeout(timeOut);
+		};
+	}, []);
 	const router = useSelector(selectRouter);
 	const { t } = useTranslation();
 
@@ -269,7 +274,7 @@ useInjectSaga({ key: sliceKey, saga: userAccountsSaga });
 				<PrivateRoute path={AppPages.ScanBlock} component={ScanBlock} />
 				<PrivateRoute path={AppPages.LiquidityOrders} component={LiquidityOrders} />
 				{/*<PrivateRoute path={AppPages.PlaceHolder} component={PlaceHolder} />*/}
-				<PrivateRoute path={AppPages.Admins} component={Admins} />
+				<PrivateRoute path={AppPages.Admins} component={Admins} allowedRoles={['superadmin']} />
 				<Route component={NotFoundPage} />
 			</Switch>
 			<GlobalStyle />

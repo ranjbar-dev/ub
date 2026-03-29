@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"ub-communicator/pkg/messaging"
 	"ub-communicator/pkg/platform"
@@ -39,4 +40,20 @@ func (mr *messageRepository) NewMessage(message *messaging.Message) error {
 func NewMessageRepository(db *mongo.Client, c platform.Configs) messaging.Repository {
 	dbName := c.GetString("mongodb.name")
 	return &messageRepository{db, dbName}
+}
+
+// EnsureIndexes creates required indexes on the messages collection.
+// Safe to call on every startup — CreateIndexes is idempotent for existing indexes.
+func EnsureIndexes(ctx context.Context, db *mongo.Client, dbName string) error {
+	coll := db.Database(dbName).Collection(CollectionName)
+	indexes := []mongo.IndexModel{
+		{Keys: bson.D{{Key: "createdAt", Value: 1}}},
+		{Keys: bson.D{{Key: "receiver", Value: 1}}},
+		{Keys: bson.D{{Key: "status", Value: 1}}},
+	}
+	_, err := coll.Indexes().CreateMany(ctx, indexes)
+	if err != nil {
+		return fmt.Errorf("failed to ensure indexes on %s.%s: %w", dbName, CollectionName, err)
+	}
+	return nil
 }

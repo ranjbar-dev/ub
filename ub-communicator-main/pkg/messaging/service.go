@@ -120,7 +120,12 @@ func (s *service) Send(message Message) error {
 	return deliveryErr
 }
 
+const maxMessageBytes = 1 << 20 // 1 MiB
+
 func (s *service) CreateMessage(data []byte) (Message, error) {
+	if len(data) > maxMessageBytes {
+		return Message{}, fmt.Errorf("message payload too large: %d bytes (max %d)", len(data), maxMessageBytes)
+	}
 	var message Message
 	if err := json.Unmarshal(data, &message); err != nil {
 		return Message{}, fmt.Errorf("failed to unmarshal message: %w", err)

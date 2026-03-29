@@ -227,11 +227,17 @@ export const Withdrawals = memo((props: Props) => {
 			},
 			{
 				id: 'currencyCode',
-				options: JSON.parse(
-					localStorage[LocalStorageKeys.CURRENCIES],
-				).currencies.map((item: { name: string; code: string }, index: number) => {
-					return { name: item.name, value: item.code };
-				}),
+				options: (() => {
+					try {
+						const raw = localStorage.getItem(LocalStorageKeys.CURRENCIES);
+						const parsed = raw ? JSON.parse(raw) : null;
+						return (parsed?.currencies ?? []).map(
+							(item: { name: string; code: string }) => ({ name: item.name, value: item.code }),
+						);
+					} catch {
+						return [];
+					}
+				})(),
 			},
 		],
 	};

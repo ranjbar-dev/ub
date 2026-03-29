@@ -29,19 +29,18 @@ export function* GetBalancesForTransferModal(action: {
   }
 }
 export function* UpdateAllBalances(action: { type: string; payload: Record<string, unknown> }) {
-  const { loaderId, code } = action.payload;
-  delete action.payload.loaderId;
+  const { loaderId, code, ...apiPayload } = action.payload;
   MessageService.send({
     name: MessageNames.SET_BUTTON_LOADING,
     loadingId: String(loaderId),
     payload: true,
   });
   try {
-    const response = yield* safeApiCall(UpdateAllBalancesAPI, action.payload);
+    const response = yield* safeApiCall(UpdateAllBalancesAPI, apiPayload);
     if (response) {
-      yield put(BalancesActions.GetBalancesAction({ type: action.payload.type }));
+      yield put(BalancesActions.GetBalancesAction({ type: apiPayload.type }));
       toast.success(
-        `${action.payload.type as string}  Wallet Updated ${code ? ',Coin : ' + code : ''}`,
+        `${apiPayload.type as string}  Wallet Updated ${code ? ',Coin : ' + code : ''}`,
       );
     }
   } finally {
@@ -65,15 +64,10 @@ export function* InternalTransfer(action: {
     network?: string;
   };
 }) {
-  const { loaderId } = action.payload;
-  // @ts-expect-error — deleting non-optional property to strip it before API call
-  delete action.payload.loaderId;
-  // @ts-expect-error — deleting non-optional property to strip it before API call
-  delete action.payload.fee;
-  if (action.payload.to_custom_address) {
-    // @ts-expect-error — deleting non-optional property to strip it before API call
-    delete action.payload.to;
-  }
+  const { loaderId, fee: _fee, to, ...rest } = action.payload;
+  const apiPayload = rest.to_custom_address
+    ? rest
+    : { ...rest, to };
 
   MessageService.send({
     name: MessageNames.SET_BUTTON_LOADING,
@@ -81,9 +75,9 @@ export function* InternalTransfer(action: {
     payload: true,
   });
   try {
-    const response = yield* safeApiCall(InternalTransferAPI, action.payload);
+    const response = yield* safeApiCall(InternalTransferAPI, apiPayload);
     if (response) {
-      yield put(BalancesActions.GetBalancesAction({ type: action.payload.from }));
+      yield put(BalancesActions.GetBalancesAction({ type: apiPayload.from }));
       toast.success('transfer in progress');
       MessageService.send({
         name: MessageNames.CLOSE_POPUP,

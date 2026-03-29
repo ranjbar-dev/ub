@@ -6,6 +6,7 @@ import { ContainerState } from './types';
 // The initial state of the LoginPage container
 export const initialState: ContainerState = {
   isLoading: false,
+  error: null,
 };
 
 const loginPageSlice = createSlice({
@@ -14,6 +15,9 @@ const loginPageSlice = createSlice({
   reducers: {
     setIsLoadingAction(state, action: PayloadAction<boolean>) {
       state.isLoading = action.payload;
+    },
+    setErrorAction(state, action: PayloadAction<string | null>) {
+      state.error = action.payload;
     },
     LoginAction(
       state,
