@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity/connectivity.dart';
@@ -22,6 +23,10 @@ class ApiService {
   static ApiService _apiService;
   static String token;
   static Connectivity connectivity;
+  static bool _isRefreshing = false;
+  static Completer<String> _refreshCompleter;
+  static int _refreshRetryCount = 0;
+  static const int _maxRefreshRetries = 3;
   static final isDebug = ENV == "DEV";
   static final platform = (GetPlatform.isAndroid ? 'ubandroid' : 'ubandroid') +
       '-v' +
@@ -84,24 +89,46 @@ class ApiService {
         onError: (DioError err, ErrorInterceptorHandler handler) async {
           if (_shouldRefreshToken(err)) {
             try {
-              dio.interceptors.requestLock.lock();
-              dio.interceptors.responseLock.lock();
+              String newToken;
+              if (_isRefreshing) {
+                // Another refresh is in progress, wait for it
+                newToken = await _refreshCompleter.future;
+              } else {
+                _refreshRetryCount++;
+                if (_refreshRetryCount > _maxRefreshRetries) {
+                  _refreshRetryCount = 0;
+                  return handler.next(err);
+                }
+                _isRefreshing = true;
+                _refreshCompleter = Completer<String>();
+                try {
+                  dio.interceptors.requestLock.lock();
+                  dio.interceptors.responseLock.lock();
+                  final refreshObj = await post(
+                    url: "auth/refresh",
+                    data: {"refresh": storage.read(StorageKeys.refresh)},
+                  );
+                  newToken = refreshObj["token"];
+                  token = newToken;
+                  storage.write(StorageKeys.refresh, refreshObj["refreshToken"]);
+                  dio.interceptors.requestLock.unlock();
+                  dio.interceptors.responseLock.unlock();
+                  _refreshRetryCount = 0;
+                  _refreshCompleter.complete(newToken);
+                } catch (e) {
+                  dio.interceptors.requestLock.unlock();
+                  dio.interceptors.responseLock.unlock();
+                  _refreshCompleter.completeError(e);
+                  rethrow;
+                } finally {
+                  _isRefreshing = false;
+                }
+              }
               RequestOptions options = err.requestOptions;
-              final refreshObj = await post(
-                url: "auth/refresh",
-                data: {"refresh": storage.read(StorageKeys.refresh)},
-              );
-              token = refreshObj["token"];
-              storage.write(StorageKeys.refresh, refreshObj["refreshToken"]);
-
-              options.headers["Authorization"] = "Bearer " + token;
-
-              dio.interceptors.requestLock.unlock();
-              dio.interceptors.responseLock.unlock();
-
+              options.headers["Authorization"] = "Bearer " + newToken;
               return dio.fetch(options);
             } catch (e) {
-              handler.next(e);
+              return handler.next(err);
             }
           } else {
             return handler.next(err);
@@ -174,7 +201,7 @@ class ApiService {
   }
 
   bool _shouldRefreshToken(DioError err) {
-    return err.response.statusCode == 403;
+    return err.response != null && err.response.statusCode == 403;
   }
 
   Future get({
