@@ -134,26 +134,7 @@ class LoginView extends GetView<LoginController> {
               ],
             ),
           ),
-          // GestureDetector(
-          //   onTap: () => controller.openRecaptcha(),
-          //   child: Container(
-          //       height: Get.height,
-          //       width: Get.width,
-          //       color: Colors.red,
-          //       child: CaptchaV2Html()
-          //       //  RecaptchaV2(
-          //       //   apiKey: "6LeCwZYUAAAAAJo8IVvGX9dH65Rw89vxaxErCeou",
-          //       //   apiSecret: "6LeCwZYUAAAAAKGahIjwfOARevvRETgvwhPMKCs_",
-          //       //   controller: controller.recaptchaV2Controller,
-          //       //   onVerifiedError: (err) {
-          //       //     print(err);
-          //       //   },
-          //       //   onVerifiedSuccessfully: (success) {
-          //       //     print(success);
-          //       //   },
-          //       // ),
-          //       ),
-          // ),
+
         ],
       ),
     );
