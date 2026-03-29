@@ -78,8 +78,9 @@ This is a **cryptocurrency exchange platform** monorepo with 6 sub-projects:
 | REST API | clients → ub-exchange-cli | HTTP `/api/v1/*` | All client-facing API (orders, trades, balances) via Gin |
 | REST API | clients → ub-server | HTTP `/api/v1/*` | Auth, user management, crypto payments via Symfony |
 | Shared DB | ub-exchange-cli ↔ ub-server | MySQL (GORM / Doctrine) | Both services read/write the same MySQL database |
-| RabbitMQ | ub-server → ub-communicator | AMQP topic exchange `messages` | Email/SMS notifications (async, prod-only publishing) |
-| MQTT Pub | ub-server → EMQX → clients | MQTT topics `main/trade/*` | Real-time market data (ticker, order book, trades) |
+| RabbitMQ | ub-exchange-cli → ub-communicator | AMQP topic exchange `messages` | Email/SMS notifications (async); Go CLI is the working publisher path |
+| RabbitMQ | ub-server → ub-communicator | AMQP direct exchange `email_exchange` | ⚠️ **BROKEN** — exchange/type/routing mismatch with consumer (see Gotcha #11) |
+| MQTT Pub | ub-server + ub-exchange-cli → EMQX → clients | MQTT topics `main/trade/*` | Real-time market data (ticker, order book, trades, klines) |
 | gRPC | Go services (ws, httpd, engine) | Internal `candle-grpc` network | Inter-service Go communication |
 | JWT | ub-server issues → ub-exchange-cli validates | HTTP `Authorization: Bearer` header | Shared auth via Lexik JWT Bundle |
 
@@ -92,30 +93,45 @@ ub-server (PHP)                          ub-communicator (Go)
        exchange: "email_exchange"              exchange: "messages" (topic)
        queue:    "email_queue_1"               queue:    "messages.command.send.consumer"
        type:     direct, durable               binding:  "messages.command.send"
-                                               workers:  5 (channel-of-channels pool)
+       routing:  [] (empty)                    workers:  5 (channel-of-channels pool)
                                                autoAck:  true
 
+ub-exchange-cli (Go)                      ↑ COMPATIBLE with consumer
+ communication/queuemanager.go
+   └─ PublishEmailOrSms()
+       exchange: "messages" (topic)
+       routing:  "messages.command.send"   ← matches consumer binding
+       Also publishes kline data:
+       exchange: "livedata" (topic)
+       routing:  "livedata.event.kline-created"
+
 Message payload: { receiver, subject, content, priority, type ("email"|"sms"), scheduledAt }
-Note: ub-server only publishes in "prod" environment.
+Note: PHP only publishes in "prod" environment and uses INCOMPATIBLE exchange config.
+      Go CLI is the working path for email/SMS notifications to reach ub-communicator.
 ```
 
 ### MQTT Topic Structure
 
 ```
 Public topics (all clients):
-  main/trade/ticker/{pair}          — Price tickers
-  main/trade/order-book/{pair}      — Live order books
-  main/trade/trade-book/{pair}      — Executed trades
-  main/trade/chart/{pair}           — OHLC chart data
-  main/trade/kline/{pair}           — K-line data
-  main/trade/change-price/{pair}    — Price changes
-  main/trade/market-price/{pair}    — Current market prices
+  main/trade/ticker/{pair}              — Price tickers (or just main/trade/ticker for all-pairs array)
+  main/trade/order-book/{pair}          — Live order books (optional /{precision} suffix)
+  main/trade/trade-book/{pair}          — Executed trades
+  main/trade/chart/{timeFrame}/{pair}   — OHLC chart data (by time frame)
+  main/trade/kline/{timeFrame}/{pair}   — K-line/candlestick data (by time frame)
+  main/trade/change-price/{pair}        — Price changes (⚠️ event subscriber commented out)
+  main/trade/market-price/{pair}        — Current market prices
 
 Private topics (authenticated users):
-  main/trade/user/{userId}/open-orders/      — User's open orders
-  main/trade/user/{userId}/crypto-payments/  — User's payment status
+  main/trade/user/{privateChannel}/open-orders/      — User's open orders
+  main/trade/user/{privateChannel}/crypto-payments/  — User's payment status
 
-Auth: EMQX calls /api/v1/emqtt/login, /acl, /superuser to validate via JWT.
+Publishers: Both ub-server (PHP/EmqttManager) and ub-exchange-cli (Go/mqttmanager) publish
+            to the same topics. Both use credentials mqtt_abbas:mqtt_abbas on emqtt:1883.
+
+Auth: EMQX calls /api/v1/emqtt/login, /acl, /superuser — served by BOTH PHP and Go.
+      Subscribers connect via WSS on port 8443. Public topics allow anonymous access.
+      Private topics validated against user's privateChannelName via JWT.
 ```
 
 ## Database Schema Overview
@@ -289,7 +305,7 @@ All APIs versioned under `/api/v1/`:
 | `/api/v1/user-balance/*` | ub-exchange-cli | Balances, auto-exchange |
 | `/api/v1/user/*` | ub-exchange-cli | Profile, 2FA, password, SMS |
 | `/api/v1/crypto-payment/*` | ub-exchange-cli | Deposit, withdraw, cancel |
-| `/api/v1/emqtt/*` | ub-server | MQTT auth (login, ACL, superuser) |
+| `/api/v1/emqtt/*` | ub-server + ub-exchange-cli | MQTT auth (login, ACL, superuser) — both backends serve these |
 | `/tv/api/v1/*` | ub-server | TradingView charting integration |
 
 Admin API uses **host-based routing** (admin subdomain → port 8001).
@@ -449,6 +465,24 @@ RabbitMQ config or both sides updated if changing messaging patterns.
 `RabbitMQProducerService` only publishes in `prod` environment. In dev/test,
 no messages reach ub-communicator. If testing the full email flow locally,
 you must either change this check or publish manually.
+
+### 13. Mailgun API Parameters Are Swapped (ub-communicator BUG)
+In `pkg/platform/mail.go:59`, the code calls `mailgun.NewMailgun(apiKey, domain)`
+but the SDK signature is `NewMailgun(domain, apiKey string)`. The domain is used
+as the API key and vice versa. **All Mailgun emails fail with auth errors.**
+Fix: swap to `mailgun.NewMailgun(domain, apiKey)`.
+
+### 14. Sentry Is Silently Broken in Communicator Production
+`platform.EnvConfigKey` reads `"wallet.environment"` but `config.yaml` uses
+`"communicator.environment"`. `GetEnv()` always returns `""`, so `captureError()`
+never sends to Sentry (the `env != "prod"` check always passes). Workaround:
+set `UBCOMMUNICATOR_WALLET_ENVIRONMENT=prod` as an env var. Fix: change
+the constant to `"communicator.environment"`.
+
+### 15. No Graceful Shutdown in Communicator
+`main.go` passes `context.Background()` to `Consume()` — SIGTERM/SIGINT are
+ignored. Docker `stop` waits its timeout then SIGKILL's the process. Worker
+pool shutdown logic exists but is unreachable via OS signals.
 
 ## Spec-Driven Development Guide
 

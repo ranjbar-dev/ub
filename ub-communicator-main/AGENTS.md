@@ -773,17 +773,25 @@ Both branches send Telegram notifications on success (🟢) or failure (🔴).
 | **autoAck=true** on RabbitMQ consume | `pkg/consumer/service.go:76` | Messages are ACK'd immediately on delivery from RabbitMQ, not after processing. Messages are lost if the service crashes mid-processing. Fix: use `autoAck=false` and call `d.Ack(false)` after `Send()` succeeds. |
 | **No reconnection loop** for RabbitMQ | `pkg/consumer/service.go:89-107` | If the RabbitMQ connection drops, the delivery channel closes and the consumer exits with an error. The process must be restarted externally. No automatic reconnect/retry logic. |
 | **Telegram bot token hardcoded** | `.gitlab-ci.yml:37-38` | Bot token `1416070700:AAGSBy7q...` is committed in plaintext. Should use CI/CD variables. |
+| **Mailgun `NewMailgun()` parameters swapped** | `pkg/platform/mail.go:59` | Code calls `mailgun.NewMailgun(apiKey, domain)` but the SDK signature is `NewMailgun(domain, apiKey string)`. Domain is used as API key and vice versa. **ALL Mailgun emails fail with authentication errors.** Fix: swap to `mailgun.NewMailgun(domain, apiKey)`. |
+| **`wallet.environment` config key never resolves** | `pkg/platform/config.go:19` | `EnvConfigKey = "wallet.environment"` but config.yaml uses `communicator.environment`. `GetEnv()` always returns `""`. **Sentry error reporting is silently broken in production** (because `l.env != "prod"` is always true). Fix: change to `"communicator.environment"` or set `UBCOMMUNICATOR_WALLET_ENVIRONMENT=prod` env var. |
+| **No graceful shutdown** | `cmd/rabbit-consumer/main.go:15` | `context.Background()` is passed to `Consume()` — SIGTERM/SIGINT are ignored. Docker `stop` sends SIGTERM (ignored), waits timeout, then SIGKILL. Worker pool shutdown logic is unreachable. MongoDB connection is never cleanly closed. Fix: use `signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)`. |
 
 ### 🟡 Medium
 
 | Issue | Location | Impact |
 |-------|----------|--------|
+| **Worker pool shutdown deadlock** | `pkg/consumer/worker.go:27-28`, `pool.go:50-53` | Workers execute `w.WorkerChannel <- w.Channel` (blocking send) outside the `select`. If blocked on this send when `Stop()` is called, `Stop()` blocks trying to send to `w.End` (unbuffered). Deadlock if workers outnumber pending work. Fix: use select with default for registration or close `WorkerChannel`. |
+| **Nil pointer panic: mailer client** | `pkg/di/container.go:96-99` | If `NewMailerClient()` returns nil (unknown `mailer_broker`), `c.mailerClient` is nil. `mailService.Send()` panics on first email. Fix: fail fast in `NewContainer()` if mailer client is nil. |
+| **Nil pointer panic: message repository** | `pkg/di/container.go:148-150` | If MongoDB connection fails, `getMessageRepository()` returns nil. Passed to `messaging.NewMessagingService()`. First call to `mr.NewMessage()` panics. Fix: propagate error up to `NewContainer()`. |
 | **No health check endpoint** | — (no HTTP server) | No way to probe service liveness. Docker/K8s cannot health-check. |
 | **mailgun-go v2 archived** | `go.mod:9` | Library is archived; should migrate to `github.com/mailgun/mailgun-go/v4`. Breaking API changes required. |
 | **gomail.v2 abandoned** (2016) | `go.mod:16` | Functional but receives no security patches. |
 | **Subject prefix inconsistency** | `sendgridmail.go:24`, `mailjetmail.go:21` vs `mailgunmail.go`, `smtpmail.go` | SendGrid and Mailjet prefix subjects with `[UNITEDBIT]`; Mailgun and SMTP do not. |
 | **SMTP DialAndSend per email** | `pkg/platform/smtpmail.go:23` | Creates new TCP+TLS connection per email. No connection pooling. |
 | **No message deduplication** | `pkg/messaging/service.go` | No idempotency key; duplicate messages from RabbitMQ will send duplicate notifications. |
+| **SMS service JSON parse false negative** | `pkg/messaging/smsService.go:34-37` | On 2xx response, code parses JSON body but discards result. If Twilio returns unexpected JSON, `Unmarshal` fails and returns `(false, error)` — marking a successful SMS as failed. Fix: remove JSON parsing or use the result. |
+| **SendGrid status code boundary** | `pkg/platform/sendgridmail.go:33` | `response.StatusCode > 300` should be `>= 300`. Status 300 (redirect) is treated as success. Minimal real-world impact (SendGrid returns 202). |
 
 ### 🟢 Low / Informational
 
@@ -793,10 +801,14 @@ Both branches send Telegram notifications on success (🟢) or failure (🔴).
 | **`scheduledAt` field unused** | `pkg/messaging/repository.go:25` | Stored but no scheduling logic exists. |
 | **Worker uses `log.Printf`** | `pkg/consumer/worker.go:32` | Workers log via stdlib `log` instead of the structured `platform.Logger`. |
 | **Pool uses `fmt.Printf`** | `pkg/consumer/pool.go:33` | "starting worker: N" printed via `fmt.Printf` instead of structured logger. |
-| **`wallet.environment` vs `communicator.environment`** | `config.go:19` vs `config.yaml:2` | Config key mismatch: `platform.EnvConfigKey` reads `"wallet.environment"` but config.yaml has `"communicator.environment"`. The env var override still works. |
-| **`wallet.allowed_ips`** | `config.go:18` | Config key references `wallet.allowed_ips` but config.yaml has `communicator.allowed_ips`. |
+| **`wallet.allowed_ips` config key mismatch** | `config.go:18` | Config key references `wallet.allowed_ips` but config.yaml has `communicator.allowed_ips`. `GetAllowedIps()` returns empty slice. Currently unused by consumer, no runtime impact. |
 | **No MongoDB indexes** | `pkg/repository/messageRepository.go` | Collection has no application-managed indexes. |
-| **Compiled binary in repo** | `rabbit-consumer`, `rabbit-consumer.exe` | Binary artifacts committed to git. Should be in `.gitignore`. |
+| **Compiled binary in repo** | `rabbit-consumer` | Linux binary tracked by git (`.gitignore` has `/main` and `*.exe` but not `/rabbit-consumer`). |
+| **SMTP `name` field unused** | `pkg/platform/smtpmail.go:9` | `smtpClient` stores `name` but From header only uses `fromAddress`. Other providers include the display name. Fix: `message.SetAddressHeader("From", m.fromAddress, m.name)`. |
+| **AMQP channel never closed** | `pkg/consumer/service.go:37` | Channel from `GetChannel()` is used for consumer lifetime but never closed. Relies on process exit for cleanup. |
+| **`sentry.debug` config unused** | `config/config.yaml:48` | Key exists in config.yaml but the code hardcodes `Debug: false` in `logger.go:66`. |
+| **No QoS/Prefetch on AMQP** | `pkg/consumer/service.go` | No `ch.Qos()` call. Since autoAck=true, RabbitMQ pushes all messages without flow control. Back-pressure is only via the buffered work channel (cap 100). |
+| **MongoDB init script hardcoded creds** | `.docker/mongo/mongo-init.js:7` | User `ub_mongo_user` / password `ub_mongo_pass` in plaintext. Acceptable for local dev; should use env vars for other environments. |
 
 ---
 
