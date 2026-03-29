@@ -1,6 +1,9 @@
 import 'package:get/get.dart' show GetPlatform;
 
 class NewTradeOrderModel {
+  // TODO(BUG-28): amount, price, and stopPointPrice are raw strings from user
+  // input. Validate they are non-empty, parseable as positive decimals, and
+  // within allowed precision/range before submitting to the API.
   String amount;
   String exchangeType;
   int pairCurrencyId;

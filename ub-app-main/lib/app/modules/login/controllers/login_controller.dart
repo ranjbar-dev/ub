@@ -15,6 +15,7 @@ import '../../../../utils/mixins/popups.dart';
 import '../../../../utils/mixins/toast.dart';
 import '../models/token_model.dart';
 import '../../../../utils/emailValidator.dart';
+import '../../../../utils/passwordValidator.dart';
 import '../../../global/providers/commonDataProvider.dart';
 import '../../account/controllers/account_controller.dart';
 import '../../account/user_model.dart';
@@ -46,9 +47,9 @@ class LoginController extends GetxController with Toaster, Popups {
     bool isLoggedIn = false;
     loginEmail.value = loginEmail.value.replaceAll(' ', '');
     loginEmailError.value = validateEmail(loginEmail.value);
-    // loginPasswordError.value = validatePassword(loginPassword.value);
+    loginPasswordError.value = validatePassword(loginPassword.value);
     ApiService.token = null;
-    if (loginEmailError.value == '') {
+    if (loginEmailError.value == '' && loginPasswordError.value == '') {
       isLoggingIn.value = true;
       try {
         final sendingData = loginData ??

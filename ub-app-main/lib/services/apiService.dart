@@ -57,6 +57,11 @@ class ApiService {
     }
     if (dio == null) {
       rawDio = new Dio();
+      // TODO(BUG-29): No certificate pinning is configured. A production app
+      // should pin the server's TLS certificate (or its public key) to prevent
+      // MITM attacks. Consider using a SecurityContext with a bundled CA
+      // certificate or a package such as `dio_certificate_pinning` and
+      // override HttpClient.badCertificateCallback to enforce the pin.
       dio = new Dio(options);
       (dio.transformer as DefaultTransformer).jsonDecodeCallback = parseJson;
       if (connectionRequestRetrier == null) {

@@ -106,7 +106,7 @@ class AuthorizedMqttController extends GetxController with Toaster {
 
     authorizedClient.status.listen(
       (status) {
-        log.i('Authorized Connection Status: $status');
+        log.d('Authorized Connection Status: $status');
         if (status == UniversalMqttClientStatus.disconnected) {
           purgeTopic(
             client: authorizedClient,
