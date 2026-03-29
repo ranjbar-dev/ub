@@ -17,7 +17,12 @@ func (p *pool) run() {
 }
 
 func (p *pool) addWork(work *work) {
-	p.collector <- work
+	select {
+	case p.collector <- work:
+	default:
+		logHandler.Warn("engine pool at capacity, blocking until worker available")
+		p.collector <- work
+	}
 }
 
 // Stop stops background workers

@@ -230,7 +230,7 @@ func (ob *orderBook) bestOrder(sideToLoad string) (order Order, found bool) {
 	return order, false
 }
 
-func (ob *orderBook) rewriteOrderBook(doneOrders []Order, partialOrder *Order) {
+func (ob *orderBook) rewriteOrderBook(doneOrders []Order, partialOrder *Order) error {
 	ctx := context.Background()
 	err := ob.orderbookProvider.RewriteOrderBook(ctx, doneOrders, partialOrder)
 	if err != nil {
@@ -238,6 +238,7 @@ func (ob *orderBook) rewriteOrderBook(doneOrders []Order, partialOrder *Order) {
 			zap.Error(err),
 		)
 	}
+	return err
 }
 
 func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxPrice string) {
@@ -251,7 +252,7 @@ func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxP
 	}
 	orders, err := ob.orderbookProvider.GetOrders(ctx, params)
 	if err != nil {
-		logHandler.Warn("error in engine:RemoveOrder",
+		logHandler.Warn("error in engine:loadOrders",
 			zap.Error(err),
 			zap.String("pair", params.Pair),
 			zap.String("side", params.Side),
@@ -260,28 +261,48 @@ func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxP
 	}
 
 	if side == SideAsk {
-		ob.asks = orders
+		// Sort asks ascending by price (lowest first = best ask at index 0), FIFO tiebreak
+		asksCopy := make([]Order, len(orders))
+		copy(asksCopy, orders)
+		sort.Slice(asksCopy, func(i, j int) bool {
+			firstPrice, errI := decimal.NewFromString(asksCopy[i].Price)
+			secondPrice, errJ := decimal.NewFromString(asksCopy[j].Price)
+			if errI != nil || errJ != nil {
+				return i < j
+			}
+			if firstPrice.Equal(secondPrice) {
+				firstID, errI := strconv.ParseInt(asksCopy[i].ID, 10, 64)
+				secondID, errJ := strconv.ParseInt(asksCopy[j].ID, 10, 64)
+				if errI != nil || errJ != nil {
+					return i < j
+				}
+				return firstID < secondID
+			}
+			return firstPrice.LessThan(secondPrice)
+		})
+		ob.asks = asksCopy
 	} else {
-		//this sorting helps up that in case when orders have same price in orderbook
-		// we could be sure the older one would be considered first
-		orders2 := make([]Order, len(orders))
-		_ = copy(orders2, orders)
-		sort.Slice(orders2, func(i, j int) bool {
-			firstPriceString := orders2[i].Price
-			secondPriceString := orders2[j].Price
-
-			if firstPriceString == secondPriceString {
-				firstIDString := orders2[i].ID
-				secondIDString := orders2[j].ID
-				firstID, _ := strconv.ParseInt(firstIDString, 10, 64)
-				secondID, _ := strconv.ParseInt(secondIDString, 10, 64)
+		// Sort bids ascending by price (highest at end, popped first by bestOrder).
+		// Same price: higher IDs first so oldest (lowest ID) is at end = FIFO via pop.
+		bidsCopy := make([]Order, len(orders))
+		copy(bidsCopy, orders)
+		sort.Slice(bidsCopy, func(i, j int) bool {
+			firstPrice, errI := decimal.NewFromString(bidsCopy[i].Price)
+			secondPrice, errJ := decimal.NewFromString(bidsCopy[j].Price)
+			if errI != nil || errJ != nil {
+				return i < j
+			}
+			if firstPrice.Equal(secondPrice) {
+				firstID, errI := strconv.ParseInt(bidsCopy[i].ID, 10, 64)
+				secondID, errJ := strconv.ParseInt(bidsCopy[j].ID, 10, 64)
+				if errI != nil || errJ != nil {
+					return i < j
+				}
 				return firstID > secondID
 			}
-
-			return i < j
+			return firstPrice.LessThan(secondPrice)
 		})
-
-		ob.bids = orders2
+		ob.bids = bidsCopy
 	}
 
 }

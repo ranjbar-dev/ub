@@ -75,9 +75,7 @@ func (e *engine) Run(workerCount int, shouldStartDispatcher bool) {
 }
 
 func (e *engine) Stop() {
-	go func() {
-		e.quit <- true
-	}()
+	e.quit <- true
 	e.pool.stop()
 }
 
@@ -101,6 +99,8 @@ func (e *engine) DispatchManually() {
 
 func (e *engine) dispatchOrder() {
 	ctx := context.Background()
+	backoff := time.Duration(0)
+	maxBackoff := 30 * time.Second
 	for {
 		select {
 		case <-e.quit:
@@ -108,7 +108,6 @@ func (e *engine) dispatchOrder() {
 		default:
 			select {
 			case <-e.quit:
-				//break
 				return
 			default:
 			}
@@ -118,8 +117,18 @@ func (e *engine) dispatchOrder() {
 				logHandler.Warn("error in engine:dispatchOrder",
 					zap.Error(err),
 				)
+				if backoff == 0 {
+					backoff = 100 * time.Millisecond
+				} else {
+					backoff = backoff * 2
+					if backoff > maxBackoff {
+						backoff = maxBackoff
+					}
+				}
+				time.Sleep(backoff)
 				continue
 			}
+			backoff = 0
 			if err == redis.Nil {
 				continue
 			}
@@ -237,7 +246,7 @@ func NewEngine(qh QueueHandler, obp OrderbookProvider, rh ResultHandler, logger 
 	queue := newQueue(qh)
 	logHandler = logger
 	shouldCallPostOrderMatching = true
-	quit := make(chan bool)
+	quit := make(chan bool, 1)
 	return &engine{
 		queue: queue,
 		env:   env,

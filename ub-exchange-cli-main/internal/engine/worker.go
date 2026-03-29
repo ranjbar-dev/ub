@@ -46,7 +46,7 @@ func (w *worker) processOrder(o Order) {
 			zap.Error(err),
 			zap.String("orderId", o.ID),
 		)
-
+		return
 	}
 
 	if shouldCallPostOrderMatching {
@@ -69,16 +69,14 @@ func (w *worker) processOrder(o Order) {
 }
 
 func (w *worker) stop() {
-	go func() {
-		w.quit <- true
-	}()
+	w.quit <- true
 }
 
 func newWorker(workChan chan *work, ID int, callBackManager *callBackManager) *worker {
 	return &worker{
 		ID:              ID,
 		workChan:        workChan,
-		quit:            make(chan bool),
+		quit:            make(chan bool, 1),
 		callBackManager: callBackManager,
 	}
 }

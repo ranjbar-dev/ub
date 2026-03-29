@@ -90,8 +90,13 @@ func (q *queue) exists(ctx context.Context, order Order) (bool, error) {
 	}
 
 	pos, err := q.qh.LPos(ctx, QueueName, string(res), redis.LPosArgs{})
-	if err != nil && err != redis.Nil {
+	if err != nil {
+		if err == redis.Nil {
+			return false, nil
+		}
 		return false, err
 	}
-	return pos > 0, nil
+	// No error = element found; pos is 0-based index
+	_ = pos
+	return true, nil
 }

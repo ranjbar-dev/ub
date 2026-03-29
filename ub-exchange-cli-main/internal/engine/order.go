@@ -2,6 +2,8 @@ package engine
 
 import (
 	"encoding/json"
+	"fmt"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -34,11 +36,31 @@ func (o Order) GetMaxPrice() (decimal.Decimal, error) {
 }
 
 func (o Order) GetQuantity() (decimal.Decimal, error) {
-	return decimal.NewFromString(o.Quantity)
+	if o.Quantity == "" {
+		return decimal.Zero, fmt.Errorf("order quantity is empty")
+	}
+	qty, err := decimal.NewFromString(o.Quantity)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("invalid order quantity %q: %w", o.Quantity, err)
+	}
+	if qty.Sign() <= 0 {
+		return decimal.Zero, fmt.Errorf("order quantity must be positive, got %s", o.Quantity)
+	}
+	return qty, nil
 }
 
 func (o Order) GetMarketPrice() (decimal.Decimal, error) {
-	return decimal.NewFromString(o.MarketPrice)
+	if o.MarketPrice == "" {
+		return decimal.Zero, nil
+	}
+	mp, err := decimal.NewFromString(o.MarketPrice)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("invalid market price %q: %w", o.MarketPrice, err)
+	}
+	if mp.Sign() < 0 {
+		return decimal.Zero, fmt.Errorf("market price must be non-negative, got %s", o.MarketPrice)
+	}
+	return mp, nil
 }
 
 func (o Order) IsBidMarket() bool {

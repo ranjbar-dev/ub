@@ -3,9 +3,11 @@ package engine
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 )
 
 const (
@@ -87,9 +89,21 @@ func (p *redisOrderBookProvider) RewriteOrderBook(ctx context.Context, doneOrder
 	}
 
 	if partialOrder != nil {
-		partialOrderPrice, _ := partialOrder.GetPrice()
-		partialOrderPriceFloat64, _ := partialOrderPrice.Float64()
-		res2, _ := partialOrder.MarshalForOrderbook()
+		partialOrderPrice, err := partialOrder.GetPrice()
+		if err != nil {
+			return fmt.Errorf("failed to get partial order price: %w", err)
+		}
+		partialOrderPriceFloat64, exact := partialOrderPrice.Float64()
+		if !exact {
+			logHandler.Warn("precision loss converting price to float64 for Redis score",
+				zap.String("price", partialOrderPrice.String()),
+				zap.Float64("float64", partialOrderPriceFloat64),
+			)
+		}
+		res2, err := partialOrder.MarshalForOrderbook()
+		if err != nil {
+			return fmt.Errorf("failed to marshal partial order: %w", err)
+		}
 		partialZ := redis.Z{
 			Score:  partialOrderPriceFloat64,
 			Member: string(res2),
@@ -192,11 +206,14 @@ func (p *redisOrderBookProvider) Exists(ctx context.Context, order Order) (bool,
 	if err != nil {
 		return false, err
 	}
-	score, err := p.rc.ZScore(ctx, queue, string(res))
-	if err != nil && err != redis.Nil {
+	_, err = p.rc.ZScore(ctx, queue, string(res))
+	if err != nil {
+		if err == redis.Nil {
+			return false, nil
+		}
 		return false, err
 	}
-	return score > 0, nil
+	return true, nil
 }
 
 func NewRedisOrderBookProvider(rc RedisClient) OrderbookProvider {

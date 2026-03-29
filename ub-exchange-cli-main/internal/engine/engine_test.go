@@ -260,7 +260,7 @@ func TestEngine_RetrieveOrder_MarketOrder_DoesNotExistsInQueue(t *testing.T) {
 
 func TestEngine_RetrieveOrder_MarketOrder_ExistsInQueue(t *testing.T) {
 	rc := new(mocks.RedisClient)
-	rc.On("LPos", mock.Anything, "engine:queue:orders", mock.Anything, mock.Anything).Once().Return(int64(1), redis.Nil)
+	rc.On("LPos", mock.Anything, "engine:queue:orders", mock.Anything, mock.Anything).Once().Return(int64(1), nil)
 	obp := engine.NewRedisOrderBookProvider(rc)
 	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
