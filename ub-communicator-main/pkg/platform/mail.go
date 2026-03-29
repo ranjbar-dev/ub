@@ -67,6 +67,7 @@ func NewMailerClient(configs Configs, logger Logger) MailerClient {
 		client.TLSConfig = &tls.Config{
 			InsecureSkipVerify: false,
 			MinVersion:         tls.VersionTLS12,
+			ServerName:         configs.GetString("smtp.host"),
 		}
 
 		return &smtpClient{client, name, fromAddress, logger}

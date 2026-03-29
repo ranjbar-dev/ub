@@ -1,5 +1,8 @@
 package platform
 
+// TODO: mailgun-go v2 (github.com/mailgun/mailgun-go v2.0.0+incompatible) is deprecated.
+// Upgrade to v4: replace github.com/mailgun/mailgun-go with github.com/mailgun/mailgun-go/v4
+// and update all import paths. The v4 API uses context-aware Send(ctx, message) instead of Send(message).
 import (
 	"context"
 	"fmt"
