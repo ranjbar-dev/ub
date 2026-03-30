@@ -5,6 +5,7 @@ import (
 	"exchange-go/internal/di"
 	"exchange-go/internal/externalexchangews"
 	"exchange-go/internal/externalexchangews/binance"
+	"fmt"
 	"os"
 	"os/signal"
 )
@@ -22,7 +23,11 @@ func main() {
 	signal.Notify(sigChan, os.Kill, os.Interrupt)
 	container := di.NewContainer()
 	externalExchangeService := container.Get(di.ExternalExchangeWsService).(externalexchangews.Service)
-	ws := externalExchangeService.GetActiveExternalExchangeWs()
+	ws, err := externalExchangeService.GetActiveExternalExchangeWs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+		os.Exit(1)
+	}
 	go func() {
 		for {
 			select {

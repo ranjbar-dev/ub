@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -41,7 +42,7 @@ type Engine interface {
 	// Stop gracefully shuts down the engine, stopping the dispatcher and draining the worker pool.
 	Stop()
 	// DispatchManually triggers a single manual order dispatch. Intended for use in tests only.
-	DispatchManually()
+	DispatchManually() error
 	// SetPostOrderMatchingCall enables or disables post-match callbacks.
 	SetPostOrderMatchingCall(shouldCall bool) error
 	// SubmitOrder adds an order to the end of the processing queue.
@@ -82,22 +83,23 @@ func (e *engine) Stop() {
 	e.pool.stop()
 }
 
-func (e *engine) DispatchManually() {
+func (e *engine) DispatchManually() error {
 	if e.env != "test" {
-		panic("this function should be called only for tests")
+		return fmt.Errorf("DispatchManually: must only be called in test environment")
 	}
 	order, err := e.queue.lPop(context.Background())
 	if err != nil && err != redis.Nil {
 		logHandler.Warn("error in engine:dispatchOrder",
 			zap.Error(err),
 		)
-		return
+		return nil
 	}
 	if err == redis.Nil {
-		return
+		return nil
 	}
 	work := work{order: order}
 	e.pool.addWork(&work)
+	return nil
 }
 
 func (e *engine) dispatchOrder() {

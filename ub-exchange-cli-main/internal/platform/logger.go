@@ -132,7 +132,8 @@ func (l *logger) captureError(err error) {
 	})
 
 	if sentryErr != nil {
-		panic("can not set sentry")
+		l.logger.Error("captureError: failed to re-initialize sentry", zap.Error(sentryErr))
+		return
 	}
 
 	defer sentry.Flush(2 * time.Second)

@@ -411,10 +411,17 @@ func (s *service) setExtraService() {
 }
 
 func (s *service) getExchangeHandler(name string, metadata string) handler.ExchangeHandler {
+	var h handler.ExchangeHandler
+	var err error
 	switch name {
 	case ExchangeBinance:
-		return binance.NewBinanceService(s.httpClient, s.rc, s.configs, s.logger, metadata)
+		h, err = binance.NewBinanceService(s.httpClient, s.rc, s.configs, s.logger, metadata)
 	default:
-		return binance.NewBinanceService(s.httpClient, s.rc, s.configs, s.logger, metadata)
+		h, err = binance.NewBinanceService(s.httpClient, s.rc, s.configs, s.logger, metadata)
 	}
+	if err != nil {
+		s.logger.Error2("getExchangeHandler: failed to create exchange handler", err)
+		return nil
+	}
+	return h
 }

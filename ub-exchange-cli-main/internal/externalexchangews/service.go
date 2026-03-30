@@ -6,13 +6,14 @@ import (
 	"exchange-go/internal/externalexchangews/types"
 	"exchange-go/internal/platform"
 	"exchange-go/internal/processor"
+	"fmt"
 )
 
 // Service provides access to the active external exchange WebSocket implementation.
 type Service interface {
 	// GetActiveExternalExchangeWs returns the WebSocket client for the currently
 	// configured external exchange (e.g. Binance).
-	GetActiveExternalExchangeWs() types.ExternalWs
+	GetActiveExternalExchangeWs() (types.ExternalWs, error)
 }
 
 type service struct {
@@ -27,14 +28,13 @@ var Ws = map[string]func(wsClient platform.WsClient, processor processor.Process
 	"binance": binance.NewWs,
 }
 
-func (s *service) GetActiveExternalExchangeWs() types.ExternalWs {
+func (s *service) GetActiveExternalExchangeWs() (types.ExternalWs, error) {
 	ws, exists := Ws[s.activeExternalExchangeName]
 	if !exists {
-		//we would never reach here just handling the error
-		panic("no active external exchange")
+		return nil, fmt.Errorf("GetActiveExternalExchangeWs: no handler for exchange %q", s.activeExternalExchangeName)
 	}
 	activePairs := s.currencyService.GetActivePairCurrenciesList()
-	return ws(s.wsClient, s.processor, s.logger, activePairs)
+	return ws(s.wsClient, s.processor, s.logger, activePairs), nil
 }
 
 func NewService(wsClient platform.WsClient, processor processor.Processor, logger platform.Logger,

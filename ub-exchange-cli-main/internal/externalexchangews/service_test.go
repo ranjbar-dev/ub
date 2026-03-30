@@ -33,6 +33,9 @@ func TestService_GetActiveExternalExchangeWs(t *testing.T) {
 	currencyService := new(mocks.CurrencyService)
 	currencyService.On("GetActivePairCurrenciesList").Once().Return(activePairs)
 	externalExchangeService := externalexchangews.NewService(wsClient, processor, logger, configs, currencyService)
-	_ = externalExchangeService.GetActiveExternalExchangeWs()
+	_, err := externalExchangeService.GetActiveExternalExchangeWs()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	configs.AssertExpectations(t)
 }

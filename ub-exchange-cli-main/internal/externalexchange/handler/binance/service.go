@@ -833,7 +833,7 @@ func (s *service) getWithdrawRequestBody(params handler.WithdrawParams) (body []
 	return []byte(final), nil
 }
 
-func NewBinanceService(httpClient platform.HTTPClient, rc platform.RedisClient, configs platform.Configs, logger platform.Logger, metadataString string) handler.ExchangeHandler {
+func NewBinanceService(httpClient platform.HTTPClient, rc platform.RedisClient, configs platform.Configs, logger platform.Logger, metadataString string) (handler.ExchangeHandler, error) {
 	md := metadata{}
 	if strings.HasPrefix(metadataString, "\"") {
 		metadataString = metadataString[1:]
@@ -848,7 +848,7 @@ func NewBinanceService(httpClient platform.HTTPClient, rc platform.RedisClient, 
 	err := json.Unmarshal([]byte(metadataString), &md)
 
 	if err != nil {
-		panic("we should never reach here if our metada is set correctly in database")
+		return nil, fmt.Errorf("NewBinanceService: unmarshal metadata: %w", err)
 	}
 
 	rateLimitHandler := newRateLimitHandler(logger)
@@ -860,6 +860,5 @@ func NewBinanceService(httpClient platform.HTTPClient, rc platform.RedisClient, 
 		exchangeInfo:     exchangeInfo,
 		rateLimitHandler: rateLimitHandler,
 		metadata:         md,
-	}
-
+	}, nil
 }

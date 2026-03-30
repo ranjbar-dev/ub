@@ -7,6 +7,7 @@ import (
 	"exchange-go/internal/platform"
 	"exchange-go/internal/response"
 	"exchange-go/internal/user"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -860,13 +861,13 @@ func (s *service) GetActivePairCurrenciesList() []Pair {
 	return s.pairRepository.GetActivePairCurrenciesList()
 }
 
-func GetPairByName(pairs []Pair, pairName string) Pair {
+func GetPairByName(pairs []Pair, pairName string) (Pair, error) {
 	for _, pair := range pairs {
 		if pair.Name == pairName {
-			return pair
+			return pair, nil
 		}
 	}
-	panic("we should never reach here")
+	return Pair{}, fmt.Errorf("GetPairByName: pair %q not found", pairName)
 }
 
 func (s *service) GetPairByID(id int64) (Pair, error) {
