@@ -17,22 +17,39 @@ type TradeFilters struct {
 	EndDate   string
 }
 
+// Recommended database indexes (to be created via Doctrine migration since GORM AutoMigrate is not used):
+//
+//   -- orders table
+//   CREATE INDEX idx_orders_user_id ON orders (creator_user_id);
+//   CREATE INDEX idx_orders_status ON orders (status);
+//   CREATE INDEX idx_orders_pair_id ON orders (pair_currency_id);
+//   CREATE INDEX idx_orders_created_at ON orders (created_at);
+//   CREATE INDEX idx_orders_updated_at ON orders (updated_at);
+//   CREATE INDEX idx_orders_user_status ON orders (creator_user_id, status);
+//   CREATE INDEX idx_orders_parent_id ON orders (parent_id);
+//   CREATE INDEX idx_orders_type ON orders (type);
+//
+//   -- trades table
+//   CREATE INDEX idx_trades_pair_created ON trades (pair_currency_id, created_at);
+//   CREATE INDEX idx_trades_buy_order_id ON trades (buy_order_id);
+//   CREATE INDEX idx_trades_sell_order_id ON trades (sell_order_id);
+//   CREATE INDEX idx_trades_created_at ON trades (created_at);
 type Order struct {
 	ID                            int64
-	UserID                        int       `gorm:"column:creator_user_id"`
+	UserID                        int       `gorm:"column:creator_user_id;index:idx_orders_user_status,priority:1;index:idx_orders_user_id"`
 	User                          user.User `gorm:"foreignKey:UserID"`
-	ParentID                      sql.NullInt64
-	Type                          string
+	ParentID                      sql.NullInt64 `gorm:"index:idx_orders_parent_id"`
+	Type                          string `gorm:"index:idx_orders_type"`
 	ExchangeType                  string
 	Price                         sql.NullString
-	Status                        string
-	CreatedAt                     time.Time
-	UpdatedAt                     time.Time
+	Status                        string    `gorm:"index:idx_orders_user_status,priority:2;index:idx_orders_status"`
+	CreatedAt                     time.Time `gorm:"index:idx_orders_created_at"`
+	UpdatedAt                     time.Time `gorm:"index:idx_orders_updated_at"`
 	DemandedAmount                sql.NullString `gorm:"column:demanded_money_amount"`
 	DemandedCoin                  string         `gorm:"column:demanded_money_currency"`
 	PayedByAmount                 sql.NullString `gorm:"column:payed_by_money_amount"`
 	PayedByCoin                   string         `gorm:"column:payed_by_money_currency"`
-	PairID                        int64          `gorm:"column:pair_currency_id"`
+	PairID                        int64          `gorm:"column:pair_currency_id;index:idx_orders_pair_id"`
 	Pair                          currency.Pair  `gorm:"foreignKey:PairID"`
 	ExtraInfoID                   sql.NullInt64
 	FinalDemanded                 sql.NullString `gorm:"column:final_demanded_money"`
@@ -49,7 +66,7 @@ type Order struct {
 	IsSubmitted                   sql.NullBool
 	IsTradedWithBot               sql.NullBool
 	CurrentMarketPrice            sql.NullString
-	IsFastExchange                bool `gorm:"default:false"`
+	IsFastExchange                bool `gorm:"default:false;index:idx_orders_fast_exchange"`
 }
 
 func (o Order) IsStopOrder() bool {
@@ -122,11 +139,11 @@ type Trade struct {
 	ID           int64
 	Price        sql.NullString
 	Amount       sql.NullString
-	PairID       int64 `gorm:"column:pair_currency_id"`
-	BuyOrderID   sql.NullInt64
-	SellOrderID  sql.NullInt64
+	PairID       int64         `gorm:"column:pair_currency_id;index:idx_trades_pair_created,priority:1"`
+	BuyOrderID   sql.NullInt64 `gorm:"index:idx_trades_buy_order_id"`
+	SellOrderID  sql.NullInt64 `gorm:"index:idx_trades_sell_order_id"`
 	BotOrderType sql.NullString
-	CreatedAt    time.Time
+	CreatedAt    time.Time `gorm:"index:idx_trades_pair_created,priority:2;index:idx_trades_created_at"`
 	UpdatedAt    time.Time
 }
 

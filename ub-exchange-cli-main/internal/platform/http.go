@@ -10,28 +10,21 @@ import (
 	"time"
 )
 
-// HTTPClient provides outbound HTTP capabilities for calling external APIs.
-// It supports GET, POST (JSON body), and form-encoded POST requests with custom headers.
 type HTTPClient interface {
-	// HTTPGet performs an HTTP GET request to the given URL with optional headers.
-	// It returns the response body, headers, status code, and any error encountered.
 	HTTPGet(ctx context.Context, url string, headers map[string]string) ([]byte, http.Header, int, error)
-	// HTTPPost performs an HTTP POST request with a JSON-serialized body and optional headers.
-	// If body is already a []byte it is sent as-is; otherwise it is marshaled to JSON.
-	// It returns the response body, headers, status code, and any error encountered.
 	HTTPPost(ctx context.Context, url string, body interface{}, headers map[string]string) ([]byte, http.Header, int, error)
-	// PostForm performs an HTTP POST request with URL-encoded form data.
 	PostForm(ctx context.Context, url string, data url.Values) (resp *http.Response, err error)
 }
 
 type httpClient struct {
+	client *http.Client
 }
 
-func (httpClient *httpClient) PostForm(ctx context.Context, url string, data url.Values) (resp *http.Response, err error) {
-	return http.PostForm(url, data)
+func (h *httpClient) PostForm(ctx context.Context, url string, data url.Values) (resp *http.Response, err error) {
+	return h.client.PostForm(url, data)
 }
 
-func (httpClient *httpClient) HTTPGet(ctx context.Context, url string, headers map[string]string) ([]byte, http.Header, int, error) {
+func (h *httpClient) HTTPGet(ctx context.Context, url string, headers map[string]string) ([]byte, http.Header, int, error) {
 	respBody := []byte("")
 	header := http.Header{}
 	statusCode := http.StatusBadRequest
@@ -44,9 +37,7 @@ func (httpClient *httpClient) HTTPGet(ctx context.Context, url string, headers m
 		req.Header.Set(k, v)
 	}
 
-	http.DefaultClient.Timeout = 10 * time.Second
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := h.client.Do(req)
 
 	if err != nil {
 		return respBody, header, statusCode, err
@@ -62,10 +53,9 @@ func (httpClient *httpClient) HTTPGet(ctx context.Context, url string, headers m
 	statusCode = resp.StatusCode
 
 	return respBody, header, statusCode, nil
-
 }
 
-func (httpClient *httpClient) HTTPPost(ctx context.Context, url string, body interface{}, headers map[string]string) ([]byte, http.Header, int, error) {
+func (h *httpClient) HTTPPost(ctx context.Context, url string, body interface{}, headers map[string]string) ([]byte, http.Header, int, error) {
 	finalRes := []byte("")
 	statusCode := http.StatusBadRequest
 	header := http.Header{}
@@ -90,7 +80,7 @@ func (httpClient *httpClient) HTTPPost(ctx context.Context, url string, body int
 		req.Header.Set(k, v)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := h.client.Do(req)
 
 	if err != nil {
 		return finalRes, header, statusCode, err
@@ -109,5 +99,9 @@ func (httpClient *httpClient) HTTPPost(ctx context.Context, url string, body int
 }
 
 func NewHTTPClient() HTTPClient {
-	return &httpClient{}
+	return &httpClient{
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}
 }

@@ -108,7 +108,9 @@ func (s *service) CreateOrder(u *user.User, params CreateOrderParams) (apiRespon
 		Price:     price,
 	}
 
-	go s.eventsHandler.HandleOrderCreation(*o, false)
+	platform.SafeGo(s.logger, "order.HandleOrderCreation", func() {
+		s.eventsHandler.HandleOrderCreation(*o, false)
+	})
 
 	return response.Success(res, "")
 }

@@ -145,7 +145,9 @@ func (s *autoExchangeManager) AutoExchange(p *Payment, ub *userbalance.UserBalan
 
 	o.Pair = pair
 	o.User = u
-	go s.orderEventsHandler.HandleOrderCreation(*o, false)
+	platform.SafeGo(s.logger, "payment.HandleOrderCreation", func() {
+		s.orderEventsHandler.HandleOrderCreation(*o, false)
+	})
 	//todo update the payment itself and set the orderid
 	ei.AutoExchangeOrderID = sql.NullInt64{Int64: o.ID, Valid: true}
 	err = s.db.Omit(clause.Associations).Save(ei).Error

@@ -41,6 +41,7 @@ func TestService_GetPrice(t *testing.T) {
 func TestService_SetPriceData(t *testing.T) {
 	redisClient := new(mocks.RedisClient)
 	redisClient.On("HSet", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	redisClient.On("Expire", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 	liveDataService := livedata.NewLiveDataService(redisClient)
 	ctx := context.Background()
 	pairName := "BTC-USDT"
@@ -64,6 +65,7 @@ func TestService_UpdateTradeBook(t *testing.T) {
 	redisClient.On("Exists", mock.Anything, mock.Anything).Once().Return(true)
 	redisClient.On("HGet", mock.Anything, mock.Anything, mock.Anything).Once().Return(tradesString, nil)
 	redisClient.On("HSet", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	redisClient.On("Expire", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 	liveDataService := livedata.NewLiveDataService(redisClient)
 	ctx := context.Background()
 	pairName := "BTC-USDT"
@@ -123,6 +125,7 @@ func TestService_SetKline(t *testing.T) {
 
 	redisClient.On("HGet", mock.Anything, mock.Anything, mock.Anything).Once().Return(currentKlineData, nil)
 	redisClient.On("HSet", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Twice().Return(nil)
+	redisClient.On("Expire", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 	liveDataService := livedata.NewLiveDataService(redisClient)
 	ctx := context.Background()
 	pairName := "BTC-USDT"
@@ -183,6 +186,7 @@ func TestService_GetPreKline(t *testing.T) {
 func TestService_SetDepthSnapshot(t *testing.T) {
 	redisClient := new(mocks.RedisClient)
 	redisClient.On("HSet", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	redisClient.On("Expire", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 	liveDataService := livedata.NewLiveDataService(redisClient)
 	ctx := context.Background()
 	pairName := "BTC-USDT"
@@ -220,6 +224,7 @@ func TestService_GetDepthSnapshot(t *testing.T) {
 func TestService_SetOrderBook(t *testing.T) {
 	redisClient := new(mocks.RedisClient)
 	redisClient.On("HSet", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	redisClient.On("Expire", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
 	liveDataService := livedata.NewLiveDataService(redisClient)
 	ctx := context.Background()
 	pairName := "BTC-USDT"

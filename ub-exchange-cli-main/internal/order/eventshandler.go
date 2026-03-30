@@ -47,7 +47,9 @@ func (s *eventsHandler) HandleOrderCreation(o Order, isForStopOrderSubmission bo
 				zap.Int64("orderID", o.ID),
 			)
 		}
-		go s.pushOrderToClient(o)
+		platform.SafeGo(s.logger, "order.pushOrderToClient", func() {
+			s.pushOrderToClient(o)
+		})
 		return
 	} else {
 		place, err := s.decisionManager.DecideOrderPlacement(o)
@@ -82,7 +84,9 @@ func (s *eventsHandler) HandleOrderCreation(o Order, isForStopOrderSubmission bo
 
 			if result.IsOrderPlaced {
 				s.doPostOrderPlacementInExternalExchange(o, result.ExternalExchangeID, result.ExternalExchangeOrderID, result.Data)
-				go s.pushOrderToClient(o)
+				platform.SafeGo(s.logger, "order.pushOrderToClient", func() {
+					s.pushOrderToClient(o)
+				})
 				return
 			}
 		}
@@ -98,8 +102,9 @@ func (s *eventsHandler) HandleOrderCreation(o Order, isForStopOrderSubmission bo
 		}
 	}
 	if s.shouldPush(o) {
-		go s.pushOrderToClient(o)
-
+		platform.SafeGo(s.logger, "order.pushOrderToClient", func() {
+			s.pushOrderToClient(o)
+		})
 	}
 
 }
@@ -125,8 +130,9 @@ func (s *eventsHandler) doPostOrderPlacementInExternalExchange(o Order, external
 }
 
 func (s *eventsHandler) HandleOrderCancellation(o Order) {
-	go s.pushOrderToClient(o)
-
+	platform.SafeGo(s.logger, "order.pushOrderToClient", func() {
+		s.pushOrderToClient(o)
+	})
 }
 
 func (s *eventsHandler) HandleOrderFulfillByAdmin(o Order) {

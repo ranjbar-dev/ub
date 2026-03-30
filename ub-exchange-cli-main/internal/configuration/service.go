@@ -133,7 +133,9 @@ func (s *service) ContactUs(params ContactUsParams) (apiResponse response.APIRes
 		Email: s.configs.GetString("exchange.supportemail"),
 		Phone: "",
 	}
-	go s.communicationService.SendContactUsToAdmin(cu, mailParams)
+	platform.SafeGo(s.logger, "configuration.SendContactUsToAdmin", func() {
+		s.communicationService.SendContactUsToAdmin(cu, mailParams)
+	})
 	return response.Success(nil, "")
 }
 

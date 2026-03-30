@@ -142,7 +142,9 @@ func (s *service) Login(params LoginParams) (resp interface{}, statusCode int) {
 	}
 	defer func() {
 		if shouldLogActivity {
-			go s.eventsHandler.LogUserLogin(logUserLoginParams)
+			platform.SafeGo(s.logger, "auth.LogUserLogin", func() {
+				s.eventsHandler.LogUserLogin(logUserLoginParams)
+			})
 		}
 	}()
 	params.Username = strings.Trim(params.Username, "")
@@ -247,7 +249,9 @@ func (s *service) Login(params LoginParams) (resp interface{}, statusCode int) {
 			Device: device,
 			IP:     params.IP,
 		}
-		go s.eventsHandler.NotifyIfUserIPHasChanged(notifyParams)
+		platform.SafeGo(s.logger, "auth.NotifyIfUserIPHasChanged", func() {
+			s.eventsHandler.NotifyIfUserIPHasChanged(notifyParams)
+		})
 		return response, statusCode
 	}
 
@@ -498,10 +502,14 @@ func (s *service) Register(params RegisterParams) (apiResponse response.APIRespo
 	}
 
 	//send verification code to user
-	go s.sendVerificationEmail(*newUser)
+	platform.SafeGo(s.logger, "auth.sendVerificationEmail", func() {
+		s.sendVerificationEmail(*newUser)
+	})
 
 	//create balances and addresses
-	go s.userBalanceService.GenerateBalancesAndAddressForUser(*newUser)
+	platform.SafeGo(s.logger, "auth.GenerateBalancesAndAddressForUser", func() {
+		s.userBalanceService.GenerateBalancesAndAddressForUser(*newUser)
+	})
 
 	res := make(map[string]string)
 	return response.Success(res, "")
@@ -636,7 +644,9 @@ func (s *service) ForgotPasswordUpdate(params ForgotPasswordUpdateParams) (apiRe
 		Email: u.Email,
 		Phone: "",
 	}
-	go s.communicationService.SendPasswordChangedEmail(cu, emailParams)
+	platform.SafeGo(s.logger, "auth.SendPasswordChangedEmail", func() {
+		s.communicationService.SendPasswordChangedEmail(cu, emailParams)
+	})
 
 	return response.Success(nil, "")
 }

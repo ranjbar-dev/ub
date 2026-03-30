@@ -694,7 +694,7 @@ func (s *service) Withdraw(u *user.User, params WithdrawParams) (apiResponse res
 	}
 
 	if label != "" {
-		go func() {
+		platform.SafeGo(s.logger, "payment.SaveNewAddress", func() {
 			userWithdrawAddressParams := userwithdrawaddress.CreateAddressParams{
 				Coin:    coin.Code,
 				Label:   label,
@@ -711,7 +711,7 @@ func (s *service) Withdraw(u *user.User, params WithdrawParams) (apiResponse res
 					zap.Int("userID", u.ID),
 				)
 			}
-		}()
+		})
 	}
 
 	tx := s.db.Begin()
@@ -862,7 +862,7 @@ func (s *service) Withdraw(u *user.User, params WithdrawParams) (apiResponse res
 	}
 
 	//remove confirmation code from redis
-	go func() {
+	platform.SafeGo(s.logger, "payment.RemoveConfirmationCodeFromRedis", func() {
 		if params.EmailCode != "" {
 			err := s.withdrawEmailConfirmationManager.RemoveConfirmationCodeFromRedis(*u, coin.Code, params.Amount, params.Address)
 			if err != nil {
@@ -874,9 +874,11 @@ func (s *service) Withdraw(u *user.User, params WithdrawParams) (apiResponse res
 			}
 
 		}
-	}()
+	})
 
-	go s.notifyUserPaymentStatusUpdate(*u, *p, "")
+	platform.SafeGo(s.logger, "payment.notifyUserPaymentStatusUpdate", func() {
+		s.notifyUserPaymentStatusUpdate(*u, *p, "")
+	})
 
 	result := make([]GetPaymentsResponse, 0)
 	status := p.Status
@@ -1208,7 +1210,9 @@ func (s *service) UpdatePaymentInExternalExchange(params UpdatePaymentInExternal
 	u := user.User{
 		ID: p.UserID,
 	}
-	go s.notifyUserPaymentStatusUpdate(u, *p, "")
+	platform.SafeGo(s.logger, "payment.notifyUserPaymentStatusUpdate", func() {
+		s.notifyUserPaymentStatusUpdate(u, *p, "")
+	})
 }
 
 func (s *service) CancelWithdraw(u *user.User, params CancelWithdrawParams) (apiResponse response.APIResponse, statusCode int) {
@@ -1593,13 +1597,19 @@ func (s *service) handleDepositCallBack(params WalletCallBackParams, coin curren
 	}
 	user := user.User{ID: ub.UserID}
 	if beforeStatus != p.Status {
-		go s.notifyUserPaymentStatusUpdate(user, *p, "")
+		platform.SafeGo(s.logger, "payment.notifyUserPaymentStatusUpdate", func() {
+			s.notifyUserPaymentStatusUpdate(user, *p, "")
+		})
 	}
-	go s.publishPaymentToUser(user, *p)
+	platform.SafeGo(s.logger, "payment.publishPaymentToUser", func() {
+		s.publishPaymentToUser(user, *p)
+	})
 
 	//only for completed status we try to autoExchange
 	if params.Status == StatusCompleted {
-		go s.autoExchangeManager.AutoExchange(p, ub)
+		platform.SafeGo(s.logger, "payment.AutoExchange", func() {
+			s.autoExchangeManager.AutoExchange(p, ub)
+		})
 	}
 
 	return nil
@@ -1753,9 +1763,13 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 		ID: ub.UserID,
 	}
 	if beforeStatus != p.Status {
-		go s.notifyUserPaymentStatusUpdate(user, *p, "")
+		platform.SafeGo(s.logger, "payment.notifyUserPaymentStatusUpdate", func() {
+			s.notifyUserPaymentStatusUpdate(user, *p, "")
+		})
 	}
-	go s.publishPaymentToUser(user, *p)
+	platform.SafeGo(s.logger, "payment.publishPaymentToUser", func() {
+		s.publishPaymentToUser(user, *p)
+	})
 	return nil
 }
 
@@ -2117,8 +2131,12 @@ func (s *service) UpdateWithdraw(u *user.User, params UpdateWithdrawParams) (api
 
 	if formerStatus != p.Status {
 		user := user.User{ID: p.UserID}
-		go s.notifyUserPaymentStatusUpdate(user, *p, params.RejectionReason)
-		go s.publishPaymentToUser(user, *p)
+		platform.SafeGo(s.logger, "payment.notifyUserPaymentStatusUpdate", func() {
+			s.notifyUserPaymentStatusUpdate(user, *p, params.RejectionReason)
+		})
+		platform.SafeGo(s.logger, "payment.publishPaymentToUser", func() {
+			s.publishPaymentToUser(user, *p)
+		})
 	}
 	res := make(map[string]interface{})
 	return response.Success(res, "")

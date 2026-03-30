@@ -9,6 +9,8 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+const LiveDataTTL = 24 * time.Hour
+
 const (
 	Prefix                      = "live_data"
 	Price                       = "price"
@@ -108,8 +110,13 @@ type service struct {
 }
 
 func (s *service) setLiveData(ctx context.Context, key string, values ...interface{}) error {
-	return s.redisClient.HSet(ctx, key, values...)
-
+	err := s.redisClient.HSet(ctx, key, values...)
+	if err != nil {
+		return err
+	}
+	// Refresh TTL so active pairs stay alive while inactive pairs expire
+	_, _ = s.redisClient.Expire(ctx, key, LiveDataTTL)
+	return nil
 }
 
 func (s *service) getLiveData(ctx context.Context, key string, field string) (string, error) {

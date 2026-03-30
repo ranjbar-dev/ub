@@ -79,14 +79,14 @@ func TestCreateManager_CreateOrder_NoAmountProvidedOrNegativeAmount(t *testing.T
 
 	_, err = ocm.CreateOrder(data)
 	assert.NotNil(t, err)
-	assert.Equal(t, "amount is not valid", err.Error())
+	assert.ErrorContains(t, err, "amount is not valid")
 
 	//negative amount
 
 	data.Amount = "-1.5"
 	_, err = ocm.CreateOrder(data)
 	assert.NotNil(t, err)
-	assert.Equal(t, "amount is not valid", err.Error())
+	assert.ErrorContains(t, err, "amount is not valid")
 
 	userBalanceService.AssertExpectations(t)
 }
@@ -133,13 +133,13 @@ func TestCreateManager_CreateOrder_Limit_NoPriceProvidedOrNegativePrice(t *testi
 
 	_, err = ocm.CreateOrder(data)
 	assert.NotNil(t, err)
-	assert.Equal(t, "price is not valid", err.Error())
+	assert.ErrorContains(t, err, "price is not valid")
 
 	//negative price
 	data.Price = "-50000"
 	_, err = ocm.CreateOrder(data)
 	assert.NotNil(t, err)
-	assert.Equal(t, "price is not valid", err.Error())
+	assert.ErrorContains(t, err, "price is not valid")
 
 }
 
@@ -185,7 +185,7 @@ func TestCreateManager_CreateOrder_StopLimit_NegativeStopPointPriceProvided(t *t
 
 	_, err = ocm.CreateOrder(data)
 	assert.NotNil(t, err)
-	assert.Equal(t, "stop point price is not valid", err.Error())
+	assert.ErrorContains(t, err, "stop point price is not valid")
 }
 
 func TestCreateManager_CreateOrder_LessThanMinimumOrderAmount(t *testing.T) {
@@ -322,7 +322,7 @@ func TestCreateManager_CreateOrder_UserBalanceIsNotEnough(t *testing.T) {
 
 	_, err = ocm.CreateOrder(data)
 	assert.NotNil(t, err)
-	assert.Equal(t, "user balance is not enough", err.Error())
+	assert.ErrorContains(t, err, "user balance is not enough")
 
 	userBalanceService.AssertExpectations(t)
 

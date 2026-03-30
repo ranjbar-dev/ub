@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -36,7 +37,7 @@ func NewCentrifugoClient(configs Configs, logger Logger) CentrifugoClient {
 	return &centrifugoClient{
 		baseURL: baseURL,
 		apiKey:  configs.GetString("centrifugo.api_key"),
-		client:  &http.Client{},
+		client:  &http.Client{Timeout: 5 * time.Second},
 		logger:  logger,
 		env:     configs.GetEnv(),
 	}
