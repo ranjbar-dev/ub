@@ -46,6 +46,7 @@ type orderBook struct {
 	pair              string
 	asks              []Order
 	bids              []Order
+	logger            Logger
 }
 
 func (ob *orderBook) processOrder(o Order) (doneOrders []Order, partialOrder *Order, error error) {
@@ -283,7 +284,7 @@ func (ob *orderBook) rewriteOrderBook(doneOrders []Order, partialOrder *Order) e
 	defer cancel()
 	err := ob.orderbookProvider.RewriteOrderBook(ctx, doneOrders, partialOrder)
 	if err != nil {
-		logHandler.Warn("error in engine:rewriteOrderBook",
+		ob.logger.Warn("error in engine:rewriteOrderBook",
 			zap.Error(err),
 		)
 	}
@@ -302,7 +303,7 @@ func (ob *orderBook) loadOrders(side string, price string, minPrice string, maxP
 	}
 	orders, err := ob.orderbookProvider.GetOrders(ctx, params)
 	if err != nil {
-		logHandler.Warn("error in engine:loadOrders",
+		ob.logger.Warn("error in engine:loadOrders",
 			zap.Error(err),
 			zap.String("pair", params.Pair),
 			zap.String("side", params.Side),
@@ -442,10 +443,11 @@ func (ob *orderBook) orderExists(ctx context.Context, o Order) (bool, error) {
 	return ob.orderbookProvider.Exists(ctx, o)
 }
 
-func newOrderBook(pair string, obp OrderbookProvider) orderBook {
+func newOrderBook(pair string, obp OrderbookProvider, logger Logger) orderBook {
 	orderBook := orderBook{
 		pair:              pair,
 		orderbookProvider: obp,
+		logger:            logger,
 	}
 	return orderBook
 }

@@ -44,9 +44,9 @@ func (t *OrderCreateTests) SetupSuite() {
 
 	//set engine
 	rc := container.Get(di.RedisClient).(platform.RedisClient)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := container.Get(di.EngineResultHandler).(order.EngineResultHandler)
 	logger := container.Get(di.LoggerService).(platform.Logger)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
+	rh := container.Get(di.EngineResultHandler).(order.EngineResultHandler)
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 	t.engine = e
 

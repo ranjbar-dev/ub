@@ -22,6 +22,7 @@ type binanceOrderBook struct {
 	httpClient          platform.HTTPClient
 	liveDataService     livedata.Service
 	lastBinanceAPIFetch int64
+	mu                  sync.Mutex
 }
 
 //this is data from websocket
@@ -80,14 +81,12 @@ func (bo *binanceOrderBook) updateOrderBook(ctx context.Context, pairName string
 
 }
 
-var mutex = &sync.Mutex{}
-
 func (bo *binanceOrderBook) fetchDepthFromBinance(ctx context.Context, externalExchangePairName string) (depthSnapshot, error) {
 	depthSnapshot := depthSnapshot{}
 	//fetch from binance again since the fetching period duration is passed
 	//if 2000 millisecond or 2 second has passed from last fetch then we fetch
-	mutex.Lock()
-	defer mutex.Unlock()
+	bo.mu.Lock()
+	defer bo.mu.Unlock()
 	lastFetch := bo.lastBinanceAPIFetch
 	now := time.Now().Unix()
 	if lastFetch == 0 || now-lastFetch >= 2 {
@@ -288,6 +287,9 @@ func handleInvalidData(redisDepthSnapshot *livedata.RedisDepthSnapshot) {
 }
 
 func getBinanceOrderBook(httpClient platform.HTTPClient, liveDataService livedata.Service) externalExchangeOrderBook {
-	lastBinanceAPIFetch := int64(0)
-	return &binanceOrderBook{httpClient, liveDataService, lastBinanceAPIFetch}
+	return &binanceOrderBook{
+		httpClient:          httpClient,
+		liveDataService:     liveDataService,
+		lastBinanceAPIFetch: 0,
+	}
 }

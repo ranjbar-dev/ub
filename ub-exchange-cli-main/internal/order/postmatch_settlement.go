@@ -17,12 +17,12 @@ import (
 func (ps *postOrderMatchingService) doPreMatchingActions(pairName string) {
 	//we empty the tempTrades in case former one exists in it
 	//also set the currentMarketPrice
-	mutex.Lock()
-	defer mutex.Unlock()
-	tempTrades = make([]tempTrade, 0)
-	tradesData = make([]TradeData, 0)
-	pushData = make([]orderPushPayload, 0)
-	currentMarketPrice, _ = ps.priceGenerator.GetPrice(context.Background(), pairName)
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	ps.tempTrades = make([]tempTrade, 0)
+	ps.tradesData = make([]TradeData, 0)
+	ps.pushData = make([]orderPushPayload, 0)
+	ps.currentMarketPrice, _ = ps.priceGenerator.GetPrice(context.Background(), pairName)
 }
 
 func (ps *postOrderMatchingService) HandlePostOrderMatching(doneOrders []CallBackOrderData, partial *CallBackOrderData, isFromAdmin bool) MatchingResult {
@@ -238,8 +238,12 @@ func (ps *postOrderMatchingService) HandlePostOrderMatching(doneOrders []CallBac
 		)
 	}
 
-	go ps.tradeEventsHandler.HandleTradesCreation(tradesData, pair)
-	go ps.pushDataToUsers(pushData)
+	localTrades := make([]TradeData, len(ps.tradesData))
+	copy(localTrades, ps.tradesData)
+	localPush := make([]orderPushPayload, len(ps.pushData))
+	copy(localPush, ps.pushData)
+	go ps.tradeEventsHandler.HandleTradesCreation(localTrades, pair)
+	go ps.pushDataToUsers(localPush)
 	for _, doneOrder := range doneOrders {
 		removingDoneOrderIds = append(removingDoneOrderIds, doneOrder.ID)
 	}
@@ -431,7 +435,7 @@ func (ps *postOrderMatchingService) handleOrderGroup(tx *gorm.DB, group orderGro
 			}
 			ps.addToPushData(group.orderItem, pair.Name)
 		} else {
-			min, max, err := ps.forceTrader.GetMinAndMaxPrice(pair.Name, order.Type, currentMarketPrice)
+			min, max, err := ps.forceTrader.GetMinAndMaxPrice(pair.Name, order.Type, ps.currentMarketPrice)
 			if err != nil {
 				return nil, fmt.Errorf("handleOrderGroup: get min/max price: %w", err)
 			}

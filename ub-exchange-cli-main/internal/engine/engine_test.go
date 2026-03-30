@@ -36,9 +36,9 @@ func TestEngine_Run(t *testing.T) {
 func TestEngine_SubmitOrder(t *testing.T) {
 	rc := new(mocks.RedisClient)
 	rc.On("RPush", mock.Anything, mock.Anything, mock.Anything).Once().Return(int64(1), nil)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
+	rh := new(mocks.EngineResultHandler)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
 
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 	o := engine.Order{
@@ -63,9 +63,9 @@ func TestEngine_RemoveOrder(t *testing.T) {
 	rc := new(mocks.RedisClient)
 	rc.On("LRem", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(int64(1), nil)
 	rc.On("ZRem", mock.Anything, mock.Anything, mock.Anything).Once().Return(true, nil)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
+	rh := new(mocks.EngineResultHandler)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
 
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 	o := engine.Order{
@@ -126,8 +126,8 @@ func TestEngine_HandleInQueueOrders(t *testing.T) {
 
 	redisClient := platform.NewRedisTestClient(rc)
 
-	robp := engine.NewRedisOrderBookProvider(redisClient)
 	logger := new(mocks.EngineLogger)
+	robp := engine.NewRedisOrderBookProvider(redisClient, logger)
 
 	e := engine.NewEngine(redisClient, robp, rh, logger, platform.EnvTest)
 	err := e.HandleInQueueOrders("BTC-USDT", "5000")
@@ -154,9 +154,9 @@ func TestEngine_RetrieveOrder_LimitOrder_DoesNotExistsInOrderBookAndQueue(t *tes
 	rc.On("ZScore", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(float64(0), redis.Nil)
 	rc.On("LPos", mock.Anything, "engine:queue:orders", mock.Anything, mock.Anything).Once().Return(int64(0), redis.Nil)
 	rc.On("LPush", mock.Anything, "engine:queue:orders", mock.Anything).Once().Return(int64(1), nil)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
+	rh := new(mocks.EngineResultHandler)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
 
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 
@@ -182,9 +182,9 @@ func TestEngine_RetrieveOrder_LimitOrder_OnlyDoesNotExistsInOrderBook(t *testing
 	rc := new(mocks.RedisClient)
 	rc.On("ZScore", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(float64(0), redis.Nil)
 	rc.On("LPos", mock.Anything, "engine:queue:orders", mock.Anything, mock.Anything).Once().Return(int64(1), nil)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
+	rh := new(mocks.EngineResultHandler)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
 
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 	o := engine.Order{
@@ -208,9 +208,9 @@ func TestEngine_RetrieveOrder_LimitOrder_OnlyDoesNotExistsInOrderBook(t *testing
 func TestEngine_RetrieveOrder_LimitOrder_ExistsInOrderBook(t *testing.T) {
 	rc := new(mocks.RedisClient)
 	rc.On("ZScore", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(float64(1), nil)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
+	rh := new(mocks.EngineResultHandler)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
 
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 	o := engine.Order{
@@ -235,9 +235,9 @@ func TestEngine_RetrieveOrder_MarketOrder_DoesNotExistsInQueue(t *testing.T) {
 	rc := new(mocks.RedisClient)
 	rc.On("LPos", mock.Anything, "engine:queue:orders", mock.Anything, mock.Anything).Once().Return(int64(0), redis.Nil)
 	rc.On("LPush", mock.Anything, "engine:queue:orders", mock.Anything).Once().Return(int64(1), nil)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
+	rh := new(mocks.EngineResultHandler)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
 
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 	o := engine.Order{
@@ -261,9 +261,9 @@ func TestEngine_RetrieveOrder_MarketOrder_DoesNotExistsInQueue(t *testing.T) {
 func TestEngine_RetrieveOrder_MarketOrder_ExistsInQueue(t *testing.T) {
 	rc := new(mocks.RedisClient)
 	rc.On("LPos", mock.Anything, "engine:queue:orders", mock.Anything, mock.Anything).Once().Return(int64(1), nil)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := new(mocks.EngineResultHandler)
 	logger := new(mocks.EngineLogger)
+	rh := new(mocks.EngineResultHandler)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
 
 	e := engine.NewEngine(rc, obp, rh, logger, platform.EnvTest)
 	o := engine.Order{

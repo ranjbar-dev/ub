@@ -10,7 +10,7 @@ import (
 )
 
 func (ps *postOrderMatchingService) addToPushData(orderItem MatchingNeededQueryFields, pairName string) {
-	for _, item := range pushData {
+	for _, item := range ps.pushData {
 		if item.ID == orderItem.OrderID {
 			return
 		}
@@ -29,16 +29,16 @@ func (ps *postOrderMatchingService) addToPushData(orderItem MatchingNeededQueryF
 		UserPrivateChannel: orderItem.UserPrivateChannel,
 		Pair:               pairName,
 	}
-	pushData = append(pushData, payload)
+	ps.pushData = append(ps.pushData, payload)
 
 }
 
 //todo this method should not be here pushing data to client should be independent from this service
 func (ps *postOrderMatchingService) pushDataToUsers(payloads []orderPushPayload) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
 	ctx := context.Background()
-	for _, item := range pushData {
+	for _, item := range payloads {
 		payload, err := json.Marshal(item)
 		if err != nil {
 			ps.logger.Error2("can not push order to clients", err,

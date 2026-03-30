@@ -9,11 +9,12 @@ type pool struct {
 	obp                         OrderbookProvider
 	cbm                         *callBackManager
 	shouldCallPostOrderMatching *atomic.Bool
+	logger                      Logger
 }
 
 func (p *pool) run() {
 	for i := 0; i < p.workerCount; i++ {
-		worker := newWorker(p.collector, i, p.cbm, p.obp, p.shouldCallPostOrderMatching)
+		worker := newWorker(p.collector, i, p.cbm, p.obp, p.shouldCallPostOrderMatching, p.logger)
 		p.workers = append(p.workers, worker)
 		go worker.start()
 	}
@@ -23,7 +24,7 @@ func (p *pool) addWork(work *work) {
 	select {
 	case p.collector <- work:
 	default:
-		logHandler.Warn("engine pool at capacity, blocking until worker available")
+		p.logger.Warn("engine pool at capacity, blocking until worker available")
 		p.collector <- work
 	}
 }
@@ -35,7 +36,7 @@ func (p *pool) stop() {
 	}
 }
 
-func newPool(workerCount int, obp OrderbookProvider, cbm *callBackManager, shouldCall *atomic.Bool) *pool {
+func newPool(workerCount int, obp OrderbookProvider, cbm *callBackManager, shouldCall *atomic.Bool, logger Logger) *pool {
 	collector := make(chan *work, 1000)
 	return &pool{
 		workerCount:                 workerCount,
@@ -43,5 +44,6 @@ func newPool(workerCount int, obp OrderbookProvider, cbm *callBackManager, shoul
 		obp:                         obp,
 		cbm:                         cbm,
 		shouldCallPostOrderMatching: shouldCall,
+		logger:                      logger,
 	}
 }

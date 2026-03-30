@@ -59,6 +59,11 @@ type postOrderMatchingService struct {
 	userLevelService   user.LevelService
 	configs            platform.Configs
 	logger             platform.Logger
+	mu                 sync.Mutex
+	currentMarketPrice string
+	tempTrades         []tempTrade
+	tradesData         []TradeData
+	pushData           []orderPushPayload
 }
 
 type MatchingNeededQueryFields struct {
@@ -111,15 +116,7 @@ type partialOrderHandlingResult struct {
 	order    Order
 }
 
-var currentMarketPrice string
 
-var tempTrades []tempTrade
-
-var tradesData []TradeData
-
-var pushData []orderPushPayload
-
-var mutex = &sync.Mutex{}
 
 type ExternalTradedOrderData struct {
 	OrderID                 int64

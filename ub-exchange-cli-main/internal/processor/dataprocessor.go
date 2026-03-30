@@ -17,8 +17,6 @@ import (
 
 const RedisChannel = "channel:ticker"
 
-var mutex = &sync.Mutex{}
-
 // Processor handles incoming market data from external exchange WebSocket streams,
 // transforming and storing trade, depth, kline, and ticker updates.
 type Processor interface {
@@ -45,6 +43,7 @@ type processor struct {
 	logger                     platform.Logger
 	currencyService            currency.Service
 	pairCurrentTradeCounts     map[string]uint32
+	mu                         sync.Mutex
 }
 
 type Trade struct {
@@ -122,7 +121,7 @@ func (p *processor) ProcessTrade(ctx context.Context, trade Trade) {
 	}
 
 	//since the rate of trades published by binance is too much we only publish 1 out of 10 trade
-	mutex.Lock()
+	p.mu.Lock()
 	count, exists := p.pairCurrentTradeCounts[trade.Pair]
 	if exists {
 		if count%10 == 0 {
@@ -134,7 +133,7 @@ func (p *processor) ProcessTrade(ctx context.Context, trade Trade) {
 		go p.mqttManager.PublishTrades(ctx, trade.Pair, payload)
 		p.pairCurrentTradeCounts[trade.Pair] = 1
 	}
-	mutex.Unlock()
+	p.mu.Unlock()
 
 }
 

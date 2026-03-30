@@ -111,8 +111,8 @@ func addEngine() {
 		Scope: di.App,
 		Build: func(ctn di.Container) (interface{}, error) {
 			redisClient := ctn.Get(RedisClient).(platform.RedisClient)
-			orderbookProvider := engine.NewRedisOrderBookProvider(redisClient) //todo should be this here  or be an independent service??
 			logger := ctn.Get(LoggerService).(platform.Logger)
+			orderbookProvider := engine.NewRedisOrderBookProvider(redisClient, logger) //todo should be this here  or be an independent service??
 			engineResultHandler := ctn.Get(EngineResultHandler).(order.EngineResultHandler)
 			configs := ctn.Get(ConfigService).(platform.Configs)
 			env := configs.GetEnv()

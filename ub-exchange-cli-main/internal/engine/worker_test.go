@@ -74,7 +74,7 @@ func TestWorker_processOrder(t *testing.T) {
 	rc.ZAdd(ctx, "order-book:ask:BTC-USDT", data...)
 	redisClient := platform.NewRedisTestClient(rc)
 
-	obp := NewRedisOrderBookProvider(redisClient)
+	obp := NewRedisOrderBookProvider(redisClient, testLogger)
 
 	workChan := make(chan *work)
 	rh := new(engineResultHandler)
@@ -87,7 +87,7 @@ func TestWorker_processOrder(t *testing.T) {
 	}
 	rh.On("CallBack", mock.Anything, mock.Anything).Once().Return(matchingResult)
 	cbm := getCallbackManager(rh)
-	worker := newWorker(workChan, 1, cbm, obp, shouldCall)
+	worker := newWorker(workChan, 1, cbm, obp, shouldCall, testLogger)
 
 	o := Order{
 		Pair:              "BTC-USDT",

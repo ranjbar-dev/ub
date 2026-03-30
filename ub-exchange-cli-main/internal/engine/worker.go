@@ -23,6 +23,7 @@ type worker struct {
 	callBackManager             *callBackManager
 	obp                         OrderbookProvider
 	shouldCallPostOrderMatching *atomic.Bool
+	logger                      Logger
 }
 
 func (w *worker) start() {
@@ -43,10 +44,10 @@ func (w *worker) start() {
 }
 
 func (w *worker) processOrder(o Order) {
-	ob := newOrderBook(o.Pair, w.obp)
+	ob := newOrderBook(o.Pair, w.obp, w.logger)
 	doneOrders, partialOrder, err := ob.processOrder(o)
 	if err != nil {
-		logHandler.Warn("error in engine:ProcessOrder",
+		w.logger.Warn("error in engine:ProcessOrder",
 			zap.Error(err),
 			zap.String("orderId", o.ID),
 		)
@@ -76,7 +77,7 @@ func (w *worker) stop() {
 	w.quit <- true
 }
 
-func newWorker(workChan chan *work, ID int, callBackManager *callBackManager, obp OrderbookProvider, shouldCall *atomic.Bool) *worker {
+func newWorker(workChan chan *work, ID int, callBackManager *callBackManager, obp OrderbookProvider, shouldCall *atomic.Bool, logger Logger) *worker {
 	return &worker{
 		ID:                          ID,
 		workChan:                    workChan,
@@ -84,5 +85,6 @@ func newWorker(workChan chan *work, ID int, callBackManager *callBackManager, ob
 		callBackManager:             callBackManager,
 		obp:                         obp,
 		shouldCallPostOrderMatching: shouldCall,
+		logger:                      logger,
 	}
 }

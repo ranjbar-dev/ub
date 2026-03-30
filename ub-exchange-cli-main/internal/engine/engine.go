@@ -13,8 +13,6 @@ import (
 
 const engineRedisTimeout = 5 * time.Second
 
-var logHandler Logger
-
 // ResultHandler is a callback interface for processing matched trades.
 type ResultHandler interface {
 	// CallBack receives completed orders and an optional partial fill, and returns the settlement result.
@@ -62,6 +60,7 @@ type engine struct {
 	quit                        chan bool
 	obp                         OrderbookProvider
 	cbm                         *callBackManager
+	logger                      Logger
 	shouldCallPostOrderMatching atomic.Bool
 }
 
@@ -71,7 +70,7 @@ func (e *engine) SetPostOrderMatchingCall(shouldCall bool) error {
 }
 
 func (e *engine) Run(workerCount int, shouldStartDispatcher bool) {
-	e.pool = newPool(workerCount, e.obp, e.cbm, &e.shouldCallPostOrderMatching)
+	e.pool = newPool(workerCount, e.obp, e.cbm, &e.shouldCallPostOrderMatching, e.logger)
 	e.pool.run()
 	if shouldStartDispatcher {
 		go e.dispatchOrder()
@@ -89,7 +88,7 @@ func (e *engine) DispatchManually() error {
 	}
 	order, err := e.queue.lPop(context.Background())
 	if err != nil && err != redis.Nil {
-		logHandler.Warn("error in engine:dispatchOrder",
+		e.logger.Warn("error in engine:dispatchOrder",
 			zap.Error(err),
 		)
 		return nil
@@ -119,7 +118,7 @@ func (e *engine) dispatchOrder() {
 
 			order, err := e.queue.blPop(ctx, 1*time.Second)
 			if err != nil && err != redis.Nil {
-				logHandler.Warn("error in engine:dispatchOrder",
+				e.logger.Warn("error in engine:dispatchOrder",
 					zap.Error(err),
 				)
 				if backoff == 0 {
@@ -152,10 +151,10 @@ func (e *engine) SubmitOrder(order Order) error {
 func (e *engine) RemoveOrder(order Order) error {
 	ctx, cancel := context.WithTimeout(context.Background(), engineRedisTimeout)
 	defer cancel()
-	ob := newOrderBook(order.Pair, e.obp)
+	ob := newOrderBook(order.Pair, e.obp, e.logger)
 	err := e.queue.remove(ctx, order)
 	if err != nil {
-		logHandler.Warn("error in engine:RemoveOrder",
+		e.logger.Warn("error in engine:RemoveOrder",
 			zap.Error(err),
 			zap.String("orderId", order.ID),
 		)
@@ -163,7 +162,7 @@ func (e *engine) RemoveOrder(order Order) error {
 	}
 	err = ob.removeOrder(order)
 	if err != nil {
-		logHandler.Warn("error in engine:RemoveOrder",
+		e.logger.Warn("error in engine:RemoveOrder",
 			zap.Error(err),
 			zap.String("orderId", order.ID),
 		)
@@ -173,7 +172,7 @@ func (e *engine) RemoveOrder(order Order) error {
 }
 
 func (e *engine) HandleInQueueOrders(pair string, price string) error {
-	ob := newOrderBook(pair, e.obp)
+	ob := newOrderBook(pair, e.obp, e.logger)
 
 	// H5: Use PopOrders (atomic read+remove) instead of GetOrders to prevent
 	// race condition where workers match against orders being processed here.
@@ -187,7 +186,7 @@ func (e *engine) HandleInQueueOrders(pair string, price string) error {
 			o.IsAlreadyInOrderBook = true
 			engineMatchingResult := e.cbm.callBack(emptyDoneOrders, &orders[i])
 			if engineMatchingResult.Err != nil {
-				logHandler.Warn("error is not nil",
+				e.logger.Warn("error is not nil",
 					zap.Error(engineMatchingResult.Err),
 					zap.String("service", "engine"),
 					zap.String("method", "HandleInQueueOrders"),
@@ -217,7 +216,7 @@ func (e *engine) RetrieveOrder(order Order) error {
 	defer cancel()
 	if order.Price != "" {
 		//it means limit order
-		ob := newOrderBook(order.Pair, e.obp)
+		ob := newOrderBook(order.Pair, e.obp, e.logger)
 		exists, err := ob.orderExists(ctx, order)
 		if err != nil {
 			return err
@@ -253,16 +252,16 @@ func (e *engine) RetrieveOrder(order Order) error {
 }
 
 func NewEngine(qh QueueHandler, obp OrderbookProvider, rh ResultHandler, logger Logger, env string) Engine {
-	logHandler = logger
 	cbm := getCallbackManager(rh)
 	queue := newQueue(qh)
 	quit := make(chan bool, 1)
 	e := &engine{
-		queue: queue,
-		env:   env,
-		quit:  quit,
-		obp:   obp,
-		cbm:   cbm,
+		queue:  queue,
+		env:    env,
+		quit:   quit,
+		obp:    obp,
+		cbm:    cbm,
+		logger: logger,
 	}
 	e.shouldCallPostOrderMatching.Store(true)
 	return e

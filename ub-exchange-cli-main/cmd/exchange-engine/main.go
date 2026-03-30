@@ -16,12 +16,17 @@ func main() {
 
 	container := di.NewContainer()
 	rc := container.Get(di.RedisClient).(platform.RedisClient)
-	obp := engine.NewRedisOrderBookProvider(rc)
-	rh := container.Get(di.EngineResultHandler).(order.EngineResultHandler)
 	logger := container.Get(di.LoggerService).(platform.Logger)
-	e := engine.NewEngine(rc, obp, rh, logger,platform.EnvProd)
+	obp := engine.NewRedisOrderBookProvider(rc, logger)
+	rh := container.Get(di.EngineResultHandler).(order.EngineResultHandler)
+	configs := container.Get(di.ConfigService).(platform.Configs)
+	e := engine.NewEngine(rc, obp, rh, logger, configs.GetEnv())
 	_ = e.SetPostOrderMatchingCall(true)
-	e.Run(10,true)
+	workerCount := configs.GetInt("engine.worker_count")
+	if workerCount <= 0 {
+		workerCount = 10
+	}
+	e.Run(workerCount, true)
 	go func() {
 		for {
 			select {

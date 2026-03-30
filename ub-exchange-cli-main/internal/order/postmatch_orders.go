@@ -153,7 +153,7 @@ func (ps *postOrderMatchingService) createChildOrder(tx *gorm.DB, orderItem Matc
 
 	childLevel := parentOrder.Level.Int64 + 1
 
-	currentMarketPriceNil := sql.NullString{String: currentMarketPrice, Valid: true}
+	currentMarketPriceNil := sql.NullString{String: ps.currentMarketPrice, Valid: true}
 
 	childOrder := &Order{
 		UserID:              parentOrder.UserID,
@@ -190,7 +190,7 @@ func (ps *postOrderMatchingService) createChildOrder(tx *gorm.DB, orderItem Matc
 }
 
 func (ps *postOrderMatchingService) handleTrade(tx *gorm.DB, tempTrade tempTrade, pair currency.Pair, userEmail string, userID int) error {
-	if !ps.shouldCreateTrade(tempTrades, tempTrade.sellOrderID, tempTrade.buyOrderID) {
+	if !ps.shouldCreateTrade(ps.tempTrades, tempTrade.sellOrderID, tempTrade.buyOrderID) {
 		return nil
 	}
 
@@ -226,8 +226,8 @@ func (ps *postOrderMatchingService) handleTrade(tx *gorm.DB, tempTrade tempTrade
 	if err != nil {
 		return err
 	}
-	tempTrades = append(tempTrades, tempTrade)
-	tradesData = append(tradesData, TradeData{
+	ps.tempTrades = append(ps.tempTrades, tempTrade)
+	ps.tradesData = append(ps.tradesData, TradeData{
 		Trade:     *trade,
 		UserEmail: userEmail,
 		UserID:    userID},
@@ -328,7 +328,7 @@ func (ps *postOrderMatchingService) handlePartialOrder(tx *gorm.DB, orderItem Ma
 
 	if tradePrice == "" {
 		isMarket = true
-		tradePrice = currentMarketPrice
+		tradePrice = ps.currentMarketPrice
 		if err != nil {
 			return partialOrderHandlingResult{
 				err:      err,

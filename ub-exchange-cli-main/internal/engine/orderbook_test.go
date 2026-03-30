@@ -24,8 +24,15 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"github.com/stretchr/testify/mock"
 )
+
+type noopLogger struct{}
+func (l *noopLogger) Warn(msg string, fields ...zap.Field) {}
+func (l *noopLogger) Info(msg string, fields ...zap.Field) {}
+
+var testLogger Logger = &noopLogger{}
 
 func TestOrderBook_processOrder_Limit_Ask_MatchedWithSingleOrder_SamePrice_WithoutRemainingPartial(t *testing.T) {
 	rc := new(mocks.RedisClient)
@@ -51,9 +58,9 @@ func TestOrderBook_processOrder_Limit_Ask_MatchedWithSingleOrder_SamePrice_Witho
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -112,9 +119,9 @@ func TestOrderBook_processOrder_Market_Ask_MatchedWithSingleOrder_SamePrice_With
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -214,9 +221,9 @@ func TestOrderBook_processOrder_Limit_Ask_MatchedWithThreeOrder_SamePrice_Withou
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -350,9 +357,9 @@ func TestOrderBook_processOrder_Market_Ask_MatchedWithThreeOrder_SamePrice_Witho
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -486,9 +493,9 @@ func TestOrderBook_processOrder_Limit_Ask_MatchedWithThreeOrder_SamePrice_WithRe
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -627,9 +634,9 @@ func TestOrderBook_processOrder_Market_Ask_MatchedWithThreeOrder_SamePrice_WithR
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -767,9 +774,9 @@ func TestOrderBook_processOrder_Limit_Ask_MatchedWithThreeOrder_DifferentPrice_W
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -913,9 +920,9 @@ func TestOrderBook_processOrder_Market_Ask_MatchedWithThreeOrder_DifferentPrice_
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1060,9 +1067,9 @@ func TestOrderBook_processOrder_Limit_Ask_MatchedWithThreeOrder_DifferentPrice_W
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1206,9 +1213,9 @@ func TestOrderBook_processOrder_Market_Ask_MatchedWithThreeOrder_DifferentPrice_
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1294,9 +1301,9 @@ func TestOrderBook_processOrder_Limit_Ask_NoMatch_OnlyPartial(t *testing.T) {
 	var data []redis.Z
 
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1328,9 +1335,9 @@ func TestOrderBook_processOrder_Market_Ask_NoMatch_OnlyPartial(t *testing.T) {
 	var data []redis.Z
 
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1377,9 +1384,9 @@ func TestOrderBook_processOrder_Limit_Bid_MatchedWithSingleOrder_SamePrice_Witho
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1441,9 +1448,9 @@ func TestOrderBook_processOrder_Market_Bid_MatchedWithSingleOrder_SamePrice_With
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1546,9 +1553,9 @@ func TestOrderBook_processOrder_Limit_Bid_MatchedWithThreeOrder_SamePrice_Withou
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1683,9 +1690,9 @@ func TestOrderBook_processOrder_Market_Bid_MatchedWithThreeOrder_SamePrice_Witho
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1826,9 +1833,9 @@ func TestOrderBook_processOrder_Limit_Bid_MatchedWithThreeOrder_SamePrice_WithRe
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -1974,9 +1981,9 @@ func TestOrderBook_processOrder_Market_Bid_MatchedWithThreeOrder_SamePrice_WithR
 	}
 	zrangeBy := &redis.ZRangeBy{Min: "0", Max: "50500", Offset: 0, Count: 10000}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", zrangeBy).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2121,9 +2128,9 @@ func TestOrderBook_processOrder_Limit_Bid_MatchedWithThreeOrder_DifferentPrice_W
 		},
 	}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2269,9 +2276,9 @@ func TestOrderBook_processOrder_Market_Bid_MatchedWithThreeOrder_DifferentPrice_
 	}
 	zrangeBy := &redis.ZRangeBy{Min: "0", Max: "50500", Offset: 0, Count: 10000}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", zrangeBy).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2398,9 +2405,9 @@ func TestOrderBook_processOrder_Limit_Bid_MatchedWithThreeOrder_DifferentPrice_W
 	}
 	zrangeBy := &redis.ZRangeBy{Min: "0", Max: "50000", Offset: 0, Count: 10000}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", zrangeBy).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2545,9 +2552,9 @@ func TestOrderBook_processOrder_Market_Bid_MatchedWithThreeOrder_DifferentPrice_
 	}
 	zrangeBy := &redis.ZRangeBy{Min: "0", Max: "50500", Offset: 0, Count: 10000}
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", zrangeBy).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2634,9 +2641,9 @@ func TestOrderBook_processOrder_Limit_Bid_NoMatch_OnlyPartial(t *testing.T) {
 	var data []redis.Z
 
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2668,9 +2675,9 @@ func TestOrderBook_processOrder_Market_Bid_NoMatch_OnlyPartial(t *testing.T) {
 	var data []redis.Z
 
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:ask:BTC-USDT", mock.Anything).Once().Return(data, nil)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2695,9 +2702,9 @@ func TestOrderBook_processOrder_Market_Bid_NoMatch_OnlyPartial(t *testing.T) {
 
 func TestOrderBook_removeOrder(t *testing.T) {
 	rc := new(mocks.RedisClient)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",
@@ -2721,9 +2728,9 @@ func TestOrderBook_removeOrder(t *testing.T) {
 
 func TestOrderBook_orderExists(t *testing.T) {
 	rc := new(mocks.RedisClient)
-	obp := NewRedisOrderBookProvider(rc)
+	obp := NewRedisOrderBookProvider(rc, testLogger)
 
-	ob := newOrderBook("BTC-USDT", obp)
+	ob := newOrderBook("BTC-USDT", obp, testLogger)
 	o := Order{
 		Pair:              "BTC-USDT",
 		ID:                "1",

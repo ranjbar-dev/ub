@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"exchange-go/internal/engine"
 	"exchange-go/internal/engine/mocks"
+	appmocks "exchange-go/internal/mocks"
 	"exchange-go/internal/platform"
 	"time"
 
@@ -93,8 +94,9 @@ func TestRedisOrderBookProvider_GetOrders(t *testing.T) {
 	}
 
 	rc.On("ZRangeByScoreWithScores", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(data, nil)
+	logger := new(appmocks.EngineLogger)
 
-	robp := engine.NewRedisOrderBookProvider(rc)
+	robp := engine.NewRedisOrderBookProvider(rc, logger)
 	params := engine.OrderBookProviderParams{
 		Pair:     "BTC-USDT",
 		Side:     "bid",
@@ -153,8 +155,9 @@ func TestRedisOrderBookProvider_GetOrders(t *testing.T) {
 func TestRedisOrderBookProvider_RemoveOrder(t *testing.T) {
 	rc := new(mocks.RedisClient)
 	rc.On("ZRem", mock.Anything, "order-book:bid:BTC-USDT", mock.Anything).Once().Return(true, nil)
+	logger := new(appmocks.EngineLogger)
 
-	robp := engine.NewRedisOrderBookProvider(rc)
+	robp := engine.NewRedisOrderBookProvider(rc, logger)
 	o := engine.Order{
 		Pair:              "BTC-USDT",
 		ID:                "2",
@@ -242,8 +245,9 @@ func TestRedisOrderBookProvider_RewriteOrderBook(t *testing.T) {
 	rc.ZAdd(ctx, "order-book:bid:BTC-USDT", data...)
 
 	redisClient := platform.NewRedisTestClient(rc)
+	logger := new(appmocks.EngineLogger)
 
-	robp := engine.NewRedisOrderBookProvider(redisClient)
+	robp := engine.NewRedisOrderBookProvider(redisClient, logger)
 
 	doneOrders := []engine.Order{
 		matchingOrder1,
@@ -301,8 +305,9 @@ func TestRedisOrderBookProvider_Exists(t *testing.T) {
 	rc.ZAdd(ctx, "order-book:bid:BTC-USDT", data...)
 
 	redisClient := platform.NewRedisTestClient(rc)
+	logger := new(appmocks.EngineLogger)
 
-	robp := engine.NewRedisOrderBookProvider(redisClient)
+	robp := engine.NewRedisOrderBookProvider(redisClient, logger)
 
 	exists, err := robp.Exists(context.Background(), o)
 	assert.Nil(t, err)
@@ -317,8 +322,9 @@ func TestRedisOrderBookProvider_GetOrders_BidPriceRange(t *testing.T) {
 			return opt.Min == "50000" && opt.Max == "+inf"
 		}),
 	).Once().Return([]redis.Z{}, nil)
+	logger := new(appmocks.EngineLogger)
 
-	robp := engine.NewRedisOrderBookProvider(rc)
+	robp := engine.NewRedisOrderBookProvider(rc, logger)
 	params := engine.OrderBookProviderParams{
 		Pair:  "BTC-USDT",
 		Side:  "bid",
@@ -337,8 +343,9 @@ func TestRedisOrderBookProvider_GetOrders_AskPriceRange(t *testing.T) {
 			return opt.Min == "0" && opt.Max == "50000"
 		}),
 	).Once().Return([]redis.Z{}, nil)
+	logger := new(appmocks.EngineLogger)
 
-	robp := engine.NewRedisOrderBookProvider(rc)
+	robp := engine.NewRedisOrderBookProvider(rc, logger)
 	params := engine.OrderBookProviderParams{
 		Pair:  "BTC-USDT",
 		Side:  "ask",

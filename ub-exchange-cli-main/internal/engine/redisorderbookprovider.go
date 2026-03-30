@@ -34,7 +34,8 @@ type RedisClient interface {
 }
 
 type redisOrderBookProvider struct {
-	rc RedisClient
+	rc     RedisClient
+	logger Logger
 }
 
 func (p *redisOrderBookProvider) GetOrders(ctx context.Context, params OrderBookProviderParams) (orders []Order, err error) {
@@ -95,7 +96,7 @@ func (p *redisOrderBookProvider) RewriteOrderBook(ctx context.Context, doneOrder
 		}
 		partialOrderPriceFloat64, exact := partialOrderPrice.Float64()
 		if !exact {
-			logHandler.Warn("precision loss converting price to float64 for Redis score",
+			p.logger.Warn("precision loss converting price to float64 for Redis score",
 				zap.String("price", partialOrderPrice.String()),
 				zap.Float64("float64", partialOrderPriceFloat64),
 			)
@@ -216,6 +217,6 @@ func (p *redisOrderBookProvider) Exists(ctx context.Context, order Order) (bool,
 	return true, nil
 }
 
-func NewRedisOrderBookProvider(rc RedisClient) OrderbookProvider {
-	return &redisOrderBookProvider{rc: rc}
+func NewRedisOrderBookProvider(rc RedisClient, logger Logger) OrderbookProvider {
+	return &redisOrderBookProvider{rc: rc, logger: logger}
 }
