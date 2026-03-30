@@ -24,6 +24,7 @@ func (s *httpServer) registerCentrifugoRoutes(v1 *gin.RouterGroup) {
 	centrifugo := v1.Group("/auth")
 	centrifugo.Use(middleware.AuthMiddleware(s.services.AuthService))
 	{
+		centrifugo.GET("/centrifugo-token", handler.CentrifugoConnectionToken(s.services.CentrifugoTokenService))
 		centrifugo.POST("/centrifugo-token", handler.CentrifugoConnectionToken(s.services.CentrifugoTokenService))
 		centrifugo.GET("/centrifugo-subscribe-token", handler.CentrifugoSubscriptionToken(s.services.CentrifugoTokenService))
 	}
