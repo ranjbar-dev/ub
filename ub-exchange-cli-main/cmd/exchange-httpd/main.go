@@ -6,6 +6,7 @@ import (
 	"exchange-go/internal/di"
 	"exchange-go/internal/order"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,7 +28,7 @@ func main() {
 
 	// Start admin HTTP server
 	go func() {
-		if err := httpServer.ListenAndServeAdmin(adminAddr); err != nil {
+		if err := httpServer.ListenAndServeAdmin(adminAddr); err != nil && err != http.ErrServerClosed {
 			fmt.Fprintf(os.Stderr, "admin server failed: %v\n", err)
 		}
 	}()

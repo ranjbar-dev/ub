@@ -23,3 +23,6 @@ jwt:
   public_key: "../config/jwt/public.pem"
   passphrase: "123456789"
   ttl: 600 # minutes
+
+engine:
+  worker_count: 10

@@ -16,6 +16,7 @@ import (
 	"exchange-go/internal/wallet"
 
 	"github.com/sarulabs/di"
+	"gorm.io/gorm"
 )
 
 // DI registrations for the HTTP API server.
@@ -44,6 +45,8 @@ func addHTTPServer() {
 				CentrifugoTokenService:     ctn.Get(centrifugoTokenService).(auth.CentrifugoTokenService),
 				UserService:                ctn.Get(userService).(user.Service),
 				OrderBookService:           ctn.Get(orderbookService).(orderbook.Service),
+				DB:                         ctn.Get(dbClient).(*gorm.DB),
+				RedisClient:                ctn.Get(RedisClient).(platform.RedisClient),
 			}
 
 			return api.NewHTTPServer(services, logger), nil

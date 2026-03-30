@@ -1,6 +1,9 @@
 # Docker-internal config for exchange-cli
 # This file is mounted into the container at /app/config/config.yaml
 # It uses Docker service names instead of localhost
+#
+# Secrets are loaded from environment variables (UBEXCHANGE_ prefix).
+# See .env.example for the full list.
 
 exchange:
   environment: "dev"
@@ -11,42 +14,45 @@ exchange:
 
 db:
   name: "mysql"
-  dsn: "exchange_user:exchange_pass@tcp(db:3306)/exchange_db?parseTime=true"
+  dsn: "" # env: UBEXCHANGE_DB_DSN
 
 redis:
   dsn: "redis:6379"
-  password: ""
+  password: "" # env: UBEXCHANGE_REDIS_PASSWORD
   db: 0
 
 rabbitmq:
-  dsn: "amqp://rabbitmquser:some_password@rabbitmq:5672/"
+  dsn: "" # env: UBEXCHANGE_RABBITMQ_DSN
   queue_name: "email_queue_1"
 
 sentry:
-  dsn: ""
+  dsn: "" # env: UBEXCHANGE_SENTRY_DSN
   debug: false
 
 centrifugo:
   api_url: "http://centrifugo:8000/api"
-  api_key: "your-api-key"
-  token_hmac_secret: "your-secret-key"
+  api_key: "" # env: UBEXCHANGE_CENTRIFUGO_API_KEY
+  token_hmac_secret: "" # env: UBEXCHANGE_CENTRIFUGO_TOKEN_HMAC_SECRET
 
 recaptcha:
-  secretkey: "secret_key"
+  secretkey: "" # env: UBEXCHANGE_RECAPTCHA_SECRETKEY
   sitekey: "site_key"
-  androidsecretkey: "android_secret_key"
+  androidsecretkey: "" # env: UBEXCHANGE_RECAPTCHA_ANDROIDSECRETKEY
   androidsitekey: "android_site_key"
 
 jwt:
   private_key: "config/jwt/private.pem"
   public_key: "config/jwt/public.pem"
-  passphrase: "123456789"
+  passphrase: "" # env: UBEXCHANGE_JWT_PASSPHRASE
   ttl: 2592000
 
 wallet:
-  host: "host"
-  username: "wallet_username"
-  password: "wallet_password"
+  host: "" # env: UBEXCHANGE_WALLET_HOST
+  username: "" # env: UBEXCHANGE_WALLET_USERNAME
+  password: "" # env: UBEXCHANGE_WALLET_PASSWORD
 
 candle:
   grpcaddr: "exchange-ws:50051"
+
+engine:
+  worker_count: 10
