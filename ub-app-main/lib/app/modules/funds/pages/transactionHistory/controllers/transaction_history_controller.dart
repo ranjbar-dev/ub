@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 import '../../../../../common/components/UBText.dart';
-import '../../../../../global/controller/authorizedMqttController.dart';
+import '../../../../../global/controller/authorizedCentrifugoController.dart';
 import '../providers/transactionHistoryProvider.dart';
 import '../transaction_history_model.dart';
 import '../../../../../../services/constants.dart';
@@ -10,7 +10,7 @@ import '../../../../../../utils/mixins/popups.dart';
 
 class TransactionHistoryController extends GetxController with Popups {
   final transactionHistoryProvider = TransactionHistoryProvider();
-  final AuthorizedMqttController authorizedMqttController = Get.find();
+  final AuthorizedCentrifugoController authorizedCentrifugoController = Get.find();
 
   final transactionHistory = TransactionHistoryModel().obs;
   final isLoading = false.obs;
@@ -21,7 +21,7 @@ class TransactionHistoryController extends GetxController with Popups {
   @override
   void onInit() {
     updateSubscription =
-        authorizedMqttController.updateDataSubject.listen((value) {
+        authorizedCentrifugoController.updateDataSubject.listen((value) {
       if (value is List &&
           (value.indexOf(RxUpdateables.TransactionHistory) != -1)) {
         getTransactionHistory(silent: true);

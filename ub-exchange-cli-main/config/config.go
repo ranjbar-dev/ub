@@ -23,6 +23,7 @@ func SetConfigs() *viper.Viper {
 
 	if !isTestEnv() {
 		v.AddConfigPath(FilePath)
+		v.AddConfigPath("./config/")
 	} else {
 		v.AddConfigPath(TestConfigFilePath)
 	}

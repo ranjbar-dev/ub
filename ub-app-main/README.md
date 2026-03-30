@@ -87,7 +87,7 @@ lib/app/modules/<feature>/
 ### Key Architecture Decisions
 - **State**: GetX `.obs` reactive variables + `Obx()` widgets (primary), Provider (secondary)
 - **HTTP**: Dio 4.0.1 singleton with interceptor chain (retry, token refresh, auth header)
-- **Real-time**: MQTT over WebSocket (`wss://`) — dual clients (authorized + unauthorized)
+- **Real-time**: Centrifugo WebSocket (`wss://`) — dual clients (authorized + unauthorized)
 - **Storage**: GetStorage (plain KV) + FlutterSecureStorage (encrypted credentials)
 - **Crypto**: RSA/AES via PointyCastle + Encrypt packages
 - **Navigation**: 35 named routes via `GetPages`, initial route `/after-splash`
@@ -99,11 +99,11 @@ lib/app/modules/<feature>/
 | `signup` | User registration with RSA-encrypted captcha |
 | `account` | Profile, settings, biometrics, KYC status |
 | `home` | Dashboard with news, popular pairs, sparklines |
-| `trade` | Market/limit/stop orders, OHLC charts, order book (MQTT) |
+| `trade` | Market/limit/stop orders, OHLC charts, order book (Centrifugo) |
 | `exchange` | Simple currency swap |
 | `market` | Ticker list, favorites, search, sorting |
 | `funds` | Balance, deposits, withdrawals, transaction history, auto-exchange |
-| `orders` | Open orders (MQTT live), order history |
+| `orders` | Open orders (Centrifugo live), order history |
 | `identityInfo` | KYC personal information |
 | `identityDocuments` | KYC document upload |
 | `phoneVerification` | Phone OTP verification |
@@ -126,13 +126,13 @@ lib/
   main.dart                    # Entry point (GetMaterialApp)
   app/
     modules/                   # 23 feature modules (GetX MVC)
-    global/                    # GlobalController, MQTT controllers, common provider
+    global/                    # GlobalController, Centrifugo controllers, common provider
     common/components/         # 70 reusable UI widgets
     common/custom/             # 49 custom widget libraries
     popups/                    # 2FA popup system
     routes/                    # 35 named routes
   services/                    # ApiService, constants, storage keys, interceptors
-  mqttClient/                  # Universal MQTT client (browser + VM)
+  centrifugoClient/                  # Universal Centrifugo client (browser + VM)
   utils/                       # Crypto, validators, extensions, mixins
   theme/                       # Dark/light theme definitions
   generated/                   # flutter_gen output (colors, fonts, assets, locales)
@@ -146,7 +146,7 @@ lib/
 | `ENV` | Environment mode | Hardcoded `"PRODUCTION"` in `ubEnv.dart` |
 
 API base: `https://[dev-]app.unitedbit.com/api/v1/`
-MQTT broker: `wss://[dev-]app.unitedbit.com:8443`
+Centrifugo server: `wss://[dev-]app.unitedbit.com:8800`
 
 ## CI/CD
 
@@ -165,6 +165,6 @@ flutter pub run build_runner build
 
 See [AGENTS.md](AGENTS.md) for the complete technical reference (1,400+ lines) covering:
 - All dependencies, routes, controllers, providers, API endpoints
-- MQTT topics, storage keys, component library
+- Centrifugo channels, storage keys, component library
 - Build system, platform config, testing, known issues
 - Upgrade roadmap

@@ -8,7 +8,7 @@
 // Order Matching:
 //   - EngineCommunicator: Submits orders to the matching engine via Redis queue
 //   - EngineResultHandler: Processes matched trade results from the engine
-//   - PostOrderMatchingService: Post-trade settlement (balance updates, DB persist, MQTT publish)
+//   - PostOrderMatchingService: Post-trade settlement (balance updates, DB persist, Centrifugo publish)
 //
 // Order Management:
 //   - Service: CRUD operations, listing, cancellation, status queries
@@ -23,7 +23,7 @@
 //
 // Events:
 //   - EventsHandler: Publishes order lifecycle events (created, matched, cancelled)
-//   - TradeEventsHandler: Publishes trade execution events via MQTT
+//   - TradeEventsHandler: Publishes trade execution events via Centrifugo
 //
 // All financial calculations use shopspring/decimal.
 package order

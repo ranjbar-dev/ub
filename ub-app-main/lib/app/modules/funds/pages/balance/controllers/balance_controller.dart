@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 
 import '../../../../../../services/constants.dart';
 import '../../../../../../utils/logger.dart';
-import '../../../../../global/controller/authorizedMqttController.dart';
+import '../../../../../global/controller/authorizedCentrifugoController.dart';
 import '../../../../../global/providers/commonDataProvider.dart';
 import '../../../../account/user_model.dart';
 import '../../../balance_response_model_model.dart';
@@ -10,7 +10,7 @@ import '../../../controllers/funds_controller.dart';
 import '../providers/balanceProvider.dart';
 
 class BalanceController extends GetxController {
-  final AuthorizedMqttController authorizedMqttController = Get.find();
+  final AuthorizedCentrifugoController authorizedCentrifugoController = Get.find();
   final isLoading = false.obs;
   final isSilentLoading = false.obs;
   final showSmallBalances = true.obs;
@@ -37,7 +37,7 @@ class BalanceController extends GetxController {
   @override
   void onInit() {
     updateSubscription =
-        authorizedMqttController.updateDataSubject.listen((value) {
+        authorizedCentrifugoController.updateDataSubject.listen((value) {
       if (value is List && (value.indexOf(RxUpdateables.Balances) != -1)) {
         getBalances(silent: true);
       }

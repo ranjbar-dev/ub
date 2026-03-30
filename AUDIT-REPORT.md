@@ -41,7 +41,7 @@ Each agent reviewed every source file, README, and AGENTS.md in its assigned pro
 | Root | Expanded AGENTS.md from ~900 → 6,000+ lines, rewrote README.md |
 | Server | Fixed 20+ version inaccuracies, documented 57 entities, 112 services |
 | Admin | Documented 27 containers, all sagas, MUI theme system |
-| Cabinet | Documented AG Grid integration, MQTT services, Redux architecture |
+| Cabinet | Documented AG Grid integration, Centrifugo services, Redux architecture |
 | App | Documented GetX controllers, Dio interceptors, Flutter widget tree |
 | Exchange | Documented matching engine internals, 29 packages, 4 binaries |
 | Communicator | Documented RabbitMQ consumer, 4 email providers, MongoDB storage |
@@ -129,7 +129,7 @@ Comprehensive security-focused audit of Server, Admin, Cabinet, App, and Communi
 
 | Project | Bugs Fixed | Key Fixes |
 |---------|-----------|-----------|
-| Server | 3 | MQTT auth bypass, withdrawal race condition (pessimistic lock), test mode bypass |
+| Server | 3 | Centrifugo auth bypass, withdrawal race condition (pessimistic lock), test mode bypass |
 | Cabinet | 4 | Double-submit prevention, token refresh race (subscriber queue), missing action dispatches |
 | App | 6 | SecureStorage for tokens, auth race condition, null safety guards |
 | Communicator | 4 | Message loss (autoAck=false), deadlock (context-based cancellation), nil panics |
@@ -143,8 +143,8 @@ Comprehensive security-focused audit of Server, Admin, Cabinet, App, and Communi
 |---------|-----------|-----------|
 | Server | 5 | AnyToAny null crash, firewall ordering, access_control bypass, LIKE injection, balance floor |
 | Admin | 5 | Auth bypass in transfer, validation gaps, API endpoint mismatch, refresh token race |
-| Cabinet | 8 | Redux state mutation, formatter bugs (.split typo), MQTT reconnect, saga effects |
-| App | 9 | MQTT disconnect cleanup, memory leaks (stream subs), financial display rounding, null guards |
+| Cabinet | 8 | Redux state mutation, formatter bugs (.split typo), Centrifugo reconnect, saga effects |
+| App | 9 | Centrifugo disconnect cleanup, memory leaks (stream subs), financial display rounding, null guards |
 | Communicator | 7 | Dead-letter queue, TLS config, panic recovery, error propagation, prefetch limit |
 
 ---
@@ -156,7 +156,7 @@ Comprehensive security-focused audit of Server, Admin, Cabinet, App, and Communi
 |---------|-------|---------|-----------|
 | Server | 4 | 2 | UbId randomization, validator improvement, IP whitelist, input guard |
 | Admin | 7 | 1 | Redux immutability, error boundaries, form validation, saga patterns |
-| Cabinet | 10 | 2 | Saga takeLatest, MQTT timer cleanup, crypto.randomUUID, state isolation |
+| Cabinet | 10 | 2 | Saga takeLatest, Centrifugo timer cleanup, crypto.randomUUID, state isolation |
 | App | 10 | 0 | Timeouts, platform detection, null guards, cleanup, retry logic |
 | Communicator | 8 | 1 | Connection timeouts, MongoDB indexes, graceful cleanup, logging, limits |
 
@@ -189,7 +189,7 @@ Comprehensive security-focused audit of Server, Admin, Cabinet, App, and Communi
 | BUG-13 | Communicator | No AMQP dial timeout | ✅ Fixed — `amqp.DefaultDial(10s)` timeout |
 | L-04 | Server | JSON decode error handling | ✅ Fixed — `BadRequestHttpException` on malformed JSON |
 | BUG-014 | Cabinet | Empty component cleanup | ✅ Fixed — `cancelAnimationFrame` cleanup added |
-| BUG-005 | Cabinet | Orderbook dispatch | ✅ Confirmed by-design (MQTT-driven, not Redux) |
+| BUG-005 | Cabinet | Orderbook dispatch | ✅ Confirmed by-design (Centrifugo-driven, not Redux) |
 
 **Final verification pass rate: 100%**
 
@@ -223,15 +223,15 @@ ba0bc59 fix(cabinet): component cleanup and orderbook dispatch verification
 06e9292 chore: update ub-server-main submodule (4 LOW fixes)
 b73dbd5 fix(communicator): 4 LOW bugs — TLS ServerName, gitignore exe, dead code docs
 89d8cdd fix(cabinet): BUG-025 — null guard in formatTableCell for AG Grid empty rows
-576e1cb fix(cabinet): 10 MEDIUM bugs — saga effects, MQTT cleanup, crypto, state isolation
+576e1cb fix(cabinet): 10 MEDIUM bugs — saga effects, Centrifugo cleanup, crypto, state isolation
 159133b fix(app): 10 MEDIUM bugs — timeouts, platform detection, null guards, cleanup
 a281d33 fix(communicator): 8 MEDIUM bugs — timeouts, indexes, cleanup, logging, limits
 4f7d810 chore: update ub-server-main submodule (4 MEDIUM fixes)
 e0c27e7 chore: update ub-server-main submodule (5 HIGH security fixes)
 88add23 fix(communicator): 7 HIGH bugs — DLQ, TLS, panic recovery, error propagation
 8b0624c fix(admin): 5 HIGH bugs — auth bypass, transfer validation, API endpoint, refresh race
-f0824ab fix(app): 9 HIGH bugs — MQTT safety, memory leaks, financial display, null guards
-ebff4de fix(cabinet): 8 HIGH bugs — Redux mutation, formatters, MQTT, saga effects
+f0824ab fix(app): 9 HIGH bugs — Centrifugo safety, memory leaks, financial display, null guards
+ebff4de fix(cabinet): 8 HIGH bugs — Redux mutation, formatters, Centrifugo, saga effects
 d620429 chore: update ub-server-main submodule (CRITICAL security fixes)
 34365c4 fix(communicator): 4 CRITICAL bugs — message loss, deadlock, nil panics
 798b29e fix(app): 6 CRITICAL bugs — token storage, auth race, null safety
@@ -255,7 +255,7 @@ b19ecfa fix: correct storage key collision for saved withdrawal coins
 5c73ff5 fix: enable refresh token storage on login
 07609dc fix(communicator): align RabbitMQ consumer with PHP producer exchange config
 a76d3f9 fix: remove 5 genuinely unused MessageNames enum values
-97ffc44 fix: remove dead MQTT service and unused MQTT dependencies
+97ffc44 fix: remove dead real-time service and unused dependencies
 1c747ed fix: prevent NPE on network error and token refresh race condition
 f439a0c fix: add null check in _shouldRefreshToken to prevent NPE on network error
 1d0fef0 fix: replace hardcoded IP with ChartApiPrefix constant
@@ -272,7 +272,7 @@ fix(server): JSON decode error handling with BadRequestHttpException
 fix(server): 4 LOW bugs — cancel balance floor, JSON validation, TODOs
 fix(server): 4 MEDIUM bugs — UbId randomization, validator, IP whitelist, input guard
 fix(server): 5 HIGH bugs — AnyToAny crash, firewall, access control, LIKE injection, balance floor
-fix(server): C-01/C-02/C-03 — MQTT auth, withdrawal race condition, test bypass
+fix(server): C-01/C-02/C-03 — Centrifugo auth, withdrawal race condition, test bypass
 fix(security): replace md5/sha1 and rand() with CSPRNG alternatives
 fix(security): reduce JWT TTL from 100 hours to 1 hour
 fix(security): replace hardcoded passwords in docker-compose files with env vars

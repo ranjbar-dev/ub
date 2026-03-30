@@ -9,7 +9,7 @@
 //   - HTTPClient: Outbound HTTP requests
 //   - JwtHandler: JWT token creation and validation
 //   - PasswordEncoder: bcrypt password hashing
-//   - MqttClient: MQTT publish/subscribe for real-time data push
+//   - CentrifugoClient: Centrifugo HTTP API publish for real-time data push
 //   - RabbitMqClient: RabbitMQ message publishing for async communication
 //   - WsClient: WebSocket connection management
 //

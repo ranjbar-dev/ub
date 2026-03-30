@@ -19,13 +19,13 @@ func (s *httpServer) registerAuthRoutes(v1 *gin.RouterGroup) {
 	}
 }
 
-// registerMqttAuthRoutes sets up /emqtt endpoints for MQTT broker authentication.
-func (s *httpServer) registerMqttAuthRoutes(v1 *gin.RouterGroup) {
-	mqttAuth := v1.Group("/emqtt")
+// registerCentrifugoRoutes sets up /auth endpoints for Centrifugo token generation (auth required).
+func (s *httpServer) registerCentrifugoRoutes(v1 *gin.RouterGroup) {
+	centrifugo := v1.Group("/auth")
+	centrifugo.Use(middleware.AuthMiddleware(s.services.AuthService))
 	{
-		mqttAuth.POST("/login", handler.MqttLogin(s.services.MqttAuthService))
-		mqttAuth.POST("/acl", handler.MqttACL(s.services.MqttAuthService))
-		mqttAuth.POST("/superuser", handler.MqttSuperUser(s.services.MqttAuthService))
+		centrifugo.POST("/centrifugo-token", handler.CentrifugoConnectionToken(s.services.CentrifugoTokenService))
+		centrifugo.GET("/centrifugo-subscribe-token", handler.CentrifugoSubscriptionToken(s.services.CentrifugoTokenService))
 	}
 }
 

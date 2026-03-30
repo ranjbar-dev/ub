@@ -91,7 +91,6 @@ const OrderBookGrid = (props: {
     };
   }, []);
   ///////////////end of resize useEffect
-  ////////mqtt
 
   const Translate = (data: { message: string }) => {
     return Translator({

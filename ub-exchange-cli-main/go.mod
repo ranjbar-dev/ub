@@ -6,7 +6,6 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
-	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/getsentry/sentry-go v0.30.0
 	github.com/gin-contrib/cors v1.7.3
 	github.com/gin-gonic/gin v1.10.1

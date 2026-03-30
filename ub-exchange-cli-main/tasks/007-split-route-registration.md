@@ -21,7 +21,7 @@ registerRoutes()
 ├── Static files (line 160)
 ├── /api/v1 group
 │   ├── /auth (5 routes)
-│   ├── /emqtt (3 routes)
+│   ├── /centrifugo (3 routes)
 │   ├── /main-data (5 routes)
 │   ├── /currencies (8 routes, mixed auth)
 │   ├── /withdraw-address (5 routes, auth required)
@@ -65,13 +65,13 @@ func (s *httpServer) registerAuthRoutes(v1 *gin.RouterGroup) {
     }
 }
 
-// registerMqttAuthRoutes sets up /emqtt endpoints for MQTT broker authentication.
-func (s *httpServer) registerMqttAuthRoutes(v1 *gin.RouterGroup) {
-    mqttAuth := v1.Group("/emqtt")
+// registerCentrifugoAuthRoutes sets up /centrifugo endpoints for real-time broker authentication.
+func (s *httpServer) registerCentrifugoAuthRoutes(v1 *gin.RouterGroup) {
+    centrifugoAuth := v1.Group("/centrifugo")
     {
-        mqttAuth.POST("/login", handler.MqttLogin(s.services.MqttAuthService))
-        mqttAuth.POST("/acl", handler.MqttACL(s.services.MqttAuthService))
-        mqttAuth.POST("/superuser", handler.MqttSuperUser(s.services.MqttAuthService))
+        centrifugoAuth.POST("/login", handler.CentrifugoLogin(s.services.CentrifugoAuthService))
+        centrifugoAuth.POST("/acl", handler.CentrifugoACL(s.services.CentrifugoAuthService))
+        centrifugoAuth.POST("/superuser", handler.CentrifugoSuperUser(s.services.CentrifugoAuthService))
     }
 }
 
@@ -140,7 +140,7 @@ func (s *httpServer) registerRoutes() {
     v1 := r.Group("/api/v1")
     {
         s.registerAuthRoutes(v1)
-        s.registerMqttAuthRoutes(v1)
+        s.registerCentrifugoAuthRoutes(v1)
         s.registerMainDataRoutes(v1)
         s.registerCurrencyRoutes(v1)
         s.registerWithdrawAddressRoutes(v1)

@@ -18,7 +18,7 @@ type EventsHandler interface {
 	// engine, an external exchange, or the Redis stop-order queue. When isForStopOrderSubmission
 	// is true, the order is treated as a triggered stop order being submitted to the engine.
 	HandleOrderCreation(o Order, isForStopOrderSubmission bool)
-	// HandleOrderCancellation pushes a cancellation notification to the client via MQTT.
+	// HandleOrderCancellation pushes a cancellation notification to the client via Centrifugo.
 	HandleOrderCancellation(o Order)
 	// HandleOrderFulfillByAdmin removes the order from the matching engine's order book
 	// after an admin manually fulfills it.
@@ -28,7 +28,7 @@ type EventsHandler interface {
 type eventsHandler struct {
 	redisManager                 RedisManager
 	decisionManager              DecisionManager
-	mqttManager                  communication.MqttManager
+	mqttManager                  communication.CentrifugoManager
 	externalExchangeOrderService externalexchange.OrderService
 	engineCommunicator           EngineCommunicator
 	postOrderMatchingService     PostOrderMatchingService
@@ -190,7 +190,7 @@ func (s *eventsHandler) shouldPush(o Order) bool {
 	return true
 }
 
-func NewOrderEventsHandler(rm RedisManager, dm DecisionManager, mqttM communication.MqttManager,
+func NewOrderEventsHandler(rm RedisManager, dm DecisionManager, mqttM communication.CentrifugoManager,
 	ees externalexchange.OrderService, ec EngineCommunicator, pom PostOrderMatchingService,
 	logger platform.Logger) EventsHandler {
 	return &eventsHandler{

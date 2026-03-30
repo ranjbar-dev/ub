@@ -31,7 +31,8 @@
       "presence": true,
       "history_size": 5,
       "history_ttl": "300s",
-      "allow_subscribe_for_client": true
+      "allow_subscribe_for_client": false,
+      "allow_subscribe_for_client_with_token": true
     }
   ],
   "log_level": "info"

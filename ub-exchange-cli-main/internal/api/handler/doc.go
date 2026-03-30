@@ -9,7 +9,7 @@
 //  4. Return the service response as JSON
 //
 // Endpoint groups:
-//   - Auth: Login, register, 2FA, password reset, MQTT auth
+//   - Auth: Login, register, 2FA, password reset, Centrifugo tokens
 //   - Orders: Create, cancel, list open/traded orders, stop orders
 //   - Payments: List payments, crypto payment creation
 //   - User: Profile, KYC, device management, settings

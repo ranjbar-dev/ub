@@ -11,7 +11,7 @@ import (
 // DI registrations for infrastructure and platform services.
 // These are registered first as they have no internal service dependencies.
 // All other services depend on one or more of: configService, loggerService,
-// dbClient, redisClient, cacheService, mqttClient, rabbitmqClient, httpClient, wsClient.
+// dbClient, redisClient, cacheService, centrifugoClient, rabbitmqClient, httpClient, wsClient.
 func addConfigService() {
 	mustAdd(di.Def{
 		Name:  ConfigService,
@@ -67,14 +67,14 @@ func addWSClient() {
 	})
 }
 
-func addMQTTClient() {
+func addCentrifugoClient() {
 	mustAdd(di.Def{
-		Name:  mqttClient,
+		Name:  centrifugoClient,
 		Scope: di.App,
 		Build: func(ctn di.Container) (interface{}, error) {
 			configsService := ctn.Get(ConfigService).(platform.Configs)
 			loggerService := ctn.Get(LoggerService).(platform.Logger)
-			return platform.NewMqttClient(configsService, loggerService), nil
+			return platform.NewCentrifugoClient(configsService, loggerService), nil
 		},
 	})
 }
@@ -100,13 +100,14 @@ func addHTTPClient() {
 	})
 }
 
-func addMQTTManager() {
+func addCentrifugoManager() {
 	mustAdd(di.Def{
-		Name:  mqttManager,
+		Name:  centrifugoManager,
 		Scope: di.App,
 		Build: func(ctn di.Container) (interface{}, error) {
-			mqttCli := ctn.Get(mqttClient).(platform.MqttClient)
-			return communication.NewMqttManager(mqttCli), nil
+			centrifugoCli := ctn.Get(centrifugoClient).(platform.CentrifugoClient)
+			loggerService := ctn.Get(LoggerService).(platform.Logger)
+			return communication.NewCentrifugoManager(centrifugoCli, loggerService), nil
 		},
 	})
 }

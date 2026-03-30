@@ -37,14 +37,14 @@ func NewContainer() di.Container {
     addDBClient()            // depends on: configService
     addLogger()              // depends on: configService
     addWSClient()            // depends on: configService, loggerService
-    addMQTTClient()          // depends on: configService, loggerService
+    addCentrifugoClient()          // depends on: configService, loggerService
     addRedisClient()         // depends on: configService, loggerService
     addHTTPClient()          // depends on: configService, loggerService
 
     // === Messaging ===
     addRabbitmqClient()      // depends on: configService, loggerService
     addQueueManager()        // depends on: rabbitmqClient, loggerService
-    addMQTTManager()         // depends on: mqttClient, loggerService
+    addCentrifugoManager()         // depends on: centrifugoClient, loggerService
 
     // === Repositories (depend on: dbClient) ===
     addOrderRepository()

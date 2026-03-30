@@ -241,7 +241,7 @@ type service struct {
 	internalTransferService          InternalTransferService
 	externalExchangeService          externalexchange.Service
 	autoExchangeManager              AutoExchangeManager
-	mqttManager                      communication.MqttManager
+	mqttManager                      communication.CentrifugoManager
 	configs                          platform.Configs
 	logger                           platform.Logger
 }
@@ -2331,7 +2331,7 @@ func NewPaymentService(db *gorm.DB, paymentRepository Repository, currencyServic
 	permissionManager user.PermissionManager, userWithdrawAddressService userwithdrawaddress.Service, userService user.Service,
 	userBalanceService userbalance.Service, communicationService communication.Service, priceGenerator currency.PriceGenerator,
 	internalTransferService InternalTransferService, externalExchangeService externalexchange.Service,
-	autoExchangeManager AutoExchangeManager, mqttManager communication.MqttManager, configs platform.Configs, logger platform.Logger) Service {
+	autoExchangeManager AutoExchangeManager, mqttManager communication.CentrifugoManager, configs platform.Configs, logger platform.Logger) Service {
 	return &service{
 		db:                               db,
 		paymentRepository:                paymentRepository,

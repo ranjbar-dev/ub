@@ -8,7 +8,7 @@
 //   - Error when partial order is a market order
 //
 // Test data: sqlmock MySQL DB, mocked order/trade repositories, user balance,
-// currency, MQTT, live data, trade events handler, and platform configs.
+// currency, Centrifugo, live data, trade events handler, and platform configs.
 package order_test
 
 import (
@@ -211,7 +211,7 @@ func TestPostOrderMatchingService_HandlePostOrderMatching_AllLimits_NoPartial(t 
 	tradeEventsHandler := new(mocks.TradeEventsHandler)
 	tradeEventsHandler.On("HandleTradesCreation", mock.Anything, mock.Anything).Once().Return()
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Times(3).Return()
 
 	redisClient := new(mocks.RedisClient)
@@ -517,7 +517,7 @@ func TestPostOrderMatchingService_HandlePostOrderMatching_AllLimits_WithPartial_
 	tradeEventsHandler := new(mocks.TradeEventsHandler)
 	tradeEventsHandler.On("HandleTradesCreation", mock.Anything, mock.Anything).Once().Return()
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Times(3).Return()
 
 	redisClient := new(mocks.RedisClient)
@@ -741,7 +741,7 @@ func TestPostOrderMatchingService_HandlePostOrderMatching_SingleMarketOrder_Only
 	tradeEventsHandler := new(mocks.TradeEventsHandler)
 	tradeEventsHandler.On("HandleTradesCreation", mock.Anything, mock.Anything).Once().Return()
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 
 	redisClient := new(mocks.RedisClient)
@@ -991,7 +991,7 @@ func TestPostOrderMatchingService_HandlePostOrderMatching_AllLimits_WithPartial_
 	tradeEventsHandler := new(mocks.TradeEventsHandler)
 	tradeEventsHandler.On("HandleTradesCreation", mock.Anything, mock.Anything).Once().Return()
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Times(3).Return()
 
 	redisClient := new(mocks.RedisClient)
@@ -1226,7 +1226,7 @@ func TestPostOrderMatchingService_HandlePostOrderMatching_Partial_FromAdmin(t *t
 	tradeEventsHandler := new(mocks.TradeEventsHandler)
 	tradeEventsHandler.On("HandleTradesCreation", mock.Anything, mock.Anything).Once().Return()
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	redisClient := new(mocks.RedisClient)
 	configs := new(mocks.Configs)
@@ -1362,7 +1362,7 @@ func TestPostOrderMatchingService_Error_OrdersAreNotOpen(t *testing.T) {
 	priceGenerator := new(mocks.PriceGenerator)
 	priceGenerator.On("GetPrice", mock.Anything, "BTC-USDT").Once().Return("50000", nil)
 	tradeEventsHandler := new(mocks.TradeEventsHandler)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	redisClient := new(mocks.RedisClient)
 	configs := new(mocks.Configs)
 	configs.On("GetEnv").Once().Return(platform.EnvTest)
@@ -1573,7 +1573,7 @@ func TestPostOrderMatchingService_Error_Error_PartialIsMarket(t *testing.T) {
 
 	tradeEventsHandler := new(mocks.TradeEventsHandler)
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 
 	redisClient := new(mocks.RedisClient)
 	redisClient.On("LPush", mock.Anything, order.UnmatchedOrdersList, "1").Once().Return(int64(1), nil)

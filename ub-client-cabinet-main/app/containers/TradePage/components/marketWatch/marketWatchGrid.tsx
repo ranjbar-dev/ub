@@ -104,7 +104,6 @@ const MarketWatchGrid = (props: {
     };
   }, []);
 
-  ////price mqtt
   useEffect(() => {
     const EventSubscription = EventSubscriber.subscribe((message: any) => {
       if (message.name === EventMessageNames.GOT_FAV_PAIRS) {

@@ -1,12 +1,12 @@
 // Package processor_test tests the data processor that handles incoming market events. Covers:
-//   - Processing trade events (updating trade book and publishing via MQTT)
-//   - Processing depth events (updating external order book and publishing order book via MQTT)
-//   - Processing kline events (publishing candlestick data via MQTT and queue manager)
+//   - Processing trade events (updating trade book and publishing via Centrifugo)
+//   - Processing depth events (updating external order book and publishing order book via Centrifugo)
+//   - Processing kline events (publishing candlestick data via Centrifugo and queue manager)
 //   - Processing ticker events (updating live price data, publishing tickers,
 //     triggering stop-order submissions and in-queue order handling)
 //
 // Test data: mock live data, price generator, kline service, order book service,
-// MQTT manager, queue manager, stop-order submission manager, in-queue order manager,
+// Centrifugo manager, queue manager, stop-order submission manager, in-queue order manager,
 // currency service, and Redis client with BTC-USDT pair and market data fixtures.
 package processor_test
 
@@ -29,7 +29,7 @@ func TestProcessor_ProcessTrade(t *testing.T) {
 	priceGenerator := new(mocks.PriceGenerator)
 	klineService := new(mocks.KlineService)
 	orderbookService := new(mocks.OrderbookService)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishTrades", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	inQueueOrderManager := new(mocks.InQueueOrderManager)
 	queueManager := new(mocks.QueueManager)
@@ -88,7 +88,7 @@ func TestProcessor_ProcessDepth(t *testing.T) {
 	orderbookService.On("UpdateExternalOrderBook", mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything).Once().Return(ob, nil)
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderBook", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 
 	inQueueOrderManager := new(mocks.InQueueOrderManager)
@@ -133,7 +133,7 @@ func TestProcessor_ProcessKline(t *testing.T) {
 	//klineService.On("SaveKline", mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	orderbookService := new(mocks.OrderbookService)
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishKline", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	inQueueOrderManager := new(mocks.InQueueOrderManager)
 	queueManager := new(mocks.QueueManager)
@@ -176,7 +176,7 @@ func TestProcessor_ProcessTicker(t *testing.T) {
 	klineService := new(mocks.KlineService)
 	orderbookService := new(mocks.OrderbookService)
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishTicker", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 
 	stopOrderSubmissionManager := new(mocks.StopOrderSubmissionManager)

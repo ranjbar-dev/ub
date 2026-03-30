@@ -42,10 +42,10 @@ This is a **cryptocurrency exchange platform** monorepo with 6 sub-projects:
          │  │  │  MySQL   │      │  between Go services
          │  │  │  ◄───────┘      │
          │  │  │                 │
-         │  │  └──── MQTT ──► EMQX broker ──► Client WebSockets
-         │  │        publish    :1883/:8083   (tickers, order books,
-         │  │        market     (auth via     trade books, user events)
-         │  │        data       /api/v1/emqtt)
+         │  │  └──── Centrifugo ──► Client WebSockets
+         │  │        publish    :8000/:8800   (tickers, order books,
+         │  │        market     (JWT auth)     trade books, user events)
+         │  │        data
          │  │
          │  └──── RabbitMQ ──► ub-communicator-main (Go)
          │        publish       consumer workers (5 pool)
@@ -64,7 +64,7 @@ This is a **cryptocurrency exchange platform** monorepo with 6 sub-projects:
 | **MariaDB** | 10.2 | Primary data store (users, orders, trades, balances, currencies) |
 | **Redis** | 6.2.2-alpine | Caching, order books (sorted sets), live data, session storage, pub/sub |
 | **RabbitMQ** | 3.7 | Async messaging: ub-exchange-cli → ub-communicator (working); ub-server → ub-communicator (broken config) |
-| **EMQX** | 3.0 (prod) / 4.0 (dev) | Real-time WebSocket push (tickers, order updates) |
+| **Centrifugo** | v4.1 | Real-time WebSocket push (tickers, order updates) |
 | **MongoDB** | latest | Audit log for sent messages (ub-communicator only) |
 | **Sentry** | — | Error tracking across all services |
 | **nginx** | — | Reverse proxy, SSL termination, host-based routing |
@@ -80,7 +80,7 @@ This is a **cryptocurrency exchange platform** monorepo with 6 sub-projects:
 | Shared DB | ub-exchange-cli ↔ ub-server | MySQL (GORM / Doctrine) | Both services read/write the same MySQL database |
 | RabbitMQ | ub-exchange-cli → ub-communicator | AMQP topic exchange `messages` | Email/SMS notifications (async); Go CLI is the working publisher path |
 | RabbitMQ | ub-server → ub-communicator | AMQP direct exchange `email_exchange` | ⚠️ **BROKEN** — exchange/type/routing mismatch with consumer (see Gotcha #11) |
-| MQTT Pub | ub-server + ub-exchange-cli → EMQX → clients | MQTT topics `main/trade/*` | Real-time market data (ticker, order book, trades, klines) |
+| Centrifugo | ub-server + ub-exchange-cli → Centrifugo → clients | Centrifugo channels `trade:*`, `user:*` | Real-time market data (ticker, order book, trades, klines) |
 | gRPC | Go services (ws, httpd, engine) | Internal `candle-grpc` network | Inter-service Go communication |
 | JWT | ub-server issues → ub-exchange-cli validates | HTTP `Authorization: Bearer` header | Shared auth via Lexik JWT Bundle |
 
@@ -110,28 +110,28 @@ Note: PHP only publishes in "prod" environment and uses INCOMPATIBLE exchange co
       Go CLI is the working path for email/SMS notifications to reach ub-communicator.
 ```
 
-### MQTT Topic Structure
+### Centrifugo Channel Structure
 
 ```
-Public topics (all clients):
-  main/trade/ticker/{pair}              — Price tickers (or just main/trade/ticker for all-pairs array)
-  main/trade/order-book/{pair}          — Live order books (optional /{precision} suffix)
-  main/trade/trade-book/{pair}          — Executed trades
-  main/trade/chart/{timeFrame}/{pair}   — OHLC chart data (by time frame)
-  main/trade/kline/{timeFrame}/{pair}   — K-line/candlestick data (by time frame)
-  main/trade/change-price/{pair}        — Price changes (⚠️ event subscriber commented out)
-  main/trade/market-price/{pair}        — Current market prices
+Public channels (all clients):
+  trade:ticker:{pair}              — Price tickers (or just trade:ticker for all-pairs array)
+  trade:order-book:{pair}          — Live order books (optional :{precision} suffix)
+  trade:trade-book:{pair}          — Executed trades
+  trade:chart:{timeFrame}:{pair}   — OHLC chart data (by time frame)
+  trade:kline:{timeFrame}:{pair}   — K-line/candlestick data (by time frame)
+  trade:change-price:{pair}        — Price changes
+  trade:market-price:{pair}        — Current market prices
 
-Private topics (authenticated users):
-  main/trade/user/{privateChannel}/open-orders/      — User's open orders
-  main/trade/user/{privateChannel}/crypto-payments/  — User's payment status
+Private channels (authenticated users):
+  user:{privateChannel}:open-orders      — User's open orders
+  user:{privateChannel}:crypto-payments  — User's payment status
 
-Publishers: Both ub-server (PHP/EmqttManager) and ub-exchange-cli (Go/mqttmanager) publish
-            to the same topics. Both use credentials mqtt_abbas:mqtt_abbas on emqtt:1883.
+Publishers: Both ub-server (PHP/CentrifugoManager) and ub-exchange-cli (Go/centrifugo)
+            publish to the same channels using HTTP API to centrifugo:8000.
 
-Auth: EMQX calls /api/v1/emqtt/login, /acl, /superuser — served by BOTH PHP and Go.
-      Subscribers connect via WSS on port 8443. Public topics allow anonymous access.
-      Private topics validated against user's privateChannelName via JWT.
+Auth: JWT tokens validated by Centrifugo using the `jwt_verify` option.
+      Subscribers connect via WebSocket on port 8000. Public channels allow anonymous access.
+      Private channels validated against user's privateChannelName via JWT.
 ```
 
 ## Database Schema Overview
@@ -228,7 +228,7 @@ Both ub-server (Predis) and ub-exchange-cli (go-redis) share the **same Redis in
 ### PHP Backend
 ```bash
 cd ub-server-main
-docker-compose up -d                          # Start all services (nginx, PHP, Go, DB, Redis, RabbitMQ, EMQX)
+docker-compose up -d                          # Start all services (nginx, PHP, Go, DB, Redis, RabbitMQ, Centrifugo)
 composer install                              # Install deps
 bin/console doctrine:migrations:migrate       # Run migrations
 vendor/bin/codeception run                    # Run tests (227 tests, 1777 assertions)
@@ -289,13 +289,13 @@ The primary Docker Compose lives in `ub-server-main/`:
 
 ```bash
 cd ub-server-main
-docker-compose up -d    # Starts: nginx, PHP-FPM, 3 Go services, MariaDB, Redis, RabbitMQ, EMQX
+docker-compose up -d    # Starts: nginx, PHP-FPM, 3 Go services, MariaDB, Redis, RabbitMQ, Centrifugo
 ```
 
 | Compose file | Purpose |
 |---|---|
 | `docker-compose.yml` | Local development (all services, exposed ports) |
-| `docker-compose-dev.yml` | Dev server (external env, EMQX v4, no nginx/DB) |
+| `docker-compose-dev.yml` | Dev server (external env, Centrifugo v4, no nginx/DB) |
 | `docker-compose-prod.yml` | Production (SSL, localhost-only DB/Redis, deploy scripts) |
 
 The communicator has its own Compose in `ub-communicator-main/`:
@@ -320,8 +320,8 @@ The Go inter-service gRPC communication uses the `candle-grpc` network.
 | 3308 | MariaDB |
 | 6379 | Redis |
 | 5672 | RabbitMQ |
-| 1883 | EMQX MQTT |
-| 8083 | EMQX WebSocket |
+| 8000 | Centrifugo HTTP API & WebSocket |
+| 8800 | Centrifugo (via nginx) |
 | 27017 | MongoDB (communicator) |
 
 ### Environment Variables
@@ -338,10 +338,10 @@ The Go inter-service gRPC communication uses the `candle-grpc` network.
 | MySQL DSN | ub-server + ub-exchange-cli | ✅ Both use `db:3306/exchange_db` |
 | Redis DSN | ub-server + ub-exchange-cli | ✅ Both use `redis:6379` DB 0 |
 | RabbitMQ credentials | ub-server + ub-exchange-cli + docker-compose | ⚠️ PHP has `guest:guest`, others have `rabbitmquser:some_password` |
-| MQTT credentials | ub-server + ub-exchange-cli | ✅ Both use `mqtt_abbas:mqtt_abbas` |
+| Centrifugo credentials | ub-server + ub-exchange-cli | ✅ Both use Centrifugo API key auth |
 | JWT key paths | ub-server + ub-exchange-cli | ✅ Both use `config/jwt/{private,public}.pem` |
 | API domain | all frontends | ✅ `app.unitedbit.com` / `admin.unitedbit.com` |
-| MQTT WSS | React + Flutter | ✅ `wss://{domain}:8443` |
+| Centrifugo WSS | React + Flutter | ✅ `wss://{domain}:8800` |
 
 ## API Contract Summary
 
@@ -358,7 +358,7 @@ All APIs versioned under `/api/v1/`:
 | `/api/v1/user-balance/*` | ub-exchange-cli | Balances, auto-exchange |
 | `/api/v1/user/*` | ub-exchange-cli | Profile, 2FA, password, SMS |
 | `/api/v1/crypto-payment/*` | ub-exchange-cli | Deposit, withdraw, cancel |
-| `/api/v1/emqtt/*` | ub-server + ub-exchange-cli | MQTT auth (login, ACL, superuser) — both backends serve these |
+| `/api/v1/centrifugo/*` | ub-server + ub-exchange-cli | Centrifugo token endpoint — both backends serve these |
 | `/tv/api/v1/*` | ub-server | TradingView charting integration |
 
 Admin API uses **host-based routing** (admin subdomain → port 8001).
@@ -422,11 +422,11 @@ docker-compose -f docker-compose-prod.yml exec exchange-app php bin/console doct
 - 250+ Doctrine migrations (append-only, never edit existing)
 
 ### Real-time
-- MQTT topics follow `main/trade/{channel}/{pair}` pattern (some include `/{timeFrame}/` before pair)
-- Both PHP (EmqttManager) and Go (mqttmanager) publish to MQTT; both use same credentials
-- Authorized vs unauthorized MQTT clients for different data access
-- EMQX authenticates clients via HTTP callback to `/api/v1/emqtt/*` (served by both PHP and Go)
-- Private topics use `user/{privateChannelName}/` (NOT userId directly)
+- Centrifugo channels follow `trade:{channel}:{pair}` and `user:{channel}` patterns
+- Both PHP (CentrifugoManager) and Go (centrifugo) publish to Centrifugo; both use API key auth
+- Authorized vs unauthorized Centrifugo clients for different channel access
+- Centrifugo validates JWT tokens with `jwt_verify` option
+- Private channels use `user:{privateChannelName}` (NOT userId directly)
 
 ### Security
 - Google reCAPTCHA v2 on auth endpoints
@@ -539,11 +539,11 @@ namespaces so they don't directly conflict, but they represent **parallel order 
 systems**. Shared keys like `queue:stop:order:*` and `live_data:pair_currency:*` are
 accessed concurrently by both services without distributed locks — potential race conditions.
 
-### 15. Flutter App Missing Trade-Book MQTT Subscription
-ub-app-main (Flutter) subscribes to ticker, order-book, kline, and private user topics,
-but does NOT subscribe to `main/trade/trade-book/{pair}`. This means recent executed
+### 15. Flutter App Missing Trade-Book Centrifugo Subscription
+ub-app-main (Flutter) subscribes to ticker, order-book, kline, and private user channels,
+but does NOT subscribe to `trade:trade-book:{pair}`. This means recent executed
 trades won't display in the mobile app's trade book view. The React client (ub-client-
-cabinet-main) does subscribe to this topic correctly.
+cabinet-main) does subscribe to this channel correctly.
 
 ### 16. Mailgun API Parameters Are Swapped (ub-communicator BUG)
 In `pkg/platform/mail.go:59`, the code calls `mailgun.NewMailgun(apiKey, domain)`
@@ -575,7 +575,7 @@ pool shutdown logic exists but is unreachable via OS signals.
 | Client dashboard UI | ub-client-cabinet-main | ub-exchange-cli-main (API) |
 | Mobile app features | ub-app-main | ub-exchange-cli-main (API) |
 | Email/SMS notifications | ub-communicator-main | ub-server-main (publisher) |
-| Real-time data (WebSocket) | ub-server-main (MQTT publish) | ub-exchange-cli-main (WS server) |
+| Real-time data (WebSocket) | ub-server-main (Centrifugo publish) | ub-exchange-cli-main (WS server) |
 | New currency/pair | ub-server-main (entity + migration) | ub-exchange-cli-main (GORM model) |
 | New database table | ub-server-main (Doctrine migration) | ub-exchange-cli-main (GORM model if shared) |
 

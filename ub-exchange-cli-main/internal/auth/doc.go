@@ -5,7 +5,7 @@
 //   - JWT token issuance and validation
 //   - Two-factor authentication (TOTP via pquerna/otp)
 //   - Password reset flows
-//   - MQTT ACL authorization (controls which topics users can subscribe to)
+//   - Centrifugo token generation (JWT for real-time connections)
 //   - Device fingerprinting for login security
 //
 // The auth service is consumed by API handlers (internal/api/handler/auth.go)

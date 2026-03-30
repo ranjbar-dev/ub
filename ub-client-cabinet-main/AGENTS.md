@@ -22,7 +22,7 @@
 | **Data Grid** | @ag-grid-enterprise/all-modules | ^25.3.0 | AG Grid Enterprise + ag-grid-react |
 | **Charts** | @amcharts/amcharts4 | ^4.10.9 | amCharts 4 |
 | **TradingView** | charting_library (vendored) | ^1.0.2 | Local `app/charting_library/` + `app/datafeeds/` |
-| **Real-time** | mqtt (via mqtt.js) | n/a | MQTT over WSS on port 8443 |
+| **Real-time** | centrifuge | n/a | Centrifugo WebSocket on port 8800 |
 | **HTTP** | fetch (native) + axios | ^0.21.0 | Fetch for REST, Axios only for file uploads |
 | **Reactive** | rxjs | ^6.6.3 | Subject/ReplaySubject pub-sub message bus |
 | **Auth** | js-cookie / universal-cookie | ^2.2.1 / ^4.0.4 | JWT in cookies |
@@ -247,7 +247,7 @@ mkdir app/containers/MyNewPage
 - **Purpose:** Root application shell — routing, auth guards, global setup
 - **Key Features:** All Route definitions, PrivateRoute HOC, MUI theme provider, reCAPTCHA provider, AppHeader/Footer conditionally rendered, analytics init, mobile redirect
 - **Redux State:** `global` (AppState) — loggedIn, theme, currencies, countries
-- **MQTT:** `useConnectToAuthorizedMqtt2()` hook connects authenticated users to MQTT
+- **Centrifugo:** `useConnectToAuthorizedCentrifugo()` hook connects authenticated users to Centrifugo
 - **API:** None directly (delegates to child containers)
 - **Routes defined:**
   - `/` → HomePage, `/login` → LoginPage, `/signup` → SignupPage
@@ -279,21 +279,21 @@ mkdir app/containers/MyNewPage
 - **Purpose:** Main trading interface — market data, order placement, TradingView charts
 - **Key Features:** StreamComponentsWrapper for real-time data, reuses OrdersPage reducer/saga
 - **Redux State:** `ordersPage` (inherited), `tradePage` — currencies, pair details
-- **MQTT:** Real-time via StreamComponentsWrapper (MarketWatch, OrderBook, MarketTrade, TradeChart topics)
+- **Centrifugo:** Real-time via StreamComponentsWrapper (MarketWatch, OrderBook, MarketTrade, TradeChart channels)
 - **API:** `GET currencies/pairs-list`, `POST order/create`, `POST order/stop-order-create`
 
 ### FundsPage
 - **Purpose:** Balance, deposits, withdrawals, transaction history
 - **Key Features:** Tabbed UI (Balance/Deposit/Withdrawals/Transactions), top info panel, payment event listener
 - **Redux State:** `fundsPage` — balanceData, currencies, transactions
-- **MQTT:** `useNewPaymentEvent()` hook for real-time payment notifications
+- **Centrifugo:** `useNewPaymentEvent()` hook for real-time payment notifications
 - **API:** `GET user-balance/balance`, `GET user-balance/withdraw-deposit`, `GET crypto-payment`, `POST crypto-payment/withdraw`, `POST crypto-payment/pre-withdraw`
 
 ### OrdersPage
 - **Purpose:** Open orders, order history, trade history
 - **Key Features:** Tabbed UI (Open Orders/Order History/Trade History), real-time updates
 - **Redux State:** `ordersPage` — openOrders, orderHistory, tradeHistory + loading flags
-- **MQTT:** RegisteredUserSubscriber for real-time order updates
+- **Centrifugo:** RegisteredUserSubscriber for real-time order updates
 - **API:** `GET order/open-orders`, `GET order/full-history`, `GET trade/full-history`, `GET order/detail`, `POST order/cancel`
 
 ### AcountPage
@@ -510,11 +510,11 @@ mkdir app/containers/MyNewPage
 - **Endpoints:** `POST user-profile-image/upload?need_id=true`, `POST user-profile-image/multiple-upload`
 - **Features:** FormData multipart, Bearer token, 30s timeout, progress published via MessageService (SET_UPLOADER_STATE, UPLOAD_PERCENTAGE)
 
-### MqttService2.ts — Real-time MQTT (Active)
-- **Pattern:** Singleton via `MqttService.getInstance()`
-- **Connection:** `wss://{mainUrl}:8443` with XOR cipher auth
+### CentrifugoPublicService.ts — Real-time Centrifugo (Active)
+- **Pattern:** Singleton via `CentrifugoPublicService.getInstance()`
+- **Connection:** `wss://{mainUrl}:8800` with XOR cipher auth
 - **Methods:**
-  - `ConnectToSubject({subject})` — Subscribe to MQTT topic
+  - `ConnectToSubject({subject})` — Subscribe to Centrifugo channel
   - `DisconnectFromSubject({subject})` — Unsubscribe
   - `ConnectToNewSubject({oldsubject, newSubject})` — Switch subscription
 - **Topic Routing:** Messages routed by topic prefix to specific RxJS subjects:
@@ -524,15 +524,15 @@ mkdir app/containers/MyNewPage
   - `main/trade/kline/` → TradeChartMessageService
   - (other) → SideMessageService
 
-### RegisteredMqttService.ts — Authenticated MQTT
+### CentrifugoAuthService.ts — Authenticated Centrifugo
 - **Pattern:** Singleton with optional re-initialization on token refresh
 - **Connection:** Same WSS endpoint, token-based auth
-- **Methods:** Same as MqttService2 (ConnectToSubject, DisconnectFromSubject, ConnectToNewSubject)
+- **Methods:** Same as CentrifugoPublicService (ConnectToSubject, DisconnectFromSubject, ConnectToNewSubject)
 - **Features:** Health check (publishes `/testing` every 5 seconds), token refresh support, all messages → RegisteredUserMessageService
 
-### mqttService.ts — Legacy MQTT (Deprecated)
-- **Pattern:** Hook-style (`useStartMQTTMessages()`)
-- **Status:** Deprecated — use MqttService2 instead
+### centrifugoService.ts — Legacy Centrifugo (Deprecated)
+- **Pattern:** Hook-style (`useStartCentrifugoMessages()`)
+- **Status:** Deprecated — use CentrifugoPublicService instead
 
 ### message_service.ts — RxJS Pub-Sub Bus
 - **Pattern:** Multiple RxJS Subject/ReplaySubject instances
@@ -540,9 +540,9 @@ mkdir app/containers/MyNewPage
   1. `MessageService` / `Subscriber` — Main app-wide event bus
   2. `DataInjectMessageService` / `dataInjectSubscriber` — Data injection
   3. `ReplayMessageService3` / `RepaySubscriber3` — ReplaySubject(3) buffer
-  4. `SideMessageService` / `SideSubscriber` — MQTT side messages
+  4. `SideMessageService` / `SideSubscriber` — Centrifugo side messages
   5. `EventMessageService` / `EventSubscriber` — UI events
-  6. `RegisteredUserMessageService` / `RegisteredUserSubscriber` — Auth user MQTT messages
+  6. `RegisteredUserMessageService` / `RegisteredUserSubscriber` — Auth user Centrifugo messages
   7. `MarketTradeMessageService` / `MarketTradeSubscriber` — Trade data stream
   8. `OrderBookMessageService` / `OrderBookSubscriber` — Order book stream
   9. `MarketWatchMessageService` / `MarketWatchSubscriber` — Market watch stream
@@ -556,9 +556,9 @@ mkdir app/containers/MyNewPage
 
 ### constants.ts — Configuration
 - **Enums:** RequestTypes, LocalStorageKeys (22 keys), SessionStorageKeys, UploadUrls
-- **URLs:** `BaseUrl = https://{mainUrl}/api/v1/`, `mqttServer = wss://{mainUrl}:8443`
+- **URLs:** `BaseUrl = https://{mainUrl}/api/v1/`, `centrifugoServer = wss://{mainUrl}:8800`
 - **Environment:** `mainUrl` = `dev-app.unitedbit.com` (dev) or `app.unitedbit.com` (prod)
-- **MQTT Config:** protocol: wss, connectTimeout: 30min, reconnectPeriod: 2s, keepalive: 0
+- **Centrifugo Config:** protocol: wss, connectTimeout: 30min, reconnectPeriod: 2s, keepalive: 0
 
 ### toastService.ts — Error Toast Formatter
 - **Methods:** `ToastMessages(errors)` — Iterates error object, cleans field names, displays individual toast notifications
@@ -675,7 +675,7 @@ SET_ERROR, SET_INPUT_ERROR
 // Document upload
 SET_DOCUMENT_IMAGES, REFRESH_VISIBLE_SECTION
 
-// MQTT
+// Centrifugo
 RECONNECT_EVENT
 
 // Test
@@ -721,8 +721,8 @@ Container dispatches Redux Action
                     ▼
                  Any subscribed component receives via .subscribe()
 
-MQTT Real-time Flow:
-    MqttService2 singleton ←──WSS──► MQTT Broker (port 8443)
+Centrifugo Real-time Flow:
+    CentrifugoPublicService singleton ←──WSS──► Centrifugo server (port 8800)
         │
         ▼ (on message)
     Topic routing by prefix:
@@ -738,22 +738,22 @@ MQTT Real-time Flow:
 
 ---
 
-## h) Real-time — MQTT
+## h) Real-time — Centrifugo
 
 ### Connection Setup
-- **Server:** `wss://{mainUrl}:8443` (WebSocket Secure)
-- **Protocol:** MQTT over WSS
+- **Server:** `wss://{mainUrl}:8800` (WebSocket Secure)
+- **Protocol:** Centrifugo WebSocket
 - **Config:** connectTimeout: 30min, reconnectPeriod: 2s, keepalive: 0
-- **Auth:** XOR cipher (`mqttCipher('ubSalt')`) encrypts random client ID
+- **Auth:** XOR cipher (`centrifugoCipher('ubSalt')`) encrypts random client ID
   - `username`: JWT token from cookie (or encrypted client ID if not logged in)
   - `password`: encrypted client ID
   - `clientId`: encrypted client ID
 
-### Two MQTT Services
-1. **MqttService2** (public) — Singleton, routes messages to 5 RxJS subjects by topic prefix
-2. **RegisteredMqttService** (authenticated) — Singleton, optional token refresh, health check every 5s, all messages → RegisteredUserMessageService
+### Two Centrifugo Services
+1. **CentrifugoPublicService** (public) — Singleton, routes messages to 5 RxJS subjects by channel prefix
+2. **CentrifugoAuthService** (authenticated) — Singleton, optional token refresh, health check every 5s, all messages → RegisteredUserMessageService
 
-### Topic Prefixes (from `MqttTopicsPrefixes` enum)
+### Channel Prefixes (from `CentrifugoChannelPrefixes` enum)
 | Prefix | Example | Target RxJS Subject |
 |--------|---------|-------------------|
 | `main/trade/ticker` | `main/trade/ticker` | MarketWatchSubscriber |
@@ -761,28 +761,28 @@ MQTT Real-time Flow:
 | `main/trade/trade-book/` | `main/trade/trade-book/BTC_USDT` | MarketTradeSubscriber |
 | `main/trade/kline/` | `main/trade/kline/BTC_USDT` | TradeChartSubscriber |
 
-### Adding MQTT Subscriptions
+### Adding Centrifugo Subscriptions
 ```typescript
 // 1. Get service instance
-import { mqttService2 } from 'services/MqttService2';
+import { centrifugoService } from 'services/CentrifugoPublicService';
 
 // 2. Subscribe to a topic
-mqttService2.ConnectToSubject({ subject: 'main/trade/order-book/BTC_USDT' });
+centrifugoService.ConnectToSubject({ subject: 'trade:order-book:BTC_USDT' });
 
 // 3. Listen for messages via the appropriate RxJS subject
 import { OrderBookSubscriber } from 'services/message_service';
 OrderBookSubscriber.subscribe((msg) => {
-  console.log(msg.payload); // Parsed JSON from MQTT message
+  console.log(msg.payload); // Parsed JSON from Centrifugo message
 });
 
 // 4. Switch subscription (e.g., user changes currency pair)
-mqttService2.ConnectToNewSubject({
-  oldsubject: 'main/trade/order-book/BTC_USDT',
-  newSubject: 'main/trade/order-book/ETH_USDT',
+centrifugoService.ConnectToNewSubject({
+  oldsubject: 'trade:order-book:BTC_USDT',
+  newSubject: 'trade:order-book:ETH_USDT',
 });
 
 // 5. Unsubscribe
-mqttService2.DisconnectFromSubject({ subject: 'main/trade/order-book/ETH_USDT' });
+centrifugoService.DisconnectFromSubject({ subject: 'trade:order-book:ETH_USDT' });
 ```
 
 ---
@@ -1100,7 +1100,7 @@ export default function* mySaga() {
 
 ### Critical
 - **Hardcoded URLs** — `services/constants.ts` has hardcoded prod/dev URLs; should use `.env`
-- **MQTT XOR cipher** — `mqttCipher('ubSalt')` is trivially reversible; should use standard TLS + JWT
+- **Centrifugo XOR cipher** — `centrifugoCipher('ubSalt')` is trivially reversible; should use standard TLS + JWT
 - **axios 0.21.0** — CVE-2023-45857 (CSRF); requires upgrade to ^1.x
 - **react-intl 2.9.0** — Deprecated; `addLocaleData` API removed in v3+
 
@@ -1156,20 +1156,20 @@ See `UPGRADE_PLAN.md` for the full 8-phase roadmap. Summary:
 |---------|---------------|------------|
 | §f API Service | "422 → ToastMessages(errors) → individual field toasts" | 422 handling is in individual saga `catch` blocks, not in `api_service.ts`. The API service has no 422-specific code. |
 | §f API Service | 4 methods listed | Actually 5 methods — `handleRawResponse()` is implicitly public (no `private` keyword) and was omitted |
-| §f mqttService.ts | "Legacy MQTT (Deprecated) — Hook-style, uses Paho" | Uses **mqtt.js** (same lib as MqttService2), not Eclipse Paho. Correct that it's hook-style and deprecated. |
+| §f centrifugoService.ts | "Legacy Centrifugo (Deprecated) — Hook-style" | Uses **centrifuge** (same lib as CentrifugoPublicService). Correct that it's hook-style and deprecated. |
 | §g MessageNames | "All 90+ MessageService Message Types" | Exactly **82 total** enum values: 78 `MessageNames` + 3 `EventMessageNames` + 1 `DataInjectMessageNames` |
-| §h MQTT Topics | 4 topic prefixes listed | Actually **7 distinct topic patterns** (see below) |
+| §h Centrifugo Channels | 4 channel prefixes listed | Actually **7 distinct channel patterns** (see below) |
 | §i Auth | Token refresh described as active | Token refresh is **DISABLED** — `retryWithNewToken()` call is commented out in `api_service.ts:68-70`; refresh token storage is commented out in `LoginPage/saga.ts:52-57` |
 | §i Auth | Logout flow | Missing critical detail: **NO server-side logout API call** — logout is entirely client-side (clear cookies + localStorage) |
 | §k Build | "Internals path: Legacy configs" | Should explicitly state **DEAD CODE** — only `craConfig/` configs are used; `internals/webpack/` files are unreachable |
 
-### Additional MQTT Topics (Missing from §h)
+### Additional Centrifugo Channels (Missing from §h)
 
 | # | Topic Pattern | Service | Auth | Purpose |
 |---|---------------|---------|------|---------|
-| 5 | `main/trade/user/{channel}/open-orders/` | RegisteredMqttService | Yes | Real-time user order updates |
-| 6 | `main/trade/user/{channel}/crypto-payments/` | RegisteredMqttService | Yes | Real-time payment notifications |
-| 7 | `/testing` (publish only) | RegisteredMqttService | Yes | Health check every 5 seconds |
+| 5 | `user:{channel}:open-orders` | CentrifugoAuthService | Yes | Real-time user order updates |
+| 6 | `user:{channel}:crypto-payments` | CentrifugoAuthService | Yes | Real-time payment notifications |
+| 7 | `testing` (publish only) | CentrifugoAuthService | Yes | Health check every 5 seconds |
 
 ### Dead Message Types (7 enum values never referenced)
 
@@ -1189,7 +1189,7 @@ Additionally, **16 message types** are subscribed to but never published (orphan
 
 | File | Evidence | Action |
 |------|----------|--------|
-| `app/services/mqttService.ts` | `useStartMQTTMessages` exported but **never imported** anywhere | Delete |
+| `app/services/centrifugoService.ts` | `useStartCentrifugoMessages` exported but **never imported** anywhere | Delete |
 | `internals/webpack/webpack.base.babel.js` | Only referenced by `yarn old_build` (never called in CI/CD) | Delete |
 | `internals/webpack/webpack.dev.babel.js` | Same — legacy, unreachable | Delete |
 | `internals/webpack/webpack.prod.babel.js` | Same — legacy, unreachable | Delete |

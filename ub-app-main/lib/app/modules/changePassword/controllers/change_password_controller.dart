@@ -15,7 +15,7 @@ enum changePasswordStep { ChangePassword, PasswordChanged }
 class ChangePasswordController extends GetxController with Toaster, Popups {
   String equalPassError = 'New password is not equal to repeated one';
   final GetStorage storage = GetStorage();
-  final ApiService apiService = ApiService();
+  final ApiService api = apiService;
 
   final _secureStorage = FlutterSecureStorage();
   final ChangePasswordProvider changePasswordProvider =

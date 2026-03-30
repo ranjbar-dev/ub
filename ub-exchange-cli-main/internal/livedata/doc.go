@@ -6,6 +6,6 @@
 //   - Recent trade book entries
 //
 // Data is written by processors (internal/processor) that consume Binance
-// WebSocket streams, and read by API handlers and MQTT publishers to push
+// WebSocket streams, and read by API handlers and Centrifugo publishers to push
 // updates to connected clients.
 package livedata

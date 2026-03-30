@@ -66,7 +66,7 @@ React 18 + TypeScript 5.4.5
 ├── Redux 4 (dynamic reducer/saga injection per container)
 ├── Redux-Saga 1.1.3 (API side effects)
 ├── RxJS 6 MessageService (90+ cross-component event types)
-├── MQTT over WSS (real-time market data: ticker, order book, trades, kline)
+├── Centrifugo WebSocket (real-time market data: ticker, order book, trades, kline)
 ├── Material-UI 4 + styled-components 5
 ├── AG Grid Enterprise 25 (data tables)
 ├── TradingView charting_library (vendored)
@@ -79,10 +79,10 @@ Each container follows a strict pattern: `index.tsx`, `reducer.ts`, `saga.ts`, `
 
 ## Key URLs
 
-| Environment | App URL | API Base | MQTT |
+| Environment | App URL | API Base | Centrifugo WS |
 |-------------|---------|----------|------|
-| Production | `https://app.unitedbit.com` | `/api/v1/` | `wss://app.unitedbit.com:8443` |
-| Development | `https://dev-app.unitedbit.com` | `/api/v1/` | `wss://dev-app.unitedbit.com:8443` |
+| Production | `https://app.unitedbit.com` | `/api/v1/` | `wss://app.unitedbit.com:8800` |
+| Development | `https://dev-app.unitedbit.com` | `/api/v1/` | `wss://dev-app.unitedbit.com:8800` |
 | Mobile | `https://m.unitedbit.com` | — | — |
 
 ## Documentation
@@ -102,7 +102,7 @@ Each container follows a strict pattern: `index.tsx`, `reducer.ts`, `saga.ts`, `
 | Styling | styled-components | 5.2.0 |
 | Data Grid | AG Grid Enterprise | ^25.3.0 |
 | Charts | amCharts 4 + TradingView | ^4.10.9 |
-| Real-time | MQTT (mqtt.js) over WSS | — |
+| Real-time | Centrifugo WebSocket (centrifuge) | — |
 | i18n | react-intl | 2.9.0 |
 | HTTP | Fetch API + Axios (uploads) | ^0.21.0 |
 | Build | Webpack (CRA-ejected) | 4.44.1 |

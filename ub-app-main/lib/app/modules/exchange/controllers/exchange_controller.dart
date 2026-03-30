@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:unitedbit/app/global/controller/authorizedMqttController.dart';
+import 'package:unitedbit/app/global/controller/authorizedCentrifugoController.dart';
 import '../../orders/pages/orderHistory/providers/order_history_provider.dart';
 
 import '../../../../services/constants.dart';
@@ -32,7 +32,7 @@ class ExchangeController extends GetxController with Popups, Toaster {
   //Objects To Provide Data
   final GlobalController globalController = Get.find();
   final TradeController tradeController = Get.find();
-  final AuthorizedMqttController authOrderController = Get.find();
+  final AuthorizedCentrifugoController authOrderController = Get.find();
 
   final inputValidationToastThrottle = new Throttling(
     duration: const Duration(milliseconds: 4000),

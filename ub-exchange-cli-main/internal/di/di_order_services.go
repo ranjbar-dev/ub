@@ -66,7 +66,7 @@ func addPostOrderMatchingService() {
 			forceTradrInst := ctn.Get(forceTrader).(order.ForceTrader)
 			priceGen := ctn.Get(priceGenerator).(currency.PriceGenerator)
 			tradeEventsHdl := ctn.Get(tradeEventsHandler).(order.TradeEventsHandler)
-			mqttMgr := ctn.Get(mqttManager).(communication.MqttManager)
+			centrifugoMgr := ctn.Get(centrifugoManager).(communication.CentrifugoManager)
 			redisClient := ctn.Get(RedisClient).(platform.RedisClient)
 			currencySvc := ctn.Get(currencyService).(currency.Service)
 			userSvc := ctn.Get(userService).(user.Service)
@@ -81,7 +81,7 @@ func addPostOrderMatchingService() {
 				forceTradrInst,
 				priceGen,
 				tradeEventsHdl,
-				mqttMgr,
+				centrifugoMgr,
 				redisClient,
 				currencySvc,
 				userSvc,
@@ -147,7 +147,7 @@ func addOrderEventsHandler() {
 		Build: func(ctn di.Container) (interface{}, error) {
 			orderRedisMgr := ctn.Get(orderRedisManager).(order.RedisManager)
 			decisionMgr := ctn.Get(decisionManager).(order.DecisionManager)
-			mqttMgr := ctn.Get(mqttManager).(communication.MqttManager)
+			centrifugoMgr := ctn.Get(centrifugoManager).(communication.CentrifugoManager)
 			externalExchangeOrderSvc := ctn.Get(externalExchangeOrderService).(externalexchange.OrderService)
 			engineCommInst := ctn.Get(engineCommunicator).(order.EngineCommunicator)
 			postOrderMatchingSvc := ctn.Get(postOrderMatchingService).(order.PostOrderMatchingService)
@@ -155,7 +155,7 @@ func addOrderEventsHandler() {
 			srv := order.NewOrderEventsHandler(
 				orderRedisMgr,
 				decisionMgr,
-				mqttMgr,
+				centrifugoMgr,
 				externalExchangeOrderSvc,
 				engineCommInst,
 				postOrderMatchingSvc,
@@ -436,7 +436,7 @@ func addWSDataProcessor() {
 			priceGen := ctn.Get(priceGenerator).(currency.PriceGenerator)
 			klineSvc := ctn.Get(klineService).(currency.KlineService)
 			orderbookSvc := ctn.Get(orderbookService).(orderbook.Service)
-			mqttMgr := ctn.Get(mqttManager).(communication.MqttManager)
+			centrifugoMgr := ctn.Get(centrifugoManager).(communication.CentrifugoManager)
 			stopOrderSubmissionManager := ctn.Get(StopOrderSubmissionManager).(order.StopOrderSubmissionManager)
 			inQueueOrderMgr := ctn.Get(inQueueOrderManager).(order.InQueueOrderManager)
 			queueMgr := ctn.Get(queueManager).(communication.QueueManager)
@@ -448,7 +448,7 @@ func addWSDataProcessor() {
 				priceGen,
 				klineSvc,
 				orderbookSvc,
-				mqttMgr,
+				centrifugoMgr,
 				stopOrderSubmissionManager,
 				inQueueOrderMgr,
 				queueMgr,

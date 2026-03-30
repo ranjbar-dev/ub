@@ -16,7 +16,7 @@
 8. [Global State & Controllers](#8-global-state--controllers)
 9. [API Service & HTTP Layer](#9-api-service--http-layer)
 10. [Interceptor Chain](#10-interceptor-chain)
-11. [MQTT Realtime System](#11-mqtt-realtime-system)
+11. [Centrifugo Realtime System](#11-centrifugo-realtime-system)
 12. [Storage System](#12-storage-system)
 13. [Cryptography](#13-cryptography)
 14. [Biometrics Service](#14-biometrics-service)
@@ -31,7 +31,7 @@
 23. [Mixins & Utilities](#23-mixins--utilities)
 24. [Code Generation](#24-code-generation)
 25. [Complete API Endpoint Reference](#25-complete-api-endpoint-reference)
-26. [MQTT Topic Reference](#26-mqtt-topic-reference)
+26. [Centrifugo Channel Reference](#26-centrifugo-channel-reference)
 27. [Common Data Provider](#27-common-data-provider)
 28. [Build Scripts](#28-build-scripts)
 29. [Docker Configuration](#29-docker-configuration)
@@ -80,7 +80,7 @@
 |---|---|---|
 | `get` | 4.3.4 | Routing, state management, DI (bindings, controllers, .obs) |
 | `dio` | 4.0.1 | HTTP client with interceptor chain |
-| `mqtt_client` | 9.6.1 | MQTT protocol (dual controllers: authorized + unauthorized) |
+| `centrifuge` | 0.15.0 | Centrifugo WebSocket client |
 | `rxdart` | 0.27.2 | Reactive streams (BehaviorSubject) |
 | `provider` | 6.0.1 | Secondary state management |
 | `get_storage` | 2.0.3 | Local key-value persistence |
@@ -187,13 +187,13 @@ Every feature follows the same structure under `lib/app/modules/<feature>/`:
 
 1. **Route navigated to** → GetPage triggers Binding
 2. **Binding.dependencies()** → `Get.lazyPut(() => Controller())` + `Get.lazyPut(() => Provider())`
-3. **Controller.onInit()** → calls Provider methods, sets up MQTT subscriptions
+3. **Controller.onInit()** → calls Provider methods, sets up Centrifugo subscriptions
 4. **View** → `GetView<Controller>` accesses controller via `controller.` getter, uses `Obx(() =>)` for reactive UI
 
 ### Global Singleton Pattern
 
 - `GlobalBinding` registers `GlobalController` as **permanent** (never disposed)
-- On login success: `loadAuthenticatedControllers()` puts `AuthorizedMqttController`, `UnAuthorizedMqttController`, `TradeController`, `AccountController` as permanent
+- On login success: `loadAuthenticatedControllers()` puts `AuthorizedCentrifugoController`, `UnAuthorizedCentrifugoController`, `TradeController`, `AccountController` as permanent
 - On logout: `_purgeTheMemory()` deletes all feature controllers
 
 ---
@@ -224,14 +224,11 @@ lib/
       options.dart                       # RetryOptions (3 retries, 1s interval)
       request_retrier.dart               # DioConnectivityRequestRetrier
       timeout_retry_interceptor.dart     # Retry on connectTimeout errors
-  mqttClient/
-    universal_mqtt_client.dart           # Export barrel
+  centrifugoClient/
+    centrifugo_service.dart              # Centrifugo client wrapper
     src/
-      mqtt_shared.dart                   # Enums, errors, status
-      mqtt_browser.dart                  # Browser WebSocket MQTT
-      mqtt_vm.dart                       # VM TCP/WebSocket MQTT
-      topics.dart                        # Topic validation, wildcards
-      universal_mqtt_client.dart         # Unified client with auto-reconnect
+      centrifugo_channels.dart           # Channel definitions and helpers
+      centrifugo_config.dart             # Connection configuration
   utils/
     basicMath.dart                       # Math helpers
     commonUtils.dart                     # Shared utilities (launchURL etc.)
@@ -267,8 +264,8 @@ lib/
         index.dart                       # GlobalBinding → GlobalController (permanent)
       controller/
         globalController.dart            # App-wide state, connectivity, theme, auth
-        authorizedMqttController.dart    # User-private MQTT topics
-        unAuthorizedMqttController.dart  # Public MQTT topics
+        authorizedCentrifugoController.dart  # User-private channels
+        unAuthorizedCentrifugoController.dart # Public channels
       providers/
         commonDataProvider.dart          # Shared API calls (countries, currencies, pairs, version)
       currency_model.dart
@@ -400,20 +397,20 @@ Startup sequence:
 | `enableDarkTheme(bool)` | Write `darkMode` to storage, call `Get.changeThemeMode` |
 | `handleLoggedOut({andExitApp})` | Clear tokens, purge all controllers, navigate to `/landing` |
 | `checkTokenValidation()` | 28-day token expiry check; biometric re-auth if expired |
-| `loadAuthenticatedControllers()` | Put `AuthorizedMqttController`, `UnAuthorizedMqttController`, `TradeController`, `AccountController` as permanent |
+| `loadAuthenticatedControllers()` | Put `AuthorizedCentrifugoController`, `UnAuthorizedCentrifugoController`, `TradeController`, `AccountController` as permanent |
 | `getPairsCurrenciesCountriesAndVersion()` | Parallel fetch: currencies, pairs, countries |
 | `getVersion()` | Check app version, show update popup if outdated |
 | `_purgeTheMemory()` | Delete all feature controllers on logout |
 | `checkIfRedirectIsNeeded()` | Mobile web → native app redirect logic |
 | `setDeviceType()` | `PHONE` if `shortestSide < 600`, else `TABLET` |
 
-### AuthorizedMqttController
+### AuthorizedCentrifugoController
 
-**File**: `lib/app/global/controller/authorizedMqttController.dart`
+**File**: `lib/app/global/controller/authorizedCentrifugoController.dart`
 
 | Property | Details |
 |---|---|
-| **Connection** | `wss://[dev-]app.unitedbit.com:8443` |
+| **Connection** | `wss://[dev-]app.unitedbit.com:8800` |
 | **Username** | JWT token |
 | **Password** | UUID v4 |
 | **Topic 1** | `main/trade/user/{channel}/open-orders/` — order events (QoS exactlyOnce) |
@@ -428,13 +425,13 @@ Startup sequence:
 
 **Emits `RxUpdateables`**: `Balances`, `TransactionHistory`, `UserPairBalances`, `OpenOrders`, `OrderHistory`
 
-### UnAuthorizedMqttController
+### UnAuthorizedCentrifugoController
 
-**File**: `lib/app/global/controller/unAuthorizedMqttController.dart`
+**File**: `lib/app/global/controller/unAuthorizedCentrifugoController.dart`
 
 | Property | Details |
 |---|---|
-| **Connection** | `wss://[dev-]app.unitedbit.com:8443` |
+| **Connection** | `wss://[dev-]app.unitedbit.com:8800` |
 | **Username** | UUID |
 | **Password** | UUID |
 
@@ -502,26 +499,24 @@ Interceptors execute in this order on every request:
 
 ---
 
-## 11. MQTT Realtime System
+## 11. Centrifugo Realtime System
 
-**Location**: `lib/mqttClient/`
+**Location**: `lib/centrifugoClient/`
 
 ### Architecture
 
 | File | Class | Purpose |
 |---|---|---|
-| `mqtt_shared.dart` | — | `UniversalMqttTransport` enum (tcp, ws, wss), status enum, error classes |
-| `mqtt_browser.dart` | `RawUniversalMqttClient` | Extends `MqttBrowserClient` (ws/wss only) |
-| `mqtt_vm.dart` | `RawUniversalMqttClient` | Extends `MqttServerClient` (tcp/ws/wss) |
-| `topics.dart` | — | `assertValidTopic()`, `isTopicMatch()` with `+` and `#` wildcards |
-| `universal_mqtt_client.dart` | `UniversalMqttClient` | Unified client with auto-reconnect (3s min interval), `BehaviorSubject` for status |
+| `centrifugo_service.dart` | `CentrifugoService` | WebSocket client with auto-reconnect, JWT auth, channel subscriptions |
+| `centrifugo_channels.dart` | — | Channel name helpers and definitions |
+| `centrifugo_config.dart` | — | Connection configuration (URL, tokens) |
 
 ### Key Methods
 
 | Method | Purpose |
 |---|---|
-| `handleString(topic, callback)` | Subscribe to topic, receive string messages |
-| `publishString(topic, message)` | Publish string message to topic |
+| `subscribe(channel, callback)` | Subscribe to Centrifugo channel, receive JSON messages |
+| `connect(token)` | Connect to Centrifugo with JWT connection token |
 
 ---
 
@@ -533,7 +528,7 @@ Interceptors execute in this order on every request:
 |---|---|
 | `token` | JWT access token |
 | `refresh` | JWT refresh token |
-| `channel` | User channel ID (for MQTT topics) |
+| `channel` | User channel ID (for Centrifugo channels) |
 | `lastLoginDate` | Timestamp of last login |
 | `countries` | Cached country list |
 | `currencies` | Cached currency list |
@@ -624,14 +619,14 @@ Credentials stored in `FlutterSecureStorage`: `se` = email, `sp` = password.
 |---|---|---|
 | `_urlPrefix` | `'dev-'` (DEV) / `''` (PRODUCTION) | Prefix for all URLs |
 | `appVersion` | From `VERSION` dart-define | Passed at build time |
-| `priceTopic` | `'main/trade/ticker'` | MQTT price ticker topic |
-| `orderbookTopic` | `'main/trade/order-book/'` | MQTT orderbook topic prefix |
-| `ohlcTopic` | `'main/trade/kline/'` | MQTT candle topic prefix |
+| `priceTopic` | `'trade:ticker'` | Centrifugo price ticker channel |
+| `orderbookTopic` | `'trade:order-book:'` | Centrifugo orderbook channel prefix |
+| `ohlcTopic` | `'trade:kline:'` | Centrifugo candle channel prefix |
 | `landingPageAddress` | `'https://www.unitedbit.com'` | Marketing site |
 | `cmsAddress` | `'https://content.unitedbit.com'` | CMS/news API |
 | `initialPair` | `'BTC-USDT'` | Default trading pair |
 | `mainUrl` | `'{prefix}app.unitedbit.com'` | Base domain |
-| `mqttServer` | `'wss://{prefix}app.unitedbit.com:8443'` | MQTT broker URL |
+| `centrifugoServer` | `'wss://{prefix}app.unitedbit.com:8800'` | Centrifugo WebSocket URL |
 | `baseUrl` / `appUrl` | `'https://{prefix}app.unitedbit.com'` | Base app URL |
 | `tradingView` | `'{appUrl}/tv/api/v1/main-route'` | TradingView route |
 | `jsAPI` | `'{appUrl}/tv/api/v1/js'` | TradingView JS API |
@@ -724,7 +719,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Provider** | `HomePageProvider` |
 | **APIs** | `GET currencies/pairs-statistic?pair_currencies=BTC-USDT\|ETH-USDT\|BCH-USDT\|DASH-USDT`; `GET https://content.unitedbit.com/ubnews?_sort=date:desc&_limit=5` |
 | **Observable State** | `isLoadingSparkLine`, `isSilentLoadingSparkLine`, `isLoadingNews`, `isRefreshing`, `isSilentLoadingNews`, `latestNews`, `sparkLinePairs`, `isUserVerified`, `popularPairs` |
-| **MQTT** | Listens to `tradeController.lastPrice` for live price updates |
+| **Centrifugo** | Listens to `tradeController.lastPrice` for live price updates |
 | **Navigation** | To `/trade`, `/market`, `/funds`, `/exchange` |
 
 ### 17.5 — trade
@@ -734,7 +729,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Purpose** | Market/limit/stop-limit orders, OHLC charts, order book, ticker |
 | **Providers** | `TradeProvider` (`GET user-balance/pair-balance`, `POST order/create`), `FavoritePairsProvider` (`POST currencies/favorite`), `OHLCProvider` (`GET tv/api/v1/js/get-bars`) |
 | **Observable State (20+)** | `orderBookData`, `activeChart`, `currentPairName`, `pairBalanceData`, `lastOhlcValue`, `pairs`, `isLoadingPairBalance`, `isCreatingOrder`, `mainActiveIndex`, `subActiveIndex`, `selectedPercentIndex`, `totalValue`, `amountValue`, `priceValue`, `stopValue`, `tradeFee`, `youGet`, `selectedTimeFrame`, `currentPairPrice`, `lastPrice`, `priceArray`, `showLoadingOverlay`, `amountInputLabel`, `priceInputLabel`, `totalInputLabel`, `stopPriceInputLabel` |
-| **MQTT Subscriptions** | 1) `priceSubscription` → `main/trade/ticker`; 2) `ohlcSubscription` → `main/trade/kline/{pair}`; 3) `orderbookSubscription` → `main/trade/order-book/{pair}`; 4) `updateSubscription` → `authorizedMqttController.updateDataSubject` for `UserPairBalances` |
+| **Centrifugo Subscriptions** | 1) `priceSubscription` → `trade:ticker`; 2) `ohlcSubscription` → `trade:kline:{pair}`; 3) `orderbookSubscription` → `trade:order-book:{pair}`; 4) `updateSubscription` → `authorizedCentrifugoController.updateDataSubject` for `UserPairBalances` |
 | **Sub-Controller** | `OHLCChartController` — obs: `isOhlcDetailsOpen`, `isLoadingOhlc`, `chartData`, `mainState`, `secondaryState`, `isLine`, `bids`, `asks`, `isTimeFramePopupOpen`, `selectedTimeFrameButtonIndex` |
 
 ### 17.6 — exchange
@@ -745,7 +740,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Provider** | `ExchangeProvider` |
 | **APIs** | `GET user-balance/pair-balance`, `POST order/create`, `GET currencies/pairs-statistic` |
 | **Observable State** | `sparkLinePairs`, `isLoadingSparkLine`, `totalValue`, `tradeFee`, `inputControllerFrom`, `inputControllerTo`, `pairBalanceData`, `isLoadingBalanceData`, `isLoadingExchangeSubmit`, `possiblePairs`, `savedCoins` |
-| **MQTT** | Listens to `tradeController.lastPrice` |
+| **Centrifugo** | Listens to `tradeController.lastPrice` |
 
 ### 17.7 — market
 
@@ -755,7 +750,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Provider** | `MarketProvider` |
 | **API** | `GET crypto-payment` (transaction history) |
 | **Observable State** | `isPageActive`, `searchComponentParameters`, `pairs`, `favorites`, `orderedPairs`, `sorted`, `tabCurrencies`, `activeTabIndex`, `activeTabString`, `coinSortDirection`, `lastPriceSortDirection`, `changeSortDirection` |
-| **MQTT** | Listens to `tradeController.lastPrice` |
+| **Centrifugo** | Listens to `tradeController.lastPrice` |
 
 ### 17.8 — funds
 
@@ -772,7 +767,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Provider** | `BalanceProvider` |
 | **API** | `GET user-balance/balance?sort=desc` |
 | **Observable State** | `isLoading`, `isSilentLoading`, `showSmallBalances`, `showAvailableData`, `isHeadOpen`, `balancesAllData` |
-| **MQTT** | Listens to `authorizedMqttController.updateDataSubject` for `Balances` |
+| **Centrifugo** | Listens to `authorizedCentrifugoController.updateDataSubject` for `Balances` |
 
 ### 17.10 — funds/deposits
 
@@ -798,7 +793,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Provider** | `TransactionHistoryProvider` |
 | **APIs** | `GET crypto-payment`, `POST crypto-payment/cancel` |
 | **Observable State** | `transactionHistory`, `isLoading`, `showLoadingOverlay`, `isSilentLoading` |
-| **MQTT** | Listens to `authorizedMqttController.updateDataSubject` for `TransactionHistory` |
+| **Centrifugo** | Listens to `authorizedCentrifugoController.updateDataSubject` for `TransactionHistory` |
 
 ### 17.13 — funds/autoExchange
 
@@ -823,7 +818,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Provider** | `OpenOrdersProvider` |
 | **APIs** | `GET order/open-orders`, `POST order/cancel` |
 | **Observable State** | `selectedOpenOrderFilterText`, `openOrders`, `isFullScreen`, `isSilentLoading`, `loadingIds`, `loadingData` |
-| **MQTT** | Listens to `authorizedMqttController.updateDataSubject` for `OpenOrders` |
+| **Centrifugo** | Listens to `authorizedCentrifugoController.updateDataSubject` for `OpenOrders` |
 
 ### 17.16 — orders/orderHistory
 
@@ -832,7 +827,7 @@ const VERSION = String.fromEnvironment('VERSION', defaultValue: '1.0.0');
 | **Provider** | `OrderHistoryProvider` |
 | **APIs** | `GET order/full-history`, `GET order/detail` |
 | **Observable State** | `loadingData`, `filtered`, `silentLoadingData`, `orderHistory`, `loadingId`, `showFilterButton`, `selectedDateButtonIndex`, `selecteTypeButtonIndex`, `filterStartDate`, `filterEndDate`, `showCanceledOrders`, `filterPair` |
-| **MQTT** | Listens to `authorizedMqttController.updateDataSubject` for `OrderHistory` |
+| **Centrifugo** | Listens to `authorizedCentrifugoController.updateDataSubject` for `OrderHistory` |
 
 ### 17.17 — identityInfo
 
@@ -1083,7 +1078,7 @@ Colors sourced from `generated/colors.gen.dart` (generated from `assets/color/co
 | `toastInfo()` | Info toast |
 | `toastAction()` | Actionable toast |
 | `toastDioError()` | Format and display Dio error |
-| `toastAuthorizedEvent()` | Display authorized MQTT event toast |
+| `toastAuthorizedEvent()` | Display authorized Centrifugo event toast |
 
 ### Popups Mixin (`lib/utils/mixins/popups.dart`)
 
@@ -1272,9 +1267,9 @@ Configuration in `pubspec.yaml` under `flutter_gen:` section.
 
 ---
 
-## 26. MQTT Topic Reference
+## 26. Centrifugo Channel Reference
 
-### Public Topics (UnAuthorizedMqttController)
+### Public Channels (UnAuthorizedCentrifugoController)
 
 | Topic | Content | QoS | Consumers |
 |---|---|---|---|
@@ -1282,7 +1277,7 @@ Configuration in `pubspec.yaml` under `flutter_gen:` section.
 | `main/trade/order-book/{pair}` | Live order book for specific pair | Default | `TradeController` |
 | `main/trade/kline/{timeframe}/{pair}` | Live OHLC candle updates | Default | `TradeController` |
 
-### Private Topics (AuthorizedMqttController)
+### Private Channels (AuthorizedCentrifugoController)
 
 | Topic | Content | QoS | Consumers |
 |---|---|---|---|
@@ -1291,10 +1286,10 @@ Configuration in `pubspec.yaml` under `flutter_gen:` section.
 
 ### Update Signal Flow
 
-AuthorizedMqttController emits `RxUpdateables` via `updateDataSubject`:
+AuthorizedCentrifugoController emits `RxUpdateables` via `updateDataSubject`:
 
 ```
-MQTT event → AuthorizedMqttController → updateDataSubject.add([RxUpdateables.X])
+Centrifugo event → AuthorizedCentrifugoController → updateDataSubject.add([RxUpdateables.X])
   → BalanceController (Balances)
   → TransactionHistoryController (TransactionHistory)
   → TradeController (UserPairBalances)
@@ -1467,7 +1462,7 @@ flutter build <target> \
 |---|---|---|---|---|
 | 6 | **HIGH** | JWT token stored in unencrypted `GetStorage` | `apiService.dart`, `login_controller.dart` | Token readable by any app with file access on rooted devices; should use `FlutterSecureStorage` |
 | 7 | **HIGH** | `ENV` hardcoded to `"PRODUCTION"` — ignores `--dart-define=ENV` | `lib/utils/environment/ubEnv.dart:4` | `const ENV = "PRODUCTION";` — build scripts pass ENV but it's never read |
-| 8 | **HIGH** | `_timer.cancel()` without null check in `onClose()` | `lib/app/global/controller/authorizedMqttController.dart:79` | `_timer` can be null if `onInit()` fails — crash on dispose |
+| 8 | **HIGH** | `_timer.cancel()` without null check in `onClose()` | `lib/app/global/controller/authorizedCentrifugoController.dart:79` | `_timer` can be null if `onInit()` fails — crash on dispose |
 | 9 | **HIGH** | Platform header always `'ubandroid'` — copy-paste bug | `lib/services/apiService.dart:26` | `(GetPlatform.isAndroid ? 'ubandroid' : 'ubandroid')` — both branches identical |
 | 10 | **HIGH** | `async void handleLoggedOut()` — fire-and-forget | `lib/app/global/controller/globalController.dart` | Exceptions in async void are uncatchable |
 | 11 | **HIGH** | Uncancelled stream subscriptions in `OHLCChartController` | `lib/app/modules/trade/controllers/ohlcChart_controller.dart` | 3 `.listen()` calls in `onInit()`, empty `onClose()` → memory leak |
@@ -1485,7 +1480,7 @@ flutter build <target> \
 | 18 | **MEDIUM** | `flutter_appavailability` unmaintained, no null-safe version | `pubspec.yaml` |
 | 19 | **MEDIUM** | `async void onInit()` in multiple controllers | Various controllers |
 | 20 | **MEDIUM** | Missing null check on `networksConfigsAndAddresses.length` | `withdrawals_controller.dart` |
-| 21 | **MEDIUM** | No `onError` handler on MQTT stream subscriptions | `trade_controller.dart` |
+| 21 | **MEDIUM** | No `onError` handler on Centrifugo stream subscriptions | `trade_controller.dart` |
 | 22 | **MEDIUM** | Mixed `print()` / `debugPrint()` / `log.e()` logging | Various files |
 | 23 | **MEDIUM** | No retry limit on token refresh — infinite loop risk | `apiService.dart:82-111` |
 | 24 | **MEDIUM** | Zero error handling in all 26 provider files | All providers return raw response; no try/catch |
@@ -1497,7 +1492,7 @@ flutter build <target> \
 
 | # | Severity | Issue | Location |
 |---|---|---|---|
-| 28 | **LOW** | Hardcoded MQTT/API URLs in `constants.dart` (not environment-driven) | `lib/services/constants.dart` |
+| 28 | **LOW** | Hardcoded Centrifugo/API URLs in `constants.dart` (not environment-driven) | `lib/services/constants.dart` |
 | 29 | **LOW** | Docker pinned to Flutter 2.10.5 | `Dockerfile*` |
 | 30 | **LOW** | `AuthMiddleware` placeholder (`isAuthenticated` always `false`) | `lib/utils/middleWares/authMiddleware.dart` |
 | 31 | **LOW** | Empty test placeholders (64% of test files) | `test/` directory |
@@ -1521,7 +1516,7 @@ flutter build <target> \
 |---|---|---|
 | **Token Storage** | D | JWT in plain `GetStorage`; email/password correctly in `FlutterSecureStorage` |
 | **Cryptography** | C | RSA 2048-bit (OK), but no padding scheme, hardcoded public key |
-| **Network** | C+ | WSS for MQTT (good), HTTPS for API (good), but no cert pinning |
+| **Network** | C+ | WSS for Centrifugo (good), HTTPS for API (good), but no cert pinning |
 | **Credentials** | D | Hardcoded reCAPTCHA keys in comments; UserAgentInfo hardcoded |
 | **Input Validation** | B | Email/password validators exist; currency formatters proper |
 
@@ -1541,7 +1536,7 @@ flutter build <target> \
 | Category | Coverage | Notes |
 |---|---|---|
 | API Service / Interceptors | **0%** | No tests for token refresh, retry logic, error handling |
-| MQTT Controllers | **0%** | No tests for message parsing, reconnection, topic management |
+| Centrifugo Controllers | **0%** | No tests for message parsing, reconnection, topic management |
 | GlobalController | **0%** | Empty placeholder test |
 | Trade Module | **~1%** | Basic placeholder only |
 | UI Components (119 widgets) | **0%** | Zero tests for UBButton, UBInput, OrderBook, CoinList, etc. |
@@ -1559,17 +1554,17 @@ flutter build <target> \
 | 4 | Timeout Retry (`TimeoutRetryInterceptor`) | ❌ **Commented out** | — |
 | 5 | Pretty Dio Logger | ❌ **Commented out** | — |
 
-### 34.5 — MQTT Topic Reference (Corrected)
+### 34.5 — Centrifugo Channel Reference (Corrected)
 
 | Topic | Exact Pattern | QoS | Controller |
 |---|---|---|---|
-| Price Ticker | `main/trade/ticker` | exactlyOnce (2) | UnAuthorized → TradeController |
-| Order Book | `main/trade/order-book/{pair}` | exactlyOnce (2) | UnAuthorized → TradeController |
-| **OHLC/Klines** | **`main/trade/kline/{timeframe}/{pair}`** | exactlyOnce (2) | UnAuthorized → TradeController |
-| Open Orders | `main/trade/user/{channel}/open-orders/` | exactlyOnce (2) | AuthorizedMqttController |
-| Crypto Payments | `main/trade/user/{channel}/crypto-payments/` | exactlyOnce (2) | AuthorizedMqttController |
+| Price Ticker | `trade:ticker` | exactlyOnce (2) | UnAuthorized → TradeController |
+| Order Book | `trade:order-book:{pair}` | exactlyOnce (2) | UnAuthorized → TradeController |
+| **OHLC/Klines** | **`trade:kline:{timeframe}:{pair}`** | exactlyOnce (2) | UnAuthorized → TradeController |
+| Open Orders | `user:{channel}:open-orders` | exactlyOnce (2) | AuthorizedCentrifugoController |
+| Crypto Payments | `user:{channel}:crypto-payments` | exactlyOnce (2) | AuthorizedCentrifugoController |
 
-> **Correction**: OHLC topic includes `{timeframe}` segment between `kline/` and `{pair}`.
+> **Correction**: OHLC channel includes `{timeframe}` segment between `kline:` and `{pair}`.
 
 ---
 
@@ -1580,7 +1575,7 @@ flutter build <target> \
 - [ ] Fix NPE in `_shouldRefreshToken()` — add null check on `err.response` (`apiService.dart:177`)
 - [ ] Remove hardcoded reCAPTCHA keys from `login_view.dart:145-146`
 - [ ] Fix `savedWithdrawalCoins` key collision (`storageKeys.dart:26` → change to `'savedWithdrawalCoins'`)
-- [ ] Add null check for `_timer.cancel()` in `authorizedMqttController.dart:79`
+- [ ] Add null check for `_timer.cancel()` in `authorizedCentrifugoController.dart:79`
 - [ ] Fix platform header copy-paste bug (`apiService.dart:26`)
 - [ ] Add token refresh race condition guard (mutex/flag)
 - [ ] Move JWT token to `FlutterSecureStorage`

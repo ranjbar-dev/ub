@@ -47,7 +47,7 @@ type Services struct {
 	OrderService               order.Service
 	UserBalanceService         userbalance.Service
 	PaymentService             payment.Service
-	MqttAuthService            auth.MqttAuthService
+	CentrifugoTokenService     auth.CentrifugoTokenService
 	UserService                user.Service
 	OrderBookService           orderbook.Service
 }
@@ -164,7 +164,7 @@ func (s *httpServer) registerRoutes() {
 	v1 := r.Group("/api/v1")
 	{
 		s.registerAuthRoutes(v1)
-		s.registerMqttAuthRoutes(v1)
+		s.registerCentrifugoRoutes(v1)
 		s.registerMainDataRoutes(v1)
 		s.registerCurrencyRoutes(v1)
 		s.registerWithdrawAddressRoutes(v1)

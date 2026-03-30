@@ -7,7 +7,7 @@
 //   - Trade stream data
 //
 // Received data is forwarded to internal processors (internal/processor)
-// for caching in Redis and publishing to clients via MQTT.
+// for caching in Redis and publishing to clients via Centrifugo.
 //
 // This package powers the exchange-ws binary (cmd/exchange-ws).
 package externalexchangews

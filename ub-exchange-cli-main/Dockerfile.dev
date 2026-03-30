@@ -1,0 +1,12 @@
+FROM golang:1.22
+
+ENV GO111MODULE=on
+
+WORKDIR /app
+
+# Pre-copy go.mod/go.sum for dependency caching
+COPY go.mod go.sum ./
+COPY vendor/ vendor/
+
+# Default: keep container alive for compose
+CMD ["tail", "-f", "/dev/null"]

@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:mqtt_client/mqtt_client.dart' show MqttSubscriptionStatus;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:unitedbit/mqttClient/universal_mqtt_client.dart'
-    show UniversalMqttClient;
+import 'package:unitedbit/centrifugoClient/centrifugo_service.dart'
+    show CentrifugoService;
 import 'package:unitedbit/services/localAuthService.dart';
 import 'package:unitedbit/services/storageKeys.dart';
 import 'package:unitedbit/utils/mixins/commonConsts.dart';
@@ -156,19 +155,17 @@ Future checkGalleryPermission(
   return Future.value();
 }
 
-Future purgeTopic({
-  @required UniversalMqttClient client,
+Future purgeChannel({
+  @required CentrifugoService client,
   @required StreamSubscription topicStream,
-  @required String topic,
+  @required String channel,
 }) async {
-  if (client != null) {
-    final topicStatus = client.getSubscriptionsStatus(topic: topic);
-    if (topicStatus == MqttSubscriptionStatus.active) {
-      print('debugPrint:' + topicStatus.toString());
-      client.unsubscribe(topic: topic);
-      if (topicStream != null) {
-        return await topicStream.cancel();
-      }
+  if (client != null && channel != null) {
+    if (client.isSubscribed(channel)) {
+      client.unsubscribe(channel: channel);
+    }
+    if (topicStream != null) {
+      return await topicStream.cancel();
     }
   }
 }

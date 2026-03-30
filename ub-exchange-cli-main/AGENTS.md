@@ -10,7 +10,7 @@
 | DB Driver | gorm.io/driver/mysql | 1.1.2 | MySQL/MariaDB |
 | Redis | go-redis/redis/v8 | 8.11.3 | Cache, order books, queues |
 | Redis Cache | go-redis/cache/v8 | 8.4.3 | In-process LRU + Redis |
-| MQTT | eclipse/paho.mqtt.golang | 1.3.5 | Real-time publish to clients |
+| Centrifugo | HTTP API client | 1.0+ | Real-time publish to clients |
 | RabbitMQ | rabbitmq/amqp091-go | 1.10.0 | Email/SMS queue to ub-communicator |
 | JWT | golang-jwt/jwt/v5 | 5.2.1 | Authentication tokens |
 | gRPC | google.golang.org/grpc | 1.40.0 | Candle service client |
@@ -48,14 +48,14 @@
 **Startup sequence (`exchange-httpd`):**
 ```
 di.NewContainer()           ← builds ~109 services lazily
-  ├─ Config, Logger, DB, Redis, MQTT, RabbitMQ
+  ├─ Config, Logger, DB, Redis, Centrifugo, RabbitMQ
   ├─ 26 Repositories (GORM)
   ├─ Domain services (business logic)
   └─ HTTPServer (Gin router with all routes)
 
 httpServer.ListenAndServeAdmin(":8001")   ← admin routes (separate Gin instance)
 unmatchedOrdersHandler.Match()            ← crash-recovery goroutine
-httpServer.ListenAndServe(":8000")        ← public + MQTT auth routes
+httpServer.ListenAndServe(":8000")        ← public + Centrifugo auth routes
 ```
 
 **Startup sequence (`exchange-engine`):**
@@ -89,7 +89,7 @@ Client → Gin HTTP API (8000/8001)
                 ↓
     Engine (10 workers, Redis sorted sets for orderbook)
                 ↓
-    Trade → MQTT publish → Client apps
+    Trade → Centrifugo publish → Client apps
 ```
 
 ---
@@ -102,9 +102,9 @@ internal/
 │   ├── handler/            # 14 files: Public endpoint handlers /api/v1/*
 │   ├── adminhandler/       # 4 files: Admin endpoint handlers /api/v1/admin/*
 │   └── middleware/         # 4 files: Auth, AdminAuth, NonRequiredAuth, recovery
-├── auth/                   # 7 files: Login, register, 2FA (TOTP), MQTT ACL
+├── auth/                   # 7 files: Login, register, 2FA (TOTP), Centrifugo auth
 ├── command/                # 20 files: 16 CLI ConsoleCommand implementations
-├── communication/          # 6 files: MQTT publishing + RabbitMQ queue publishing
+├── communication/          # 6 files: Centrifugo publishing + RabbitMQ queue publishing
 ├── configuration/          # 4 files: App settings, app version service
 ├── country/                # 4 files: Country management
 ├── currency/               # 9+ files: Coins, pairs, prices, kline, gRPC candle client
@@ -120,9 +120,9 @@ internal/
 ├── payment/                # 10 files: Withdrawal, deposit, auto-exchange, internal transfer
 ├── platform/               # 13 files: Infrastructure abstractions:
 │                           #   jwt.go, logger.go, redis.go, sql.go, cache.go,
-│                           #   mqtt.go, rabbitmq.go, http.go, bcrypt.go,
+│                           #   centrifugo.go, rabbitmq.go, http.go, bcrypt.go,
 │                           #   config.go, error.go, ws.go, sentry.go
-├── processor/              # 3 files: Real-time Binance WS data → Redis + MQTT
+├── processor/              # 3 files: Real-time Binance WS data → Redis + Centrifugo
 ├── repository/             # 26 GORM data access repositories (see §Repository Layer)
 ├── response/               # 2 files: Standard API response envelope
 ├── transaction/            # 3 files: Bank transfer / ledger logic
@@ -144,11 +144,12 @@ internal/
 - **Dependencies**: auth, order, payment, user, currency, configuration, userbalance, orderbook, userwithdrawaddress, communication
 
 #### `internal/auth/` — Authentication & Authorization
-- **Purpose**: Login, registration, 2FA (TOTP), password reset, MQTT broker auth
-- **Key types**: `Service` (interface), `AuthEventsHandler`, `MqttAuthService`
+- **Purpose**: Login, registration, 2FA (TOTP), password reset, Centrifugo token generation
+- **Purpose**: Login, registration, 2FA (TOTP), password reset, Centrifugo token generation
+- **Key types**: `Service` (interface), `AuthEventsHandler`, `CentrifugoTokenService`
 - **Key functions**: `Login()`, `Register()`, `GetUser(token)`, `GetAdminUser(token)`, `ForgotPassword()`, `VerifyEmail()`
 - **External deps**: Redis (forgot-password tokens), RabbitMQ (email notifications)
-- **MQTT auth**: `/api/v1/emqtt/login`, `/acl`, `/superuser` — called by EMQX as webhook backend
+- **Centrifugo auth**: JWT-based connection and subscription tokens via `/api/v1/auth/centrifugo-token`
 
 #### `internal/command/` — CLI Commands
 - **Purpose**: 16 scheduled/manual commands run by `exchange-cli` binary
@@ -157,11 +158,11 @@ internal/
 - **Dependencies**: varies per command (see §CLI Commands)
 
 #### `internal/communication/` — Message Publishing
-- **Purpose**: MQTT topic publishing + RabbitMQ queue publishing
-- **Key types**: `MqttManager` (MQTT publish), `QueueManager` (RabbitMQ publish), `Service` (email/SMS orchestration)
-- **MQTT topics**: `main/trade/*` (public), `main/trade/user/<channel>/*` (private)
+- **Purpose**: Centrifugo channel publishing + RabbitMQ queue publishing
+- **Key types**: `CentrifugoManager` (Centrifugo publish via HTTP API), `QueueManager` (RabbitMQ publish), `Service` (email/SMS orchestration)
+- **Centrifugo channels**: `trade:*` (public), `user:<channel>:*` (private)
 - **RabbitMQ routing keys**: `messages.command.send` (email/SMS), `livedata.event.kline-created` (candle data)
-- **External deps**: MQTT broker (EMQX), RabbitMQ
+- **External deps**: Centrifugo (HTTP API), RabbitMQ
 
 #### `internal/configuration/` — App Settings
 - **Purpose**: Runtime configuration, app version management
@@ -222,8 +223,8 @@ internal/
 #### `internal/order/` — Order Management (Core Domain)
 - **Purpose**: Order CRUD, matching orchestration, trade execution, bot aggregation, stop orders
 - **Key types**: `Service`, `CreateManager`, `EventsHandler`, `PostOrderMatchingService`, `EngineCommunicator`, `EngineResultHandler`, `DecisionManager`, `ForceTrader`, `BotAggregationService`, `StopOrderSubmissionManager`, `InQueueOrderManager`, `UnmatchedOrdersHandler`, `AdminOrderManager`, `TradeEventsHandler`, `RedisManager`
-- **Key flow**: Create → Decide (internal/external) → Engine queue → Match → PostOrderMatching → Balance update → MQTT publish
-- **Dependencies**: DB, Redis, MQTT, engine, currency, userbalance, externalexchange
+- **Key flow**: Create → Decide (internal/external) → Engine queue → Match → PostOrderMatching → Balance update → Centrifugo publish
+- **Dependencies**: DB, Redis, Centrifugo, engine, currency, userbalance, externalexchange
 
 #### `internal/orderbook/` — Orderbook Aggregation
 - **Purpose**: Build aggregated order book from Redis data + Binance REST snapshots
@@ -233,8 +234,8 @@ internal/
 #### `internal/payment/` — Payment Processing
 - **Purpose**: Withdrawals, deposits, auto-exchange, internal transfers, email confirmation
 - **Key types**: `Service`, `AutoExchangeManager`, `WithdrawEmailConfirmationManager`, `InternalTransferService`, `Repository`
-- **Flow**: Pre-withdraw → 2FA verify → Email confirm → Lock balance → Wallet service → DB persist → MQTT
-- **Dependencies**: DB, Redis (confirmation codes), wallet service, MQTT, communication
+- **Flow**: Pre-withdraw → 2FA verify → Email confirm → Lock balance → Wallet service → DB persist → Centrifugo
+- **Dependencies**: DB, Redis (confirmation codes), wallet service, Centrifugo, communication
 
 #### `internal/platform/` — Infrastructure Abstractions
 - **Purpose**: Thin wrappers around external libraries; all other packages depend on these interfaces
@@ -244,7 +245,7 @@ internal/
   - `redis.go` — `RedisClient` interface (wraps go-redis)
   - `sql.go` — `SqlClient` (wraps `*gorm.DB`)
   - `cache.go` — `Cache` interface (in-process LRU + Redis)
-  - `mqtt.go` — `MqttClient` interface (wraps paho)
+  - `centrifugo.go` — CentrifugoClient (HTTP API)
   - `rabbitmq.go` — `RabbitMqClient` interface (wraps amqp091)
   - `http.go` — `HTTPClient` interface (wraps `net/http`)
   - `ws.go` — `WsClient` interface (wraps gorilla/websocket)
@@ -254,11 +255,11 @@ internal/
   - `sentry.go` — Sentry integration
 
 #### `internal/processor/` — Real-time Market Data Processor
-- **Purpose**: Transform Binance WS events into Redis updates + MQTT publishes
+- **Purpose**: Transform Binance WS events into Redis updates + Centrifugo publishes
 - **Key types**: `Processor` (interface), `WsDataProcessor` (implementation)
 - **Methods**: `ProcessTrade()`, `ProcessDepth()`, `ProcessKline()`, `ProcessTicker()`
 - **Ticker processing**: Also triggers `StopOrderSubmissionManager.Check()` and publishes to Redis pub/sub channel `channel:ticker`
-- **Dependencies**: Redis, livedata, MQTT, kline, orderbook, currency, stop order manager
+- **Dependencies**: Redis, livedata, Centrifugo, kline, orderbook, currency, stop order manager
 
 #### `internal/response/` — API Response Envelope
 - **Purpose**: Standard `{status, message, data}` response struct
@@ -332,8 +333,8 @@ Worker goroutine (×10):
                       ├─ UserBalanceService.UpdateBalances()
                       ├─ TradeEventsHandler.OnTrade() → BotAggregationService
                       ├─ LiveDataService.UpdateTradeBook()
-                      ├─ MqttManager.PublishTrades()
-                      └─ MqttManager.PublishOrderToOpenOrders()
+                      ├─ CentrifugoManager.PublishTrades()
+                      └─ CentrifugoManager.PublishOrderToOpenOrders()
                  └─ ob.rewriteOrderBook()
                       └─ Redis TxPipeline: ZRem done + ZAdd partial
 ```
@@ -352,13 +353,13 @@ Worker goroutine (×10):
 4. **Dispatch**: Engine dispatcher BLPop → deserialize → send to worker pool
 5. **Match**: Worker loads opposite orderbook from Redis sorted set → price-time matching loop
 6. **Fill**: Fully filled orders → `doneOrders[]`; partially filled → `partialOrder`
-7. **Settle**: `PostOrderMatchingService.Handle()` → DB trade records + balance updates + MQTT publish
+7. **Settle**: `PostOrderMatchingService.Handle()` → DB trade records + balance updates + Centrifugo publish
 8. **Rewrite**: Atomically update Redis sorted sets (ZRem done, ZAdd partial with updated amount)
 
 ### Partial Fill Handling
 - When a limit order partially fills, the remaining quantity is stored back in the Redis sorted set via `ZAdd`
 - The `partialOrder` retains the original order ID with updated `Amount` reflecting the unfilled remainder
-- Both the filled portion (as a trade) and the partial update are published via MQTT
+- Both the filled portion (as a trade) and the partial update are published via Centrifugo
 
 ### Crash Recovery
 - `UnmatchedOrderHandler.Match()` runs as a background goroutine in `exchange-httpd`
@@ -398,13 +399,12 @@ globalRecover (panic recovery)
 | POST | `/api/v1/auth/forgot-password/update` | `handler.ForgotPasswordUpdate` | Complete password reset with token |
 | POST | `/api/v1/auth/verify` | `handler.VerifyEmail` | Verify email address with token |
 
-### MQTT Broker Auth Endpoints — No Auth Required (called by EMQX)
+### Centrifugo Token Endpoints — Auth Required
 
 | Method | Path | Handler | Purpose |
 |--------|------|---------|---------|
-| POST | `/api/v1/emqtt/login` | `handler.MqttLogin` | MQTT broker login webhook |
-| POST | `/api/v1/emqtt/acl` | `handler.MqttACL` | MQTT ACL check (form-encoded) |
-| POST | `/api/v1/emqtt/superuser` | `handler.MqttSuperUser` | MQTT superuser check (form-encoded) |
+| GET | `/api/v1/auth/centrifugo-token` | `handler.CentrifugoToken` | Generate Centrifugo connection JWT |
+| GET | `/api/v1/auth/centrifugo-subscribe-token` | `handler.CentrifugoSubscribeToken` | Generate Centrifugo subscription JWT for private channels |
 
 ### Public Data Endpoints — No Auth Required
 
@@ -527,7 +527,7 @@ globalRecover (panic recovery)
 
 **HTTP status codes**: 200 (success), 400/422 (validation), 401 (unauthorized), 500 (server error)
 
-**Content types**: JSON (`application/json`), form (`application/x-www-form-urlencoded` for MQTT auth), multipart (image uploads)
+**Content types**: JSON (`application/json`), form (`application/x-www-form-urlencoded`), multipart (image uploads)
 
 **Auth header**: `Authorization: Bearer <jwt_token>`
 
@@ -542,7 +542,7 @@ globalRecover (panic recovery)
 | 3 | `generate-address` | `0 5 * * *` (daily 5AM) | Generate wallet addresses for users missing them | ✓ user_balances | — | Wallet service |
 | 4 | `retrieve-open-orders` | `*/15 * * * *` (15min) | Sync external open orders to Redis; trigger stop orders | — | ✓ stop orders | Engine queue |
 | 5 | `submit-bot-orders` | `* * * * *` (1min) | Read aggregated bot trades from Redis, submit to Binance | ✓ external orders | ✓ read+del | Binance REST |
-| 6 | `sync-kline` | `* * * * *` (1min) | Fetch OHLC candle data from gRPC/Binance, publish via MQTT | ✓ ohlc_sync | — | gRPC/Binance |
+| 6 | `sync-kline` | `* * * * *` (1min) | Fetch OHLC candle data from gRPC/Binance, publish via Centrifugo | ✓ ohlc_sync | — | gRPC/Binance |
 | 7 | `generate-kline-sync` | `0 2 * * *` (daily 2AM) | Create kline sync jobs for all pairs × timeframes | ✓ ohlc_sync | — | — |
 | 8 | `check-withdrawals` | `*/10 * * * *` (10min) | Check withdrawal status on Binance, update payment records | ✓ payments | — | Binance REST |
 | 9 | `update-orders-from-external` | `*/30 * * * *` (30min) | Sync filled/cancelled external orders back to local DB | ✓ ext orders | — | Binance REST |
@@ -568,7 +568,7 @@ globalRecover (panic recovery)
 | `dbClient` | `*gorm.DB` | ConfigService |
 | `RedisClient` | `platform.RedisClient` | ConfigService |
 | `wsClient` | `platform.WsClient` | none |
-| `mqttClient` | `platform.MqttClient` | ConfigService, LoggerService |
+| `centrifugoClient` | `platform.CentrifugoClient` | ConfigService, LoggerService |
 | `httpClient` | `platform.HTTPClient` | none |
 | `rabbitmqClient` | `platform.RabbitMqClient` | ConfigService, LoggerService |
 | `jwtHandler` | `platform.JwtHandler` | none |
@@ -578,7 +578,7 @@ globalRecover (panic recovery)
 
 | Constant | Type | Dependencies |
 |----------|------|-------------|
-| `mqttManager` | `communication.MqttManager` | mqttClient |
+| `centrifugoManager` | `communication.CentrifugoManager` | centrifugoClient |
 | `queueManager` | `communication.QueueManager` | rabbitmqClient, LoggerService |
 | `communicationService` | `communication.Service` | queueManager, LoggerService |
 
@@ -637,7 +637,7 @@ globalRecover (panic recovery)
 | `userService` | `user.Service` | dbClient, userRepository, userProfileRepository, profileImageRepository, countryService, twoFaManager, passwordEncoder, communicationService, phoneConfirmationManager, jwtService, ConfigService, LoggerService |
 | `authEventsHandler` | `auth.EventsHandler` | loginHistoryService, communicationService, userService, ConfigService, LoggerService |
 | `authService` | `auth.Service` | dbClient, userRepository, userLevelService, permissionManager, userBalanceService, jwtService, passwordEncoder, communicationService, authEventsHandler, forgotPasswordManager, recaptchaManager, twoFaManager, ConfigService, LoggerService |
-| `mqttAuthService` | `auth.MqttAuthService` | authService, ConfigService, LoggerService |
+| `centrifugoAuthService` | `auth.CentrifugoAuthService` | authService, ConfigService, LoggerService |
 | `walletAuthorizationService` | `wallet.AuthorizationService` | RedisClient, httpClient, ConfigService, LoggerService |
 | `walletService` | `wallet.Service` | walletAuthorizationService, httpClient, ConfigService, LoggerService |
 | `userBalanceService` | `userbalance.Service` | dbClient, userBalanceRepository, currencyService, priceGenerator, permissionManager, walletService, userService, userWalletBalanceRepository, ConfigService, LoggerService |
@@ -647,7 +647,7 @@ globalRecover (panic recovery)
 | `internalTransferService` | `payment.InternalTransferService` | internalTransferRepository |
 | `withdrawEmailConfirmationManager` | `payment.WithdrawEmailConfirmationManager` | RedisClient, communicationService |
 | `autoExchangeManager` | `payment.AutoExchangeManager` | dbClient, paymentRepository, orderCreateManager, orderEventsHandler, userService, currencyService, priceGenerator, LoggerService |
-| `paymentService` | `payment.Service` | dbClient, paymentRepository, currencyService, walletService, userConfigService, twoFaManager, withdrawEmailConfirmationManager, permissionManager, userService, userBalanceService, userWithdrawAddressService, communicationService, priceGenerator, internalTransferService, externalExchangeService, autoExchangeManager, mqttManager, ConfigService, LoggerService |
+| `paymentService` | `payment.Service` | dbClient, paymentRepository, currencyService, walletService, userConfigService, twoFaManager, withdrawEmailConfirmationManager, permissionManager, userService, userBalanceService, userWithdrawAddressService, communicationService, priceGenerator, internalTransferService, externalExchangeService, autoExchangeManager, centrifugoManager, ConfigService, LoggerService |
 
 ### Order & Trading Pipeline
 
@@ -661,8 +661,8 @@ globalRecover (panic recovery)
 | `engineService` | `engine.Engine` | RedisClient, orderbookProvider, engineResultHandler, LoggerService, ConfigService |
 | `engineCommunicator` | `order.EngineCommunicator` | forceTrader, engineService |
 | `EngineResultHandler` | `order.EngineResultHandler` | postOrderMatchingService |
-| `orderEventsHandler` | `order.EventsHandler` | orderRedisManager, decisionManager, mqttManager, externalExchangeOrderService, engineCommunicator, postOrderMatchingService, LoggerService |
-| `postOrderMatchingService` | `order.PostOrderMatchingService` | dbClient, orderRepository, userBalanceService, forceTrader, priceGenerator, tradeEventsHandler, mqttManager, RedisClient, currencyService, userService, userLevelService, ConfigService, LoggerService |
+| `orderEventsHandler` | `order.EventsHandler` | orderRedisManager, decisionManager, centrifugoManager, externalExchangeOrderService, engineCommunicator, postOrderMatchingService, LoggerService |
+| `postOrderMatchingService` | `order.PostOrderMatchingService` | dbClient, orderRepository, userBalanceService, forceTrader, priceGenerator, tradeEventsHandler, centrifugoManager, RedisClient, currencyService, userService, userLevelService, ConfigService, LoggerService |
 | `orderCreateManager` | `order.CreateManager` | dbClient, userBalanceService, userLevelService, priceGenerator |
 | `orderService` | `order.Service` | dbClient, orderRepository, orderCreateManager, orderEventsHandler, currencyService, priceGenerator, userBalanceService, orderRedisManager, userConfigService, permissionManager, adminOrderManager, engineCommunicator, ConfigService, LoggerService |
 | `adminOrderManager` | `order.AdminOrderManager` | currencyService, klineService, priceGenerator, postOrderMatchingService, stopOrderSubmissionManager, orderEventsHandler, LoggerService |
@@ -678,7 +678,7 @@ globalRecover (panic recovery)
 | `externalExchangeOrderService` | `externalexchange.OrderService` | externalExchangeOrderRepository, externalExchangeService, LoggerService |
 | `orderFromExternalService` | `externalexchange.OrderFromExternalService` | orderFromExternalRepository, tradeFromExternalRepository |
 | `ExternalExchangeWsService` | `externalexchangews.Service` | wsClient, wsDataProcessor, ConfigService, LoggerService, currencyService |
-| `wsDataProcessor` | `processor.Processor` | RedisClient, liveDataService, priceGenerator, klineService, orderbookService, mqttManager, stopOrderSubmissionManager, inQueueOrderManager, queueManager, LoggerService, currencyService |
+| `wsDataProcessor` | `processor.Processor` | RedisClient, liveDataService, priceGenerator, klineService, orderbookService, centrifugoManager, stopOrderSubmissionManager, inQueueOrderManager, queueManager, LoggerService, currencyService |
 
 ### HTTP Server
 
@@ -727,27 +727,27 @@ Registered in `di_commands.go`: `SetUserLevelCommand`, `InitializeBalanceCommand
 
 ---
 
-## Real-time Data — MQTT Topics, Redis Pub/Sub, WebSocket
+## Real-time Data — Centrifugo Channels, Redis Pub/Sub, WebSocket
 
-### MQTT Topics (QoS 0, non-retained, via EMQX v4)
+### Centrifugo Channels (via Centrifugo v4, HTTP API publish)
 
 **Public market data (broadcast to all):**
 
-| Topic | Payload | Publisher | Trigger |
-|-------|---------|----------|---------|
-| `main/trade/trade-book/<pair>` | JSON trade list | `PostOrderMatchingService`, `Processor.ProcessTrade()` | Internal match or Binance trade |
-| `main/trade/kline/<timeframe>/<pair>` | JSON `RedisKline` | `Processor.ProcessKline()` | New candle from Binance WS |
-| `main/trade/ticker` | JSON ticker snapshot | `Processor.ProcessTicker()` | Binance ticker update |
-| `main/trade/order-book/<pair>` | JSON order book | `Processor.ProcessDepth()` | Binance depth update |
+| Channel | Payload | Publisher | Trigger |
+|---------|---------|----------|---------|
+| `trade:trade-book:<pair>` | JSON trade list | `PostOrderMatchingService`, `Processor.ProcessTrade()` | Internal match or Binance trade |
+| `trade:kline:<timeframe>:<pair>` | JSON `RedisKline` | `Processor.ProcessKline()` | New candle from Binance WS |
+| `trade:ticker` | JSON ticker snapshot | `Processor.ProcessTicker()` | Binance ticker update |
+| `trade:order-book:<pair>` | JSON order book | `Processor.ProcessDepth()` | Binance depth update |
 
-**Private user topics (per-user, EMQX ACL-protected):**
+**Private user channels (per-user, subscription token required):**
 
-| Topic Pattern | Payload | Publisher | Trigger |
-|---------------|---------|----------|---------|
-| `main/trade/user/<privateChannel>/open-orders/` | JSON order update | `OrderEventsHandler`, `PostOrderMatchingService` | Order created/filled/partial |
-| `main/trade/user/<privateChannel>/crypto-payments/` | JSON payment | `PaymentService` | Withdrawal/deposit status change |
+| Channel Pattern | Payload | Publisher | Trigger |
+|-----------------|---------|----------|---------|
+| `user:<privateChannel>:open-orders` | JSON order update | `OrderEventsHandler`, `PostOrderMatchingService` | Order created/filled/partial |
+| `user:<privateChannel>:crypto-payments` | JSON payment | `PaymentService` | Withdrawal/deposit status change |
 
-`<privateChannel>` is a per-user identifier from JWT claims. MQTT auth is handled by EMQX webhook calling `/api/v1/emqtt/login`, `/acl`, `/superuser`.
+`<privateChannel>` is a per-user identifier from JWT claims. Centrifugo validates JWT connection tokens and subscription tokens for private `user:*` channels.
 
 ### Redis Pub/Sub
 
@@ -786,7 +786,7 @@ Registered in `di_commands.go`: `SetUserLevelCommand`, `InitializeBalanceCommand
   - `trade` — Recent trades
   - `ticker` — 24h price/volume ticker
   - `kline_1m`, `kline_5m`, `kline_1h`, `kline_1d` — Candlestick data
-- **Processing**: `WsDataProcessor` transforms raw WS events → Redis live data + MQTT publish
+- **Processing**: `WsDataProcessor` transforms raw WS events → Redis live data + Centrifugo publish
 - **Recovery**: On depth stream out-of-sync, re-fetches snapshot from Binance REST API
 
 ---
@@ -818,11 +818,10 @@ sentry:
   dsn: "https://...@sentry.io/..."
   debug: false
 
-mqtt:
-  dsn: "emqtt:1883"
-  clientid: "mqtt_client"
-  username: "..."
-  password: "..."
+centrifugo:
+  api_url: "http://centrifugo:8000/api"
+  api_key: "centrifugo-api-key"
+  token_secret: "centrifugo-token-secret"
 
 recaptcha:
   secretkey: "..."
@@ -898,7 +897,7 @@ test/
 ├── generate_address_command_test.go
 ├── generate_kline_sync_command_test.go
 ├── initialize_balance_command_test.go
-├── mqtt_auth_test.go                # MQTT broker auth
+├── centrifugo_auth_test.go                # Centrifugo token generation
 ├── order_cancel_test.go             # Order cancellation
 ├── order_create_test.go             # Order creation
 ├── order_list_test.go               # Order listing
@@ -937,11 +936,12 @@ go test ./... --failfast
 - Token TTL: 30 days (production), 10 minutes (test)
 - Middleware extracts user from `Authorization: Bearer <token>` header
 
-### MQTT ACL
-- EMQX v4 broker with HTTP webhook auth backend
-- Endpoints: `/api/v1/emqtt/login`, `/acl`, `/superuser`
+### Centrifugo Auth
+- Centrifugo v4 with JWT-based authentication
+- Connection tokens: generated via `/api/v1/auth/centrifugo-token`
+- Subscription tokens: generated for private `user:*` channels via `/api/v1/auth/centrifugo-subscribe-token`
 - Per-user private channels via `<privateChannel>` identifier
-- No MQTT message encryption (plaintext QoS 0)
+- Server-side publishing via HTTP API with API key authentication
 
 ### Password Security
 - bcrypt hashing via `golang.org/x/crypto`
@@ -952,14 +952,14 @@ go test ./... --failfast
 - SMS OTP via Redis-stored codes + RabbitMQ → ub-communicator
 
 ### Known Security Concerns
-- ⚠️ `config/config.yaml` contains hardcoded credentials (DB, RabbitMQ, MQTT, JWT passphrase `123456789`, Sentry DSN)
+- ⚠️ `config/config.yaml` contains hardcoded credentials (DB, RabbitMQ, Centrifugo, JWT passphrase `123456789`, Sentry DSN)
 - ⚠️ RSA keys committed to `config/jwt/` and `config/ub-captcha/` — should use secrets manager
 - ⚠️ No rate limiting on any API endpoints (login brute-force, order spam, SMS flood)
 - ⚠️ CORS allows all origins in non-production (`*`)
 - ⚠️ JWT TTL is 30 days — unusually long for a financial application
 - ⚠️ No CSRF protection (relies on CORS + Bearer token)
 - ⚠️ Admin API on separate port (:8001) but no IP whitelisting
-- 🔴 MQTT login endpoint always returns success — no actual authentication (handler/mqtt.go)
+- 🔴 Centrifugo token endpoint always returns success — no actual authentication (handler/centrifugo.go)
 - 🔴 Test email backdoor bypasses recaptcha in production (auth/service.go:516)
 - 🔴 No JWT algorithm enforcement — RS256/HS256 confusion attack possible (platform/jwt.go:77)
 - 🔴 Admin auth missing 2FA change check (auth/service.go:747)
@@ -998,7 +998,7 @@ go test ./... --failfast
 - Confirmations: `withdraw-confirmation:<userId>`, `forgot-password:<userId>`, `phone-confirmation:<userId>` (hash, TTL 3h)
 - Cache: `<entity>:<id>` pattern (via go-redis/cache)
 
-### MQTT Topic Patterns
+### Centrifugo Channel Patterns
 - Public: `main/trade/<data-type>/<pair>`
 - Private: `main/trade/user/<privateChannel>/<data-type>/`
 
@@ -1047,7 +1047,7 @@ go build -o ws     cmd/exchange-ws/main.go
   - `depth-stream`: `./ws depth` (3s sleep start)
   - `ticker-trade-stream`: `./ws ticker trade`
   - `kline-stream`: `./ws kline_1m kline_5m kline_1h kline_1d`
-- Dependencies: MariaDB 10.5+, Redis 6.2+, RabbitMQ 3.7+, EMQX v4
+- Dependencies: MariaDB 10.5+, Redis 6.2+, RabbitMQ 3.7+, Centrifugo v4
 
 ---
 
@@ -1129,12 +1129,12 @@ go build -o ws     cmd/exchange-ws/main.go
 
 | ID | Location | Severity | Description |
 |----|----------|----------|-------------|
-| S-1 | `handler/mqtt.go:10-16` | **CRITICAL** | `MqttLogin()` always returns success — no actual authentication |
+| S-1 | `handler/centrifugo.go:10-16` | **CRITICAL** | `CentrifugoToken()` always returns success — no actual authentication |
 | S-2 | `auth/service.go:516` | **CRITICAL** | Test email `behkamegit@gmail.com` bypasses recaptcha in production |
 | S-3 | `postmatch_balance.go:15-75` | **CRITICAL** | TOCTOU race in balance updates — no pessimistic lock, no negative check |
 | S-4 | `platform/jwt.go:77` | **HIGH** | No explicit RS256 algorithm enforcement — HS256 confusion attack possible |
 | S-5 | `auth/service.go:747-763` | **HIGH** | Admin auth skips `TwoFaChangedAt` check — old tokens survive 2FA toggle |
-| S-6 | `config/config.yaml` | **HIGH** | 7 hardcoded secrets (JWT passphrase `123456789`, DB, MQTT, RabbitMQ, Wallet credentials) |
+| S-6 | `config/config.yaml` | **HIGH** | 7 hardcoded secrets (JWT passphrase `123456789`, DB, Centrifugo, RabbitMQ, Wallet credentials) |
 | S-7 | `adminhandler/payment.go` | **HIGH** | Payment webhook callback has no HMAC/signature validation |
 | S-8 | All endpoints | **HIGH** | No rate limiting middleware (login brute-force, SMS flood, withdrawal spam) |
 | S-9 | `handler/userprofileimage.go` | **MEDIUM** | KYC image upload has no file size validation in handler |
@@ -1184,8 +1184,8 @@ go build -o ws     cmd/exchange-ws/main.go
 | GET | `api.binance.com/api/v3/exchangeInfo` | Symbol metadata | 10 |
 | POST | `sapi/v1/capital/withdraw/apply` | Initiate withdrawal | N/A |
 
-### MQTT Trade Throttling
-`ProcessTrade()` in `processor/dataprocessor.go` publishes only **1 in every 10 Binance trades** to reduce MQTT load. Counter is mutex-protected per-pair.
+### Centrifugo Trade Throttling
+`ProcessTrade()` in `processor/dataprocessor.go` publishes only **1 in every 10 Binance trades** to reduce Centrifugo load. Counter is mutex-protected per-pair.
 
 ---
 

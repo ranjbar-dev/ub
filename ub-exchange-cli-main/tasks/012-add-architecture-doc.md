@@ -12,7 +12,7 @@ While `AGENTS.md` provides a good package map and data flow overview, there is n
 - Service dependency graph (which service depends on which)
 - Data flow for key operations (order creation, trade settlement, withdrawal)
 - Package layering rules (what can import what)
-- Infrastructure topology (Redis sorted sets, RabbitMQ queues, MQTT topics)
+- Infrastructure topology (Redis sorted sets, RabbitMQ queues, Centrifugo channels)
 
 AI agents need this to understand impact analysis when modifying code.
 
@@ -36,7 +36,7 @@ Create `ARCHITECTURE.md` at project root with visual dependency graphs and data 
 ├─────────────────────────────────────────────┤
 │           internal/platform/                 │  Infrastructure abstractions
 ├─────────────────────────────────────────────┤
-│     MySQL    Redis    RabbitMQ    MQTT       │  External systems
+│     MySQL    Redis    RabbitMQ    Centrifugo       │  External systems
 └─────────────────────────────────────────────┘
 ```
 
@@ -44,15 +44,15 @@ Create `ARCHITECTURE.md` at project root with visual dependency graphs and data 
 
 Document these critical paths:
 1. **Order Creation Flow**: Client → handler → CreateOrder → DecisionManager → Engine → Redis queue
-2. **Order Matching Flow**: Engine worker → Redis order book → EngineResultHandler → PostOrderMatchingService → DB + MQTT
+2. **Order Matching Flow**: Engine worker → Redis order book → EngineResultHandler → PostOrderMatchingService → DB + Centrifugo
 3. **Trade Settlement Flow**: PostOrderMatchingService → updateBalances → createTransactions → pushDataToUsers
 4. **Withdrawal Flow**: handler → PaymentService → WalletService → external blockchain API
-5. **Real-time Data Flow**: Trade event → LiveDataService → MQTT broker → Client WebSocket
+5. **Real-time Data Flow**: Trade event → LiveDataService → Centrifugo server → Client WebSocket
 
 ### Section 3: DI Service Graph
 
 Document the ~110 services and their dependency relationships. Group by domain:
-- Infrastructure services (config, cache, DB, Redis, RabbitMQ, MQTT, logger)
+- Infrastructure services (config, cache, DB, Redis, RabbitMQ, Centrifugo, logger)
 - Repository services (20+ repositories)
 - Domain services (auth, user, order, currency, payment, etc.)
 - API services (HTTP server, handlers)
@@ -70,9 +70,9 @@ Document what's stored in Redis and the key patterns:
 
 Document queues, exchanges, routing keys, and which service produces/consumes each.
 
-### Section 6: MQTT Topic Structure
+### Section 6: Centrifugo Channel Structure
 
-Document MQTT topics used for real-time push to clients (tickers, order updates, trade notifications).
+Document Centrifugo channels used for real-time push to clients (tickers, order updates, trade notifications).
 
 ## Implementation Plan
 

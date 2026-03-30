@@ -22,7 +22,7 @@ import (
 // The HTTP server is the outermost layer — it depends on all domain services
 // (authService, orderService, paymentService, userService, currencyService,
 // userBalanceService, walletService, configurationService, orderbookService,
-// userWithdrawAddressService, countryService, mqttAuthService).
+// userWithdrawAddressService, countryService, centrifugoTokenService).
 // It must be registered after all domain services are registered.
 func addHTTPServer() {
 	mustAdd(di.Def{
@@ -41,7 +41,7 @@ func addHTTPServer() {
 				OrderService:               ctn.Get(orderService).(order.Service),
 				UserBalanceService:         ctn.Get(userBalanceService).(userbalance.Service),
 				PaymentService:             ctn.Get(paymentService).(payment.Service),
-				MqttAuthService:            ctn.Get(mqttAuthService).(auth.MqttAuthService),
+				CentrifugoTokenService:     ctn.Get(centrifugoTokenService).(auth.CentrifugoTokenService),
 				UserService:                ctn.Get(userService).(user.Service),
 				OrderBookService:           ctn.Get(orderbookService).(orderbook.Service),
 			}

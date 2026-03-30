@@ -25,9 +25,10 @@ class Constants {
   static const _urlPrefix = (ENV == "DEV") ? 'dev-' : '';
 
   static const appVersion = VERSION;
-  static const priceTopic = 'main/trade/ticker';
-  static const orderbookTopic = 'main/trade/order-book/';
-  static const ohlcTopic = 'main/trade/kline/';
+  static const tickerChannel = 'trade:ticker:';
+  static const orderbookChannel = 'trade:order-book:';
+  static const ohlcChannel = 'trade:kline:';
+  static const tradeBookChannel = 'trade:trade-book:';
   static const landingPageAddress = 'https://www.unitedbit.com';
   static const cmsAddress = 'https://content.unitedbit.com';
   static const webLandingAddress = 'https://www.unitedbit.com';
@@ -36,10 +37,8 @@ class Constants {
   static const initialPair = 'BTC-USDT';
   static const pre = 'https';
   static const mainUrl = '${_urlPrefix}app.unitedbit.com';
-  static const _mqttMainUrl = '${_urlPrefix}app.unitedbit.com';
-
-  static const _mqttProtocol = 'wss';
-  static const mqttServer = "$_mqttProtocol://$_mqttMainUrl:8443";
+  static const centrifugoWsUrl = 'wss://${_urlPrefix}app.unitedbit.com/connection/websocket';
+  static const centrifugoLocalWsUrl = 'ws://localhost:8800/connection/websocket';
   static const appUrl = "$pre://$mainUrl";
   static const baseUrl = appUrl;
   static const tradingView = "$appUrl/tv/api/v1/main-route";

@@ -4,11 +4,11 @@ our services includes following:
 
 ##### exchange-server
 written in golang, is responsible for end user request to our system.
-it has dependency to mysql,redis,rabbitmq, emqx(mqtt) all our different services run in docker containers
+it has dependency to mysql,redis,rabbitmq, centrifugo (real-time messaging) all our different services run in docker containers
 
 #### ub-server
 written in php, is responsible for admin part of the exchange.
-it has dependency to mysql,redis,rabbitmq, emqx(mqtt).
+it has dependency to mysql,redis,rabbitmq, centrifugo (real-time messaging).
 
 #### wallet
 written in golang, is responsible for handling wallet.

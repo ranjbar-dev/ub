@@ -20,7 +20,7 @@ Client -> Gin HTTP API -> Auth middleware (JWT) -> Handler -> Service -> Reposit
                                                                |
                                                    Engine (10 workers, Redis sorted sets)
                                                                |
-                                                   Trade -> MQTT publish -> Client apps
+                                                   Trade -> Centrifugo publish -> Client apps
 ```
 
 ## Prerequisites
@@ -29,7 +29,7 @@ Client -> Gin HTTP API -> Auth middleware (JWT) -> Handler -> Service -> Reposit
 - **MariaDB 10.5+** (or MySQL 8.0+)
 - **Redis 6.2+**
 - **RabbitMQ 3.7+**
-- **EMQX v4** (MQTT broker)
+- **Centrifugo v5** (real-time messaging)
 - **Docker & docker-compose** (recommended for local development)
 
 ## Quick Start
@@ -45,7 +45,7 @@ go build -o exchange-ws     cmd/exchange-ws/main.go
 
 ### Configuration
 
-1. Copy and edit `config/config.yaml` — set DB, Redis, RabbitMQ, MQTT, JWT, and wallet credentials
+1. Copy and edit `config/config.yaml` — set DB, Redis, RabbitMQ, Centrifugo, JWT, and wallet credentials
 2. Environment variable overrides use prefix `UBEXCHANGE_` (e.g., `UBEXCHANGE_DB_DSN`)
 3. Place RSA keys in `config/jwt/private.pem` and `config/jwt/public.pem`
 
@@ -83,7 +83,7 @@ go test ./... --failfast
 | HTTP | Gin | 1.10.1 |
 | ORM | GORM v2 | 1.21.15 |
 | Redis | go-redis/v8 | 8.11.3 |
-| MQTT | paho.mqtt.golang | 1.3.5 |
+| Real-time | Centrifugo HTTP API | phpcent |
 | RabbitMQ | amqp091-go | 1.10.0 |
 | JWT | golang-jwt/v5 | 5.2.1 |
 | gRPC | grpc | 1.40.0 |
@@ -97,7 +97,7 @@ go test ./... --failfast
 ## Documentation
 
 - **[AGENTS.md](AGENTS.md)** — Complete AI-agent reference: all packages, endpoints, DI services, CLI commands, conventions
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — Data flows, dependency graph, Redis structures, RabbitMQ topology, MQTT topics
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — Data flows, dependency graph, Redis structures, RabbitMQ topology, Centrifugo channels
 - **[docs/](docs/)** — Domain-specific documentation (order matching, Binance WS, orderbook, user balance)
 - **[tasks/](tasks/)** — 13 documented refactoring tasks with priority
 

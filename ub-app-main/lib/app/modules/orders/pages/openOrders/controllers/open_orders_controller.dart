@@ -11,14 +11,14 @@ import 'package:unitedbit/utils/mixins/popups.dart';
 import 'package:unitedbit/utils/mixins/toast.dart';
 
 import '../../../../../common/components/UBText.dart';
-import '../../../../../global/controller/authorizedMqttController.dart';
+import '../../../../../global/controller/authorizedCentrifugoController.dart';
 import '../../../order_model.dart';
 import '../../../widgets/orderRow/openOrderRow.dart';
 import '../cancel_order_model.dart';
 import '../providers/open_orders_provider.dart';
 
 class OpenOrdersController extends GetxController with Toaster, Popups {
-  final AuthorizedMqttController authorizedMqttController = Get.find();
+  final AuthorizedCentrifugoController authorizedCentrifugoController = Get.find();
 
   final OpenOrdersProvider openOrdersProvider = OpenOrdersProvider();
   GlobalKey<AnimatedListState> openOrderListKey = GlobalKey();
@@ -40,7 +40,7 @@ class OpenOrdersController extends GetxController with Toaster, Popups {
   void onInit() {
     super.onInit();
     updateSubscription =
-        authorizedMqttController.updateDataSubject.listen((value) {
+        authorizedCentrifugoController.updateDataSubject.listen((value) {
       if (value is List && (value.indexOf(RxUpdateables.OpenOrders) != -1)) {
         getOpenOrders(silent: true);
       }

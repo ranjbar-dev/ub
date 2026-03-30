@@ -38,7 +38,7 @@ type processor struct {
 	priceGenerator             currency.PriceGenerator
 	klineService               currency.KlineService
 	orderBookService           orderbook.Service
-	mqttManager                communication.MqttManager
+	mqttManager                communication.CentrifugoManager
 	stopOrderSubmissionManager order.StopOrderSubmissionManager
 	inQueueOrderManager        order.InQueueOrderManager
 	queueMnager                communication.QueueManager
@@ -140,7 +140,7 @@ func (p *processor) ProcessTrade(ctx context.Context, trade Trade) {
 
 func (p *processor) ProcessDepth(ctx context.Context, externalExchangeName string, pairName string, externalExchangePairName string, data []byte) {
 	precision := p.getPairPrecision(pairName)
-	//we should create order book and then publish to mqtt
+	//we should create order book and then publish to centrifugo
 	orderBook, err := p.orderBookService.UpdateExternalOrderBook(ctx, externalExchangeName, pairName, externalExchangePairName, precision, data)
 	if err != nil {
 		p.logger.Warn("can not update external orderbook",
@@ -292,7 +292,7 @@ func (p *processor) getFormerPriceOfPair(ctx context.Context, pairName string) s
 	return price
 }
 
-func NewProcessor(redisClient platform.RedisClient, liveDataService livedata.Service, priceGenerator currency.PriceGenerator, klineService currency.KlineService, orderBookService orderbook.Service, mqttManager communication.MqttManager, stopOrderSubmissionManager order.StopOrderSubmissionManager, inQueueOrderManager order.InQueueOrderManager, queueMnager communication.QueueManager, logger platform.Logger, currencyService currency.Service) Processor {
+func NewProcessor(redisClient platform.RedisClient, liveDataService livedata.Service, priceGenerator currency.PriceGenerator, klineService currency.KlineService, orderBookService orderbook.Service, mqttManager communication.CentrifugoManager, stopOrderSubmissionManager order.StopOrderSubmissionManager, inQueueOrderManager order.InQueueOrderManager, queueMnager communication.QueueManager, logger platform.Logger, currencyService currency.Service) Processor {
 	pairCurrentTradeCounts := make(map[string]uint32)
 	return &processor{
 		redisClient:                redisClient,

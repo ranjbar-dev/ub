@@ -1,7 +1,7 @@
 # Architecture — ub-exchange-cli-main
 
 This document describes the actual architecture of the Go exchange service: package layering rules,
-key data flows, DI service dependency graph, Redis data structures, RabbitMQ topology, and MQTT
+key data flows, DI service dependency graph, Redis data structures, RabbitMQ topology, and Centrifugo
 topic structure. Every claim is traceable to a specific source file.
 
 ---
@@ -18,7 +18,7 @@ topic structure. Every claim is traceable to a specific source file.
 3. [DI Service Dependency Graph](#3-di-service-dependency-graph)
 4. [Redis Data Structures](#4-redis-data-structures)
 5. [RabbitMQ Queue Topology](#5-rabbitmq-queue-topology)
-6. [MQTT Topic Structure](#6-mqtt-topic-structure)
+6. [Centrifugo Channel Structure](#6-centrifugo-channel-structure)
 7. [Binary Entry Points](#7-binary-entry-points)
 
 ---
@@ -59,7 +59,7 @@ Dependency flow is strictly top-down. Lower layers must never import upper layer
                                   │  internal/platform/               │
                                   │  Infrastructure abstractions:     │
                                   │  Configs · Logger · RedisClient   │
-                                  │  RabbitMqClient · MqttClient      │
+                                  │  RabbitMqClient · CentrifugoClient      │
                                   │  JwtHandler · PasswordEncoder     │
                                   │  HTTPClient · WsClient · Cache    │
                                   │  SqlClient (GORM *gorm.DB)        │
@@ -68,7 +68,7 @@ Dependency flow is strictly top-down. Lower layers must never import upper layer
                                   ┌──────────────▼────────────────────┐
                                   │  External Systems                  │
                                   │  MySQL/MariaDB · Redis · RabbitMQ │
-                                  │  MQTT/EMQX · Binance WS/REST API  │
+                                  │  Centrifugo · Binance WS/REST API  │
                                   │  External wallet service (HTTP)    │
                                   └───────────────────────────────────┘
 ```
@@ -77,8 +77,8 @@ Dependency flow is strictly top-down. Lower layers must never import upper layer
 
 | Package | Role |
 |---------|------|
-| `internal/communication` | MQTT publishing (`MqttManager`) + RabbitMQ publishing (`QueueManager`) |
-| `internal/processor` | Transforms Binance WS events → livedata + MQTT |
+| `internal/communication` | Centrifugo publishing (`CentrifugoManager`) + RabbitMQ publishing (`QueueManager`) |
+| `internal/processor` | Transforms Binance WS events → livedata + Centrifugo |
 | `internal/di` | Wires all ~115 services into a single `sarulabs/di` App-scoped container |
 | `internal/jwt` | JWT token creation/validation helpers |
 | `internal/response` | Standard `{status, message, data}` API response struct |
@@ -120,8 +120,8 @@ handler.CreateOrder()
           │         ExternalExchangeOrderService.Submit()
           │           └─ Binance REST API POST /order
           │
-          └─ MqttManager.PublishOrderToOpenOrders()
-               └─ MQTT topic: main/trade/user/<privateChannel>/open-orders/
+          └─ CentrifugoManager.PublishOrderToOpenOrders()
+               └─ Centrifugo channel: trade:user:<privateChannel>:open-orders
 ```
 
 **Key facts:**
@@ -195,11 +195,11 @@ PostOrderMatchingService.Handle(doneOrders, partialOrder)
   ├─ 4. LiveDataService.UpdateTradeBook()
   │       └─ Redis HSET  live_data:pair_currency:<pair>  trade_book <last 20 trades>
   │
-  ├─ 5. MqttManager.PublishTrades()
-  │       └─ MQTT topic: main/trade/trade-book/<pair>
+  ├─ 5. CentrifugoManager.PublishTrades()
+  │       └─ Centrifugo channel: trade:trade-book:<pair>
   │
-  └─ 6. MqttManager.PublishOrderToOpenOrders()  (per involved user)
-          └─ MQTT topic: main/trade/user/<privateChannel>/open-orders/
+  └─ 6. CentrifugoManager.PublishOrderToOpenOrders()  (per involved user)
+          └─ Centrifugo channel: trade:user:<privateChannel>:open-orders
 ```
 
 **Result returned to engine:** `MatchingResult{RemovingDoneOrderIds, RemainingPartialOrder}` — engine uses this to atomically rewrite the Redis sorted sets.
@@ -241,8 +241,8 @@ handler.CreateWithdraw()
         │
         ├─ 7. PaymentRepository.Create()  (DB)
         │
-        └─ 8. MqttManager.PublishPayment()
-                └─ MQTT topic: main/trade/user/<privateChannel>/crypto-payments/
+        └─ 8. CentrifugoManager.PublishPayment()
+                └─ Centrifugo channel: trade:user:<privateChannel>:crypto-payments
 ```
 
 **Polling completion:** `check-withdrawals` CLI command (runs every 10 min) calls `ExternalExchangeService.CheckWithdrawals()` → updates payment status → `CommunicationService.SendCryptoPaymentStatusUpdateEmail()`.
@@ -251,7 +251,7 @@ handler.CreateWithdraw()
 
 ### 2.5 Real-time Market Data Flow (Binance WS)
 
-**Source files:** `cmd/exchange-ws/main.go`, `internal/externalexchangews/`, `internal/processor/dataprocessor.go`, `internal/livedata/service.go`, `internal/communication/mqttmanager.go`
+**Source files:** `cmd/exchange-ws/main.go`, `internal/externalexchangews/`, `internal/processor/dataprocessor.go`, `internal/livedata/service.go`, `internal/communication/centrifugomanager.go`
 
 ```
 exchange-ws binary
@@ -264,30 +264,30 @@ exchange-ws binary
             ├─ ProcessTrade(trade)
             │    ├─ LiveDataService.UpdateTradeBook()
             │    │    └─ Redis HSET  live_data:pair_currency:<pair>  trade_book
-            │    └─ MqttManager.PublishTrades()
-            │         └─ MQTT: main/trade/trade-book/<pair>
+            │    └─ CentrifugoManager.PublishTrades()
+            │         └─ Centrifugo: trade:trade-book:<pair>
             │
             ├─ ProcessDepth(depth)
             │    ├─ LiveDataService.SetDepthSnapshot()
             │    │    └─ Redis HSET  live_data:pair_currency:<pair>  depth_snapshot
-            │    └─ MqttManager.PublishOrderBook()
-            │         └─ MQTT: main/trade/order-book/<pair>
+            │    └─ CentrifugoManager.PublishOrderBook()
+            │         └─ Centrifugo: trade:order-book:<pair>
             │
             ├─ ProcessKline(kline)
             │    ├─ KlineService.SaveKline()  (rotates current → pre-kline in Redis)
             │    │    └─ Redis HSET  live_data:pair_currency:<pair>  kline_<tf>  pre_kline_<tf>
             │    ├─ QueueManager.PublishKline()
             │    │    └─ RabbitMQ  routing key: "livedata.event.kline-created"
-            │    └─ MqttManager.PublishKline()
-            │         └─ MQTT: main/trade/kline/<timeframe>/<pair>
+            │    └─ CentrifugoManager.PublishKline()
+            │         └─ Centrifugo: trade:kline:<timeframe>:<pair>
             │
             └─ ProcessTicker(ticker)
                  ├─ LiveDataService.SetPriceData()
                  │    └─ Redis HSET  live_data:pair_currency:<pair>  price  percentage  volume
                  ├─ Redis PUBLISH  "channel:ticker"  (internal pub/sub)
                  ├─ StopOrderSubmissionManager.Check()  ← triggers stop orders
-                 └─ MqttManager.PublishTicker()
-                      └─ MQTT: main/trade/ticker
+                 └─ CentrifugoManager.PublishTicker()
+                      └─ Centrifugo: trade:ticker
 ```
 
 **`sync-kline` CLI command** pulls historical OHLC data from `CandleGRPCClient` (gRPC to a separate candle service) and seeds Redis + DB.
@@ -305,7 +305,7 @@ ConfigService       ← config.yaml via Viper
 LoggerService       ← ConfigService
 dbClient            ← ConfigService                  (*gorm.DB)
 RedisClient         ← ConfigService
-mqttClient          ← ConfigService, LoggerService
+centrifugoClient          ← ConfigService, LoggerService
 rabbitmqClient      ← ConfigService, LoggerService
 wsClient            ← (none)
 httpClient          ← (none)
@@ -317,7 +317,7 @@ cacheService        ← ConfigService, LoggerService   (in-process LRU cache)
 ### Communication Layer
 
 ```
-mqttManager         ← mqttClient
+centrifugoManager         ← centrifugoClient
 queueManager        ← rabbitmqClient, LoggerService
 communicationService ← queueManager, LoggerService
 ```
@@ -380,7 +380,7 @@ graph TD
         userConfigService --> userConfigRepository
         authEventsHandler --> loginHistoryService & communicationService & userService & ConfigService & LoggerService
         authService --> dbClient & userRepository & userLevelService & permissionManager & userBalanceService & jwtService & passwordEncoder & communicationService & authEventsHandler & forgotPasswordManager & recaptchaManager & twoFaManager & ConfigService & LoggerService
-        mqttAuthService --> authService & ConfigService & LoggerService
+        centrifugoAuthService --> authService & ConfigService & LoggerService
         forgotPasswordManager --> RedisClient & communicationService & ConfigService
         phoneConfirmationManager --> RedisClient & communicationService
         countryService --> countryRepository & ConfigService
@@ -398,11 +398,11 @@ graph TD
         botAggregationService --> RedisClient
         tradeEventsHandler --> botAggregationService & ConfigService & LoggerService
         orderRedisManager --> RedisClient
-        postOrderMatchingService --> dbClient & orderRepository & userBalanceService & forceTrader & priceGenerator & tradeEventsHandler & mqttManager & RedisClient & currencyService & userService & userLevelService & ConfigService & LoggerService
+        postOrderMatchingService --> dbClient & orderRepository & userBalanceService & forceTrader & priceGenerator & tradeEventsHandler & centrifugoManager & RedisClient & currencyService & userService & userLevelService & ConfigService & LoggerService
         engineResultHandler --> postOrderMatchingService
         engineService["engineService\n(engine.Engine)"] --> RedisClient & orderbookProvider & engineResultHandler & LoggerService & ConfigService
         engineCommunicator --> forceTrader & engineService
-        orderEventsHandler --> orderRedisManager & decisionManager & mqttManager & externalExchangeOrderService & engineCommunicator & postOrderMatchingService & LoggerService
+        orderEventsHandler --> orderRedisManager & decisionManager & centrifugoManager & externalExchangeOrderService & engineCommunicator & postOrderMatchingService & LoggerService
         stopOrderSubmissionManager --> dbClient & orderRepository & liveDataService & orderRedisManager & orderEventsHandler & LoggerService
         inQueueOrderManager --> engineService & LoggerService
         unmatchedOrderHandler --> RedisClient & orderRepository & engineCommunicator & ConfigService & LoggerService
@@ -415,7 +415,7 @@ graph TD
         internalTransferService --> internalTransferRepository
         withdrawEmailConfirmationManager --> RedisClient & communicationService
         autoExchangeManager --> dbClient & paymentRepository & orderCreateManager & orderEventsHandler & userService & currencyService & priceGenerator & LoggerService
-        paymentService --> dbClient & paymentRepository & currencyService & walletService & userConfigService & twoFaManager & withdrawEmailConfirmationManager & permissionManager & userWithdrawAddressService & userService & userBalanceService & communicationService & priceGenerator & internalTransferService & externalExchangeService & autoExchangeManager & mqttManager & ConfigService & LoggerService
+        paymentService --> dbClient & paymentRepository & currencyService & walletService & userConfigService & twoFaManager & withdrawEmailConfirmationManager & permissionManager & userWithdrawAddressService & userService & userBalanceService & communicationService & priceGenerator & internalTransferService & externalExchangeService & autoExchangeManager & centrifugoManager & ConfigService & LoggerService
         userWithdrawAddressService --> dbClient & userWithdrawAddressRepository & currencyService & walletService & LoggerService
     end
 
@@ -424,7 +424,7 @@ graph TD
         externalExchangeOrderService --> externalExchangeOrderRepository & externalExchangeService & LoggerService
         orderFromExternalService --> orderFromExternalRepository & tradeFromExternalRepository
         externalExchangeWsService --> wsClient & wsDataProcessor & ConfigService & LoggerService & currencyService
-        wsDataProcessor --> RedisClient & liveDataService & priceGenerator & klineService & orderbookService & mqttManager & stopOrderSubmissionManager & inQueueOrderManager & queueManager & LoggerService & currencyService
+        wsDataProcessor --> RedisClient & liveDataService & priceGenerator & klineService & orderbookService & centrifugoManager & stopOrderSubmissionManager & inQueueOrderManager & queueManager & LoggerService & currencyService
     end
 
     subgraph "Configuration"
@@ -564,29 +564,29 @@ Source: `internal/communication/service.go`.
 
 ---
 
-## 6. MQTT Topic Structure
+## 6. Centrifugo Channel Structure
 
-All topics are published QoS 0, non-retained, via EMQX v4 broker. Source: `internal/communication/mqttmanager.go`.
+All channels are published via Centrifugo HTTP API. Source: `internal/communication/centrifugomanager.go`.
 
-### Public Market Topics (broadcast to all subscribers)
+### Public Market Channels (broadcast to all subscribers)
 
-| Topic | Payload | Published by | Trigger |
-|-------|---------|-------------|---------|
-| `main/trade/trade-book/<pair>` | JSON trade list | `PostOrderMatchingService`, `Processor.ProcessTrade()` | Internal trade matched or Binance trade event |
-| `main/trade/kline/<timeframe>/<pair>` | JSON `RedisKline` | `Processor.ProcessKline()` | New candle from Binance WS |
-| `main/trade/ticker` | JSON ticker snapshot | `Processor.ProcessTicker()` | Binance ticker update |
-| `main/trade/order-book/<pair>` | JSON order book | `Processor.ProcessDepth()` | Binance depth update |
+| Channel | Payload | Published by | Trigger |
+|---------|---------|-------------|---------|
+| `trade:trade-book:<pair>` | JSON trade list | `PostOrderMatchingService`, `Processor.ProcessTrade()` | Internal trade matched or Binance trade event |
+| `trade:kline:<timeframe>:<pair>` | JSON `RedisKline` | `Processor.ProcessKline()` | New candle from Binance WS |
+| `trade:ticker` | JSON ticker snapshot | `Processor.ProcessTicker()` | Binance ticker update |
+| `trade:order-book:<pair>` | JSON order book | `Processor.ProcessDepth()` | Binance depth update |
 
-**Note:** `main/trade/stream` is defined as a constant (`Topic`) but not actively published in the current implementation. The commented-out `finalPayload` wrappers in `mqttmanager.go` suggest an abandoned stream multiplexer design.
+**Note:** `trade:stream` is defined as a constant (`Channel`) but not actively published in the current implementation. The commented-out `finalPayload` wrappers in `centrifugomanager.go` suggest an abandoned stream multiplexer design.
 
-### Private User Topics (per-user, authenticated via EMQX ACL)
+### Private User Channels (per-user, authenticated via Centrifugo JWT)
 
-| Topic Pattern | Payload | Published by | Trigger |
-|---------------|---------|-------------|---------|
-| `main/trade/user/<privateChannel>/open-orders/` | JSON order update | `OrderEventsHandler`, `PostOrderMatchingService` | Order created, filled, or partial fill |
-| `main/trade/user/<privateChannel>/crypto-payments/` | JSON payment update | `PaymentService` | Withdrawal/deposit status change |
+| Channel Pattern | Payload | Published by | Trigger |
+|----------------|---------|-------------|---------|
+| `user:<privateChannel>:open-orders` | JSON order update | `OrderEventsHandler`, `PostOrderMatchingService` | Order created, filled, or partial fill |
+| `user:<privateChannel>:crypto-payments` | JSON payment update | `PaymentService` | Withdrawal/deposit status change |
 
-`privateChannel` is a per-user identifier resolved from the user's JWT claims. MQTT authentication is handled by the `/api/v1/emqtt/login`, `/api/v1/emqtt/acl`, and `/api/v1/emqtt/superuser` HTTP endpoints that EMQX calls as a webhook auth backend (source: `internal/api/routes.go` `registerMqttAuthRoutes()`).
+`privateChannel` is a per-user identifier resolved from the user's JWT claims. Authentication is handled by Centrifugo's JWT verification (source: `internal/api/routes.go` `registerCentrifugoAuthRoutes()`).
 
 ---
 
@@ -607,12 +607,12 @@ Runs as a background goroutine inside `exchange-httpd`. Periodically scans open 
 
 ```
 di.NewContainer()          ← builds ~115 services lazily
-  ├─ Config, Logger, DB, Redis, MQTT, RabbitMQ (infrastructure)
+  ├─ Config, Logger, DB, Redis, Centrifugo, RabbitMQ (infrastructure)
   ├─ Repositories           ← GORM connections
   ├─ Domain services        ← business logic wired together
   └─ HTTPServer             ← Gin router with all routes registered
 
 httpServer.ListenAndServeAdmin(":8001")   ← admin routes
 unmatchedOrdersHandler.Match()            ← crash-recovery loop
-httpServer.ListenAndServe(":8000")        ← public + MQTT auth routes
+httpServer.ListenAndServe(":8000")        ← public + Centrifugo auth routes
 ```

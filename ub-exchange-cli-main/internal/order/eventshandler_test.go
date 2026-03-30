@@ -5,10 +5,10 @@
 //   - HandleOrderCreation for stop order submission to our exchange
 //   - HandleOrderCreation for stop order submission to external exchange
 //   - HandleOrderCreation fallback when external exchange returns placement failure
-//   - HandleOrderCancellation publishing cancellation via MQTT
+//   - HandleOrderCancellation publishing cancellation via Centrifugo
 //   - HandleOrderFulfillByAdmin removing order from engine
 //
-// Test data: mocked Redis manager, decision manager, MQTT manager, external exchange
+// Test data: mocked Redis manager, decision manager, Centrifugo manager, external exchange
 // service, engine communicator, post-order matching service, and logger.
 package order_test
 
@@ -29,7 +29,7 @@ func TestEventsHandler_HandleOrderCreation_OurExchange(t *testing.T) {
 	decisionManager := new(mocks.DecisionManager)
 	decisionManager.On("DecideOrderPlacement", mock.Anything).Once().Return(order.PlaceOurExchange, nil)
 
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
@@ -56,7 +56,7 @@ func TestEventsHandler_HandleOrderCreation_ExternalExchange(t *testing.T) {
 	redisManager := new(mocks.OrderRedisManager)
 	decisionManager := new(mocks.DecisionManager)
 	decisionManager.On("DecideOrderPlacement", mock.Anything).Once().Return(order.PlaceExternalExchange, nil)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
@@ -84,7 +84,7 @@ func TestEventsHandler_HandleOrderCreation_ForStopOrder(t *testing.T) {
 	redisManager := new(mocks.OrderRedisManager)
 	redisManager.On("AddStopOrderToQueue", mock.Anything, mock.Anything).Once().Return(nil)
 	decisionManager := new(mocks.DecisionManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
 
@@ -108,7 +108,7 @@ func TestEventsHandler_HandleOrderCreation_ForStopOrderSubmission_OurExchange(t 
 	redisManager := new(mocks.OrderRedisManager)
 	decisionManager := new(mocks.DecisionManager)
 	decisionManager.On("DecideOrderPlacement", mock.Anything).Once().Return(order.PlaceOurExchange, nil)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
 	engineCommunicator := new(mocks.EngineCommunicator)
@@ -134,7 +134,7 @@ func TestEventsHandler_HandleOrderCreation_ForStopOrderSubmission_ExternalExchan
 	redisManager := new(mocks.OrderRedisManager)
 	decisionManager := new(mocks.DecisionManager)
 	decisionManager.On("DecideOrderPlacement", mock.Anything).Once().Return(order.PlaceExternalExchange, nil)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
@@ -162,7 +162,7 @@ func TestEventsHandler_HandleOrderCreation_ExternalExchangeReturnsError(t *testi
 	redisManager := new(mocks.OrderRedisManager)
 	decisionManager := new(mocks.DecisionManager)
 	decisionManager.On("DecideOrderPlacement", mock.Anything).Once().Return(order.PlaceExternalExchange, nil)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
 	orderResult := externalexchange.UserOrderResult{IsOrderPlaced: false}
 	externalExchangeOrderService.On("CreateExternalExchangeOrderForUser", mock.Anything).Once().Return(orderResult, nil)
@@ -186,7 +186,7 @@ func TestEventsHandler_HandleOrderCreation_ExternalExchangeReturnsError(t *testi
 func TestEventsHandler_HandleOrderCancellation(t *testing.T) {
 	redisManager := new(mocks.OrderRedisManager)
 	decisionManager := new(mocks.DecisionManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishOrderToOpenOrders", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
 	engineCommunicator := new(mocks.EngineCommunicator)
@@ -204,7 +204,7 @@ func TestEventsHandler_HandleOrderCancellation(t *testing.T) {
 func TestEventsHandler_HandleOrderFulfillByAdmin(t *testing.T) {
 	redisManager := new(mocks.OrderRedisManager)
 	decisionManager := new(mocks.DecisionManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	externalExchangeOrderService := new(mocks.ExternalExchangeOrderService)
 	engineCommunicator := new(mocks.EngineCommunicator)
 	engineCommunicator.On("RemoveOrder", mock.Anything).Once().Return(nil)

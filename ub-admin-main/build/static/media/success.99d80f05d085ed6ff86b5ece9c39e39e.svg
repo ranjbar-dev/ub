@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="0 0 24 24">
+  <defs>
+    <clipPath id="clip-path">
+      <rect id="Rectangle_4436" data-name="Rectangle 4436" width="24" height="24" transform="translate(25.126 265.783)" fill="#00bb61"/>
+    </clipPath>
+  </defs>
+  <g id="Group_8542" data-name="Group 8542" transform="translate(-25.126 -265.783)">
+    <g id="Group_8541" data-name="Group 8541" clip-path="url(#clip-path)">
+      <path id="Path_7615" data-name="Path 7615" d="M37.126,269.783h0a8,8,0,0,0-8,8h0a8,8,0,0,0,8,8h0a8,8,0,0,0,8-8h0A8,8,0,0,0,37.126,269.783Zm4.416,4.9-5.27,6.808a.5.5,0,0,1-.371.193h-.025a.5.5,0,0,1-.363-.156L32.742,278.6a.5.5,0,0,1,.726-.688l2.37,2.5,4.913-6.346a.5.5,0,1,1,.791.612Z" fill="#00bb61"/>
+    </g>
+  </g>
+</svg>

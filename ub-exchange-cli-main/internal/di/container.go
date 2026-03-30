@@ -10,14 +10,14 @@ const (
 	cacheService                     = "cacheService"
 	dbClient                         = "dbClient"
 	wsClient                         = "wsClient"
-	mqttClient                       = "mqttClient"
+	centrifugoClient                 = "centrifugoClient"
 	httpClient                       = "httpClient"
-	mqttManager                      = "mqttManager"
+	centrifugoManager                = "centrifugoManager"
 	recaptchaManager                 = "recaptchaManager"
 	liveDataService                  = "liveDataService"
 	priceGenerator                   = "priceGenerator"
 	klineService                     = "klineService"
-	mqttAuthService                  = "mqttAuthService"
+	centrifugoTokenService           = "centrifugoTokenService"
 	authService                      = "authService"
 	candleGRPCClient                 = "candleGRPCClient"
 	klineSyncRepository              = "klineSyncRepository"
@@ -161,9 +161,9 @@ func NewContainer() di.Container {
 	addDBClient()            // depends on: configService
 	addLogger()              // depends on: configService
 	addWSClient()            // no deps
-	addMQTTClient()          // depends on: configService, loggerService
+	addCentrifugoClient()    // depends on: configService, loggerService
 	addRedisClient()         // depends on: configService
-	addMQTTManager()         // depends on: mqttClient
+	addCentrifugoManager()   // depends on: centrifugoClient, loggerService
 
 	// === Live Data + Kline Services (depend on: redisClient, dbClient) ===
 	addLiveDataService()     // depends on: redisClient
@@ -220,14 +220,14 @@ func NewContainer() di.Container {
 	addUserLevelService()         // depends on: userLevelRepository
 
 	// === Order Engine Pipeline (critical path for order matching) ===
-	addPostOrderMatchingService()   // depends on: dbClient, orderRepository, userBalanceService, forceTrader, priceGenerator, tradeEventsHandler, mqttManager, redisClient, currencyService, userService, userLevelService, configService, loggerService
+	addPostOrderMatchingService()   // depends on: dbClient, orderRepository, userBalanceService, forceTrader, priceGenerator, tradeEventsHandler, centrifugoManager, redisClient, currencyService, userService, userLevelService, configService, loggerService
 	addEngineResultHandler()        // depends on: postOrderMatchingService
 	addEngine()                     // depends on: redisClient, engineResultHandler, configService, loggerService
 	addEngineCommunicator()         // depends on: forceTrader, engineService
-	addOrderEventsHandler()         // depends on: orderRedisManager, decisionManager, mqttManager, externalExchangeOrderService, engineCommunicator, postOrderMatchingService, loggerService
+	addOrderEventsHandler()         // depends on: orderRedisManager, decisionManager, centrifugoManager, externalExchangeOrderService, engineCommunicator, postOrderMatchingService, loggerService
 	addStopOrderSubmissionManager() // depends on: dbClient, orderRepository, liveDataService, orderRedisManager, orderEventsHandler, loggerService
 	addInQueueOrderManager()        // depends on: engineService, loggerService
-	addWSDataProcessor()            // depends on: redisClient, liveDataService, priceGenerator, klineService, orderbookService, mqttManager, stopOrderSubmissionManager, inQueueOrderManager, queueManager, loggerService, currencyService
+	addWSDataProcessor()            // depends on: redisClient, liveDataService, priceGenerator, klineService, orderbookService, centrifugoManager, stopOrderSubmissionManager, inQueueOrderManager, queueManager, loggerService, currencyService
 	addUnmatchedOrderHandler()      // depends on: redisClient, orderRepository, engineCommunicator, configService, loggerService
 
 	// === Auth Domain (depend on: userService, communicationService) ===
@@ -243,7 +243,7 @@ func NewContainer() di.Container {
 	addAppVersionRepository()         // depends on: dbClient, cacheService
 	addRecaptchaManager()             // depends on: httpClient, configService, loggerService, ubCaptchaManager
 	addAuthService()                  // depends on: dbClient, userRepository, userLevelService, permissionManager, userBalanceService, jwtService, passwordEncoder, communicationService, authEventsHandler, forgotPasswordManager, recaptchaManager, twoFaManager, configService, loggerService
-	addMqttAuthService()              // depends on: authService, configService, loggerService
+	addCentrifugoTokenService()       // depends on: configService
 
 	// === Payment Domain (depend on: userService, currencyService, walletService) ===
 	addInternalTransferRepository()       // depends on: dbClient
@@ -254,7 +254,7 @@ func NewContainer() di.Container {
 	addUserWithdrawAddressRepository()    // depends on: dbClient
 	addUserWithdrawAddressService()       // depends on: dbClient, userWithdrawAddressRepository, currencyService, walletService, loggerService
 	addWithdrawEmailConfirmationManager() // depends on: redisClient, communicationService
-	addPaymentService()                   // depends on: dbClient, paymentRepository, currencyService, walletService, userConfigService, twoFaManager, withdrawEmailConfirmationManager, permissionManager, userService, userBalanceService, userWithdrawAddressService, communicationService, priceGenerator, internalTransferService, externalExchangeService, autoExchangeManager, mqttManager, configService, loggerService
+	addPaymentService()                   // depends on: dbClient, paymentRepository, currencyService, walletService, userConfigService, twoFaManager, withdrawEmailConfirmationManager, permissionManager, userService, userBalanceService, userWithdrawAddressService, communicationService, priceGenerator, internalTransferService, externalExchangeService, autoExchangeManager, centrifugoManager, configService, loggerService
 
 	// === CLI Commands (external exchange, kline, trade, balance) ===
 	addCheckWithdrawalsInExternalExchangeCommand() // depends on: paymentService, externalExchangeService, internalTransferService, configService, loggerService

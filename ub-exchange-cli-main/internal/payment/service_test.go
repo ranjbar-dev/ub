@@ -23,7 +23,7 @@
 // UserPermissionManager, UserWithdrawAddressService, UserService,
 // UserBalanceService, CommunicationService, PriceGenerator,
 // InternalTransferService, ExternalExchangeService, AutoExchangeManager,
-// MqttManager, and Configs; go-sqlmock for GORM database interactions.
+// CentrifugoManager, and Configs; go-sqlmock for GORM database interactions.
 package payment_test
 
 import (
@@ -102,7 +102,7 @@ func TestService_GetPayments(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 
@@ -183,7 +183,7 @@ func TestService_Detail_Fail_NotFound(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 
@@ -233,7 +233,7 @@ func TestService_Detail(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -283,7 +283,7 @@ func TestService_PreWithdraw_Fail_CoinNotFound(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -329,7 +329,7 @@ func TestService_PreWithdraw_Fail_NetworkCoinNotFound(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -378,7 +378,7 @@ func TestService_PreWithdraw_Fail_AddressIsNotValid(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -430,7 +430,7 @@ func TestService_PreWithdraw_Fail_WrongAmount(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -482,7 +482,7 @@ func TestService_PreWithdraw_Fail_UserAccountStatusIsNotVerified(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -535,7 +535,7 @@ func TestService_PreWithdraw_Fail_UserDisabledTwoFa(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -590,7 +590,7 @@ func TestService_PreWithdraw_Fail_PermissionNotGranted(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -650,7 +650,7 @@ func TestService_PreWithdraw_Fail_LessThanMinimumWithdraw(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -711,7 +711,7 @@ func TestService_PreWithdraw_Fail_MoreThanMaximumWithdraw(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -776,7 +776,7 @@ func TestService_PreWithdraw_Fail_AccountIsReadOnly(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -842,7 +842,7 @@ func TestService_PreWithdraw_Fail_WhitelistEnabled(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -916,7 +916,7 @@ func TestService_PreWithdraw_Fail_UserBalanceIsNotEnough(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -996,7 +996,7 @@ func TestService_PreWithdraw_Successful_NeedEmailCodeAndTwoFa_UserConfigExists(t
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	configs.On("GetEnv").Return("test")
 	logger := new(mocks.Logger)
@@ -1080,7 +1080,7 @@ func TestService_PreWithdraw_Successful_NeedTwoFaAndEmailCode_UserConfigDoesNotE
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	configs.On("GetEnv").Return("test")
 	logger := new(mocks.Logger)
@@ -1141,7 +1141,7 @@ func TestService_Withdraw_Fail_CoinNotFound(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1186,7 +1186,7 @@ func TestService_Withdraw_Fail_NetworkCoinNotFound(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1235,7 +1235,7 @@ func TestService_Withdraw_Fail_AddressIsNotValid(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1287,7 +1287,7 @@ func TestService_Withdraw_Fail_WrongAmount(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1339,7 +1339,7 @@ func TestService_Withdraw_Fail_UserAccountStatusIsNotVerified(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1392,7 +1392,7 @@ func TestService_Withdraw_Fail_UserDisabledTwoFa(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1447,7 +1447,7 @@ func TestService_Withdraw_Fail_PermissionNotGranted(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1507,7 +1507,7 @@ func TestService_Withdraw_Fail_LessThanMinimumWithdraw(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1568,7 +1568,7 @@ func TestService_Withdraw_Fail_MoreThanMaximumWithdraw(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1633,7 +1633,7 @@ func TestService_Withdraw_Fail_AccountIsReadOnly(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1699,7 +1699,7 @@ func TestService_Withdraw_Fail_WhitelistEnabled(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1792,7 +1792,7 @@ func TestService_Withdraw_Fail_UserBalanceIsNotEnough(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1863,7 +1863,7 @@ func TestService_Withdraw_Fail_WrongTwoFaCode_UserConfigExist(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -1935,7 +1935,7 @@ func TestService_Withdraw_Fail_WrongEmailCode_UserConfigExist(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2001,7 +2001,7 @@ func TestService_Withdraw_Fail_WrongTwoFaCode_UserConfigDoesNotExist(t *testing.
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2125,7 +2125,7 @@ func TestService_Withdraw_Successful_TwoFaAndEmailCodeAreCorrect_UserConfigExist
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2258,7 +2258,7 @@ func TestService_Withdraw_Successful_TwoFaIsCorrect_UserConfigDoesExist(t *testi
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2353,7 +2353,7 @@ func TestService_GetInProgressWithdrawalsInExternalExchange(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2432,7 +2432,7 @@ func TestService_UpdatePaymentInExternalExchange_StatusCompleted(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2514,7 +2514,7 @@ func TestService_UpdatePaymentInExternalExchange_StatusFailed(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2573,7 +2573,7 @@ func TestService_CancelWithdraw_PaymentDoesNotExist(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2638,7 +2638,7 @@ func TestService_CancelWithdraw_PaymentIsNotWithdraw(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2702,7 +2702,7 @@ func TestService_CancelWithdraw_PaymentDoesNotBelongToUser(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2769,7 +2769,7 @@ func TestService_CancelWithdraw_PaymentStatusIsNotCreated(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2848,7 +2848,7 @@ func TestService_CancelWithdraw_Successful(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -2914,7 +2914,7 @@ func TestService_HandleWalletCallback_internalTransfer(t *testing.T) {
 	internalTransferService.On("UpdateStatus", int64(1), payment.StatusCompleted).Once().Return(nil)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -3000,7 +3000,7 @@ func TestService_HandleWalletCallback_Deposit_AlreadyDoesNotExist_Status_Created
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3099,7 +3099,7 @@ func TestService_HandleWalletCallback_Deposit_AlreadyDoesNotExist_Status_Complet
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
 	autoExchangeManager.On("AutoExchange", mock.Anything, mock.Anything).Once().Return()
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3203,7 +3203,7 @@ func TestService_HandleWalletCallback_Deposit_AlreadyExist_Status_Completed(t *t
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
 	autoExchangeManager.On("AutoExchange", mock.Anything, mock.Anything).Once().Return()
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3309,7 +3309,7 @@ func TestService_HandleWalletCallback_Withdraw_Status_Failed(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3416,7 +3416,7 @@ func TestService_HandleWalletCallback_Withdraw_Status_Completed(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3514,7 +3514,7 @@ func TestService_UpdateWithdraw_UpdateAdminStatus_And_Fee_And_NetworkFee(t *test
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -3620,7 +3620,7 @@ func TestService_UpdateWithdraw_UpdateStatus_Reject(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3736,7 +3736,7 @@ func TestService_UpdateWithdraw_UpdateStatus_InProgressAndAutoTransfer_UsingHotW
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3859,7 +3859,7 @@ func TestService_UpdateWithdraw_UpdateStatus_InProgressAndAutoTransfer_UsingExte
 	}
 	externalExchangeService.On("Withdraw", mock.Anything).Once().Return(withdrawResult, nil)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -3980,7 +3980,7 @@ func TestService_UpdateWithdraw_UpdateStatus_InProgressAndNotAutoTransfer(t *tes
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	mqttManager.On("PublishPayment", mock.Anything, mock.Anything, mock.Anything).Once().Return()
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
@@ -4086,7 +4086,7 @@ func TestService_UpdateDeposit_ShouldNotDepoist(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,
@@ -4193,7 +4193,7 @@ func TestService_UpdateDeposit_ShouldDepoist(t *testing.T) {
 	internalTransferService := new(mocks.InternalTransferService)
 	externalExchangeService := new(mocks.ExternalExchangeService)
 	autoExchangeManager := new(mocks.AutoExchangeManager)
-	mqttManager := new(mocks.MqttManager)
+	mqttManager := new(mocks.CentrifugoManager)
 	configs := new(mocks.Configs)
 	logger := new(mocks.Logger)
 	paymentService := payment.NewPaymentService(db, paymentRepo, currencyService, walletService, userConfigService,

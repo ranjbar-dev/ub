@@ -34,7 +34,7 @@ type CallBackOrderData struct {
 }
 
 // PostOrderMatchingService performs post-trade settlement after the matching engine
-// matches orders, including balance updates, trade record creation, and MQTT event publishing.
+// matches orders, including balance updates, trade record creation, and Centrifugo event publishing.
 type PostOrderMatchingService interface {
 	// HandlePostOrderMatching processes matched orders and an optional partial fill by updating
 	// balances, creating trade records, and publishing events. When isFromAdmin is true the
@@ -52,7 +52,7 @@ type postOrderMatchingService struct {
 	forceTrader        ForceTrader
 	priceGenerator     currency.PriceGenerator
 	tradeEventsHandler TradeEventsHandler
-	mqttManager        communication.MqttManager
+	mqttManager        communication.CentrifugoManager
 	rc                 platform.RedisClient
 	currencyService    currency.Service
 	userService        user.Service
@@ -131,7 +131,7 @@ type ExternalTradedOrderData struct {
 }
 
 func NewPostOrderMatchingService(db *gorm.DB, or Repository, ubs userbalance.Service, ft ForceTrader, pg currency.PriceGenerator, teh TradeEventsHandler,
-	mqttManager communication.MqttManager, rc platform.RedisClient, currencyService currency.Service, userService user.Service,
+	mqttManager communication.CentrifugoManager, rc platform.RedisClient, currencyService currency.Service, userService user.Service,
 	userLevelService user.LevelService, configs platform.Configs, logger platform.Logger) PostOrderMatchingService {
 	return &postOrderMatchingService{
 		db:                 db,

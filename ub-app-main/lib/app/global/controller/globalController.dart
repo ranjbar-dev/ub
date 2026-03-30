@@ -36,8 +36,8 @@ import '../../modules/trade/controllers/trade_controller.dart';
 import '../../routes/app_pages.dart';
 import '../currency_pairs_model.dart';
 import '../providers/commonDataProvider.dart';
-import 'authorizedMqttController.dart';
-import 'unAuthorizedMqttController.dart';
+import 'authorizedCentrifugoController.dart';
+import 'unAuthorizedCentrifugoController.dart';
 
 enum DeviceTypes { PHONE, TABLET }
 
@@ -209,8 +209,8 @@ class GlobalController extends GetxController with Toaster, Popups {
   }
 
   void loadAuthenticatedControllers() {
-    Get.put(AuthorizedMqttController(), permanent: true);
-    Get.put(UnAuthorizedMqttController(), permanent: true);
+    Get.put(AuthorizedCentrifugoController(), permanent: true);
+    Get.put(UnAuthorizedCentrifugoController(), permanent: true);
     Get.put<TradeController>(TradeController(), permanent: true);
     Get.put<AccountController>(AccountController(), permanent: true);
     accountController = Get.find();
@@ -225,8 +225,8 @@ class GlobalController extends GetxController with Toaster, Popups {
 
   void _purgeTheMemory() {
     Future.delayed(100.milliseconds).then((value) {
-      Get.delete<AuthorizedMqttController>(force: true);
-      Get.delete<UnAuthorizedMqttController>(force: true);
+      Get.delete<AuthorizedCentrifugoController>(force: true);
+      Get.delete<UnAuthorizedCentrifugoController>(force: true);
       Get.delete<TradeController>(force: true);
       Get.delete<OrderHistoryController>(force: true);
       Get.delete<OpenOrdersController>(force: true);

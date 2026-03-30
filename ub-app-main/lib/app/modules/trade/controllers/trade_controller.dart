@@ -6,8 +6,7 @@ import 'package:dio/dio.dart' show DioError;
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:unitedbit/mqttClient/universal_mqtt_client.dart'
-    show UniversalMqttClient, UniversalMqttClientStatus, MqttQos;
+import 'package:unitedbit/centrifugoClient/centrifugo_service.dart';
 import 'package:unitedbit/services/constants.dart';
 import 'package:unitedbit/services/storageKeys.dart';
 import 'package:unitedbit/utils/commonUtils.dart';
@@ -22,9 +21,9 @@ import '../../../../generated/locales.g.dart';
 import '../../../common/components/UBButton.dart';
 import '../../../common/components/UBWrappedButtons.dart';
 import '../../../global/autocompleteModel.dart';
-import '../../../global/controller/authorizedMqttController.dart';
+import '../../../global/controller/authorizedCentrifugoController.dart';
 import '../../../global/controller/globalController.dart';
-import '../../../global/controller/unAuthorizedMqttController.dart';
+import '../../../global/controller/unAuthorizedCentrifugoController.dart';
 import '../../account/controllers/account_controller.dart';
 import '../../orders/controllers/orders_controller.dart';
 import '../../orders/pages/openOrders/controllers/open_orders_controller.dart';
@@ -72,8 +71,8 @@ class TradeController extends GetxController with Toaster {
       new Throttling(duration: const Duration(milliseconds: 4000));
 
   final GlobalController globalController = Get.find();
-  final UnAuthorizedMqttController unAuthorizedMqttController = Get.find();
-  final AuthorizedMqttController authorizedMqttController = Get.find();
+  final UnAuthorizedCentrifugoController unAuthorizedCentrifugoController = Get.find();
+  final AuthorizedCentrifugoController authorizedCentrifugoController = Get.find();
 
   final log = UBLogger.log;
   final timeFrameButtons = [
@@ -168,7 +167,7 @@ class TradeController extends GetxController with Toaster {
 
   final showLoadingOverlay = false.obs;
 
-  UniversalMqttClient unAuthorizedClient;
+  CentrifugoService centrifugoService;
 
   String get _coinName1 => currentPairName.split('-')[1];
 
@@ -178,9 +177,9 @@ class TradeController extends GetxController with Toaster {
 
   @override
   void onInit() async {
-    unAuthorizedClient = unAuthorizedMqttController.unAuthorizedClient;
+    centrifugoService = unAuthorizedCentrifugoController.centrifugoService;
     updateSubscription =
-        authorizedMqttController.updateDataSubject.listen((value) {
+        authorizedCentrifugoController.updateDataSubject.listen((value) {
       if (value is List &&
           (value.indexOf(RxUpdateables.UserPairBalances) != -1)) {
         getPairBalances();
@@ -204,7 +203,7 @@ class TradeController extends GetxController with Toaster {
         storage.read(StorageKeys.selectedTimeFrame) ?? '1hour';
 
     Future.wait([
-      _connectToUnAuthorizedMqtt(),
+      _connectToCentrifugo(),
       //getPairBalances(pairId: storedPair["id"] ?? 1),
     ]);
     storage.write(StorageKeys.loggedInOnce, true);
@@ -364,15 +363,15 @@ class TradeController extends GetxController with Toaster {
         subIndex: subActiveIndex.value,
         pair: pairName,
       );
-      purgeTopic(
-        client: unAuthorizedClient,
+      purgeChannel(
+        client: centrifugoService,
         topicStream: orderbookSubscription,
-        topic: _orderBookTopic,
+        channel: _orderBookChannel,
       );
-      purgeTopic(
-        client: unAuthorizedClient,
+      purgeChannel(
+        client: centrifugoService,
         topicStream: ohlcSubscription,
-        topic: _ohlcTopic,
+        channel: _ohlcChannel,
       );
 
       orderBookData.value = {};
@@ -401,7 +400,7 @@ class TradeController extends GetxController with Toaster {
       ohlcSubscription.cancel();
     }
     if (ohlcTopicInitialized) {
-      unAuthorizedClient.unsubscribe(topic: _ohlcTopic);
+      centrifugoService.unsubscribe(channel: _ohlcChannel);
     }
     storage.write(StorageKeys.selectedTimeFrame, newTimeFrame);
     selectedTimeFrame.value = newTimeFrame;
@@ -478,42 +477,28 @@ class TradeController extends GetxController with Toaster {
     }
   }
 
-  Future _connectToUnAuthorizedMqtt() async {
+  Future _connectToCentrifugo() async {
     pairs = globalController.currencyPairsArray;
-    unAuthorizedClient.status.listen(
+
+    centrifugoService.status.listen(
       (status) {
-        if (status == UniversalMqttClientStatus.disconnected) {
-          purgeTopic(
-            client: unAuthorizedClient,
-            topicStream: orderbookSubscription,
-            topic: _orderBookTopic,
-          );
-          purgeTopic(
-            client: unAuthorizedClient,
-            topicStream: ohlcSubscription,
-            topic: _ohlcTopic,
-          );
-          purgeTopic(
-            client: unAuthorizedClient,
-            topicStream: priceSubscription,
-            topic: _priceTopic,
-          );
-        }
-        log.i('UnAuthorized connection Status: $status');
-        if (status == UniversalMqttClientStatus.connected) {
-          _connectToPriceTopic();
-          _connectToOHLC();
-          _connectToOrderBook();
-        }
+        log.i('UnAuthorized Centrifugo Status: $status');
       },
     );
     try {
-      await unAuthorizedClient.connect();
+      await centrifugoService.connect();
     } catch (e) {
       log.e(
         e.toString(),
       );
     }
+
+    // Subscribe to all channels after connecting.
+    // Centrifuge-dart handles automatic re-subscription on reconnection.
+    _connectToPriceTopic();
+    _connectToOHLC();
+    _connectToOrderBook();
+
     return Future.value(true);
   }
 
@@ -675,8 +660,8 @@ class TradeController extends GetxController with Toaster {
   }
 
   Future _connectToOrderBook() async {
-    orderbookSubscription = unAuthorizedClient
-        .handleString(_orderBookTopic, MqttQos.exactlyOnce)
+    orderbookSubscription = centrifugoService
+        .handleString(_orderBookChannel)
         .listen(
       (message) async {
         if (message != null && activeChart.value == TradeTopCharts.OrderBook) {
@@ -695,16 +680,16 @@ class TradeController extends GetxController with Toaster {
     return Future.value(true);
   }
 
-  String get _ohlcTopic =>
-      "${Constants.ohlcTopic}${selectedTimeFrame.value}/${currentPairName.value}";
+  String get _ohlcChannel =>
+      "${Constants.ohlcChannel}${selectedTimeFrame.value}:${currentPairName.value}";
 
-  String get _orderBookTopic =>
-      "${Constants.orderbookTopic}${currentPairName.value}";
-  String get _priceTopic => Constants.priceTopic;
+  String get _orderBookChannel =>
+      "${Constants.orderbookChannel}${currentPairName.value}";
+  String get _tickerChannel => Constants.tickerChannel;
 
   Future _connectToOHLC() async {
     ohlcSubscription =
-        unAuthorizedClient.handleString(_ohlcTopic, MqttQos.exactlyOnce).listen(
+        centrifugoService.handleString(_ohlcChannel).listen(
       (message) {
         ohlcTopicInitialized = true;
         // final ohlcObj = OhlcModel.fromJson(jsonDecode(message));
@@ -723,8 +708,8 @@ class TradeController extends GetxController with Toaster {
 
   void _connectToPriceTopic() {
     final pairsObj = <String, dynamic>{};
-    priceSubscription = unAuthorizedClient
-        .handleString(Constants.priceTopic, MqttQos.exactlyOnce)
+    priceSubscription = centrifugoService
+        .handleString(Constants.tickerChannel)
         .listen(
       (message) {
         if (message != null) {

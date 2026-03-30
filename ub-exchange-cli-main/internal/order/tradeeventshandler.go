@@ -8,7 +8,7 @@ import (
 )
 
 // TradeEventsHandler publishes trade events to downstream services such as
-// bot aggregation and MQTT client notifications.
+// bot aggregation and Centrifugo client notifications.
 type TradeEventsHandler interface {
 	// HandleTradesCreation processes newly created trades by forwarding bot trades
 	// to the aggregation service for consolidation and external exchange submission.

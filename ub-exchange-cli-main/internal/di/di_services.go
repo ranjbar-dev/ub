@@ -315,15 +315,13 @@ func addAuthService() {
 	})
 }
 
-func addMqttAuthService() {
+func addCentrifugoTokenService() {
 	mustAdd(di.Def{
-		Name:  mqttAuthService,
+		Name:  centrifugoTokenService,
 		Scope: di.App,
 		Build: func(ctn di.Container) (interface{}, error) {
-			authSvc := ctn.Get(authService).(auth.Service)
 			configsService := ctn.Get(ConfigService).(platform.Configs)
-			logger := ctn.Get(LoggerService).(platform.Logger)
-			return auth.NewMqttAuthService(authSvc, configsService, logger), nil
+			return auth.NewCentrifugoTokenService(configsService), nil
 		},
 	})
 }
@@ -510,7 +508,7 @@ func addPaymentService() {
 			internalTransferSvc := ctn.Get(internalTransferService).(payment.InternalTransferService)
 			externalExchangeSvc := ctn.Get(externalExchangeService).(externalexchange.Service)
 			autoExchangeMgr := ctn.Get(autoExchangeManager).(payment.AutoExchangeManager)
-			mqttMgr := ctn.Get(mqttManager).(communication.MqttManager)
+			centrifugoMgr := ctn.Get(centrifugoManager).(communication.CentrifugoManager)
 			configService := ctn.Get(ConfigService).(platform.Configs)
 			logger := ctn.Get(LoggerService).(platform.Logger)
 			srv := payment.NewPaymentService(
@@ -530,7 +528,7 @@ func addPaymentService() {
 				internalTransferSvc,
 				externalExchangeSvc,
 				autoExchangeMgr,
-				mqttMgr,
+				centrifugoMgr,
 				configService,
 				logger,
 			)

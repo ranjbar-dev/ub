@@ -21,7 +21,7 @@ after receiving data for each stream we should map and filter data to what is mo
 
 mapping and filtering happens in  `internal/processor/dataprocessor`
 
-for each stream we do different things and finally publish data to our clients using MQTT protocol
+for each stream we do different things and finally publish data to our clients using Centrifugo
 
 #### ticker stream
 - for ticker stream we save data in redis including price, percentage and volume), the ticker also gives us the signal 

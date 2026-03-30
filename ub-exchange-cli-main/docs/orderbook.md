@@ -17,5 +17,5 @@ the following lines are the binance description to create order book.
 after receiving websocket data of depth ,we save it in redis, as stream data keep receiving
 we try to update the orderbook data in redis , somehow some data would be out of date which should be removed.
 the out of date data are the data that lastUpdatedId is less than the current receiving one , in this situation we get 
-depth data from binance api and try to rewrite the orderbook.finally we sort the data and send it to clients using MQTT
+depth data from binance api and try to rewrite the orderbook.finally we sort the data and send it to clients using Centrifugo
 

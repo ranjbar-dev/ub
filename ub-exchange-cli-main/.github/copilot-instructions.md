@@ -17,7 +17,7 @@ applyTo: "ub-exchange-cli-main/**"
 - Wrap all errors with context: `fmt.Errorf("service.Method: %w", err)`
 - Log errors with structured fields via `zap.String("key", val)`, `zap.Error(err)`
 - Never swallow errors — if you can't handle it, propagate it
-- Check all error returns from Redis, GORM, MQTT, RabbitMQ operations
+- Check all error returns from Redis, GORM, Centrifugo, RabbitMQ operations
 
 ### DI Container
 - All services registered in `internal/di/container.go` with string constant keys
@@ -71,10 +71,10 @@ func (cmd *MyCommand) Run(ctx context.Context, flags []string) {
 - Live data: `HSET` with key patterns like `live_data:price`, `live_data:kline:BTC_USDT:1m`
 - Cache: TTL-based via go-redis/cache/v8
 
-## MQTT Topics
+## Centrifugo Channels
 - Public: `main/trade/{pair}` (depth, trades, ticker)
 - Private: `main/trade/user/{userID}/open-orders`, `main/trade/user/{userID}/crypto-payments`
-- Publish via `platform.MqttClient.Publish(topic, qos, retained, payload)`
+- Publish via `platform.CentrifugoClient.Publish(topic, qos, retained, payload)`
 
 ## What NOT to Change Without Careful Review
 - Order matching logic in `internal/engine/` — critical financial path

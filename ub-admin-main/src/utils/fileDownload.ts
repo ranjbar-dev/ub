@@ -1,3 +1,5 @@
+import { LocalStorageKeys } from 'services/constants';
+
 /**
  * Triggers a browser file download from a Blob.
  * Creates a temporary anchor element, assigns the blob URL, clicks it, then cleans up.
@@ -32,8 +34,6 @@ const fileDownloader = (data: BlobPart, filename: string): void => {
  * @param params.url - URL to fetch the file from
  * @param params.filename - Filename for the downloaded file
  */
-import { LocalStorageKeys } from 'services/constants';
-
 const downloadFile = async (params: { url: string; filename: string }): Promise<void> => {
   try {
     const token = localStorage.getItem(LocalStorageKeys.ACCESS_TOKEN) || '';

@@ -28,7 +28,7 @@ A full-stack cryptocurrency exchange platform built as a monorepo with 6 special
         │          │
         ├── Shared MySQL (MariaDB 10.2) ──┤
         ├── Redis 6.2 (cache, order books)│
-        ├── EMQX (MQTT real-time push) ───┘
+        ├── Centrifugo (WebSocket real-time push) ─┘
         │
         └── RabbitMQ ──► ub-communicator (Go)
             (async)       Email / SMS delivery
@@ -48,7 +48,7 @@ See [`AGENTS.md`](AGENTS.md) for detailed architecture, API contracts, and cross
 
 ### Start the Full Stack (Docker)
 ```bash
-# 1. Start core infrastructure (DB, Redis, RabbitMQ, EMQX, PHP, Go services, nginx)
+# 1. Start core infrastructure (DB, Redis, RabbitMQ, Centrifugo, PHP, Go services, nginx)
 cd ub-server-main
 docker-compose up -d
 
@@ -73,7 +73,7 @@ cd ../ub-app-main && flutter pub get && flutter run
 | 3308 | MariaDB |
 | 6379 | Redis |
 | 5672 | RabbitMQ |
-| 1883 | MQTT |
+| 8000 | Centrifugo HTTP API |
 
 ## Project Documentation
 

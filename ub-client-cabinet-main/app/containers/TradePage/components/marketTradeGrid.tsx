@@ -83,7 +83,6 @@ const MarketTradeGrid = (props: {
     };
   }, []);
   ///////////////end of resize useEffect
-  /////////trade mqtt
 
   useEffect(() => {
     let counter = 0;

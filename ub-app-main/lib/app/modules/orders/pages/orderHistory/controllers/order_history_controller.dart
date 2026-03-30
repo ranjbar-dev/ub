@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../common/components/UBWrappedButtons.dart';
 import '../../../../../global/autocompleteModel.dart';
-import '../../../../../global/controller/authorizedMqttController.dart';
+import '../../../../../global/controller/authorizedCentrifugoController.dart';
 import '../../../../../global/response_model.dart';
 import '../../../order_history_detail_model.dart';
 import '../../../order_model.dart';
@@ -18,7 +18,7 @@ import '../../../../../../utils/mixins/toast.dart';
 
 class OrderHistoryController extends GetxController with Toaster, Popups {
   final OrderHistoryProvider orderHistoryProvider = OrderHistoryProvider();
-  final AuthorizedMqttController authorizedMqttController = Get.find();
+  final AuthorizedCentrifugoController authorizedCentrifugoController = Get.find();
   bool disableInfiniteScroll = false;
   final loadingData = false.obs;
   final filtered = false.obs;
@@ -51,7 +51,7 @@ class OrderHistoryController extends GetxController with Toaster, Popups {
   void onInit() {
     super.onInit();
     updateSubscription =
-        authorizedMqttController.updateDataSubject.listen((value) {
+        authorizedCentrifugoController.updateDataSubject.listen((value) {
       if (value is List && (value.indexOf(RxUpdateables.OrderHistory) != -1)) {
         getOrderHistory(silent: true, andResetFilters: true);
       }
