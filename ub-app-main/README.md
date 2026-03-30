@@ -35,40 +35,40 @@ flutter test
 ### Android
 ```bash
 # Dev APK (split per ABI)
-./buildDevAPK.sh
+./scripts/buildDevAPK.sh
 
 # Production APK (split per ABI)
-./buildAPK.sh
+./scripts/buildAPK.sh
 
 # Production App Bundle
-./buildBundle.sh
+./scripts/buildBundle.sh
 ```
 
 ### Web
 ```bash
 # Dev build (canvaskit renderer)
-./buildWeb-dev.sh
+./scripts/buildWeb-dev.sh
 
 # Production build (canvaskit renderer)
-./buildWeb.sh
+./scripts/buildWeb.sh
 ```
 
 ### Docker
 ```bash
 # Dev web (nginx)
-docker build -f Dockerfiledev -t ub-app-dev .
+docker build -f docker/Dockerfiledev -t ub-app-dev .
 
 # Production web (nginx)
-docker build -f Dockerfileprod -t ub-app-prod .
+docker build -f docker/Dockerfileprod -t ub-app-prod .
 
 # Production APK
-docker build -f Dockerfileapkprod -t ub-app-apk .
+docker build -f docker/Dockerfileapkprod -t ub-app-apk .
 ```
 
 ### Local Dev
 ```bash
-./runApp.sh          # flutter run with VERSION dart-define
-./runWeb.sh          # flutter run -d chrome on port 8000
+./scripts/runApp.sh          # flutter run with VERSION dart-define
+./scripts/runWeb.sh          # flutter run -d chrome on port 8000
 ```
 
 ## Architecture

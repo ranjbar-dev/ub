@@ -78,7 +78,7 @@ cd ../ub-app-main && flutter pub get && flutter run
 ## Project Documentation
 
 - **[`AGENTS.md`](AGENTS.md)** — Comprehensive workspace guidelines (tech stack, architecture, conventions, gotchas, spec-driven development guide)
-- **[`refactoring-summary.md`](refactoring-summary.md)** — History of god-service refactoring (UserBalanceService, ExternalExchangeOrderService)
+- **[`refactoring-summary.md`](docs/refactoring-summary.md)** — History of god-service refactoring (UserBalanceService, ExternalExchangeOrderService)
 - Each sub-project has its own `AGENTS.md` and/or `README.md` with project-specific details
 
 ## Development Workflow

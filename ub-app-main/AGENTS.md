@@ -1318,14 +1318,14 @@ Centrifugo event → AuthorizedCentrifugoController → updateDataSubject.add([R
 
 | Script | Purpose | Output | Env |
 |---|---|---|---|
-| `buildAPK.sh` | Production Android APK | Split-per-ABI APKs | `ENV=PRODUCTION` |
-| `buildBundle.sh` | Production Android App Bundle | AAB file | `ENV=PRODUCTION` |
-| `buildDevAPK.sh` | Dev Android APK + send to Telegram | Split-per-ABI APKs | `ENV=DEV` |
-| `buildWeb.sh` | Production web build | `build/web/` | `ENV=PRODUCTION` |
-| `buildWeb-dev.sh` | Dev web build | `build/web/` | `ENV=DEV` |
-| `runApp.sh` | Local dev run (device) | Live debug | — |
-| `runWeb.sh` | Local dev run (Chrome) | Port 8000 | `ENV=DEV` |
-| `tag.sh` | Git commit + tag with pubspec version | Git tag | — |
+| `scripts/buildAPK.sh` | Production Android APK | Split-per-ABI APKs | `ENV=PRODUCTION` |
+| `scripts/buildBundle.sh` | Production Android App Bundle | AAB file | `ENV=PRODUCTION` |
+| `scripts/buildDevAPK.sh` | Dev Android APK + send to Telegram | Split-per-ABI APKs | `ENV=DEV` |
+| `scripts/buildWeb.sh` | Production web build | `build/web/` | `ENV=PRODUCTION` |
+| `scripts/buildWeb-dev.sh` | Dev web build | `build/web/` | `ENV=DEV` |
+| `scripts/runApp.sh` | Local dev run (device) | Live debug | — |
+| `scripts/runWeb.sh` | Local dev run (Chrome) | Port 8000 | `ENV=DEV` |
+| `scripts/tag.sh` | Git commit + tag with pubspec version | Git tag | — |
 
 ### Common Build Steps
 
@@ -1351,9 +1351,9 @@ flutter build <target> \
 
 | Dockerfile | Base | Flutter | Build | Output |
 |---|---|---|---|---|
-| `Dockerfiledev` | `debian:bullseye-slim` | 2.10.5 | `buildWeb-dev.sh` | `nginx:alpine` serving `build/web/` |
-| `Dockerfileprod` | `debian:bullseye-slim` | 2.10.5 | `buildWeb.sh` | `nginx:alpine` serving `build/web/` |
-| `Dockerfileapkprod` | `debian:bullseye-slim` | 2.10.5 | `buildAPK.sh` | APK files (includes Android CLI tools + SDK license acceptance) |
+| `docker/Dockerfiledev` | `debian:bullseye-slim` | 2.10.5 | `scripts/buildWeb-dev.sh` | `nginx:alpine` serving `build/web/` |
+| `docker/Dockerfileprod` | `debian:bullseye-slim` | 2.10.5 | `scripts/buildWeb.sh` | `nginx:alpine` serving `build/web/` |
+| `docker/Dockerfileapkprod` | `debian:bullseye-slim` | 2.10.5 | `scripts/buildAPK.sh` | APK files (includes Android CLI tools + SDK license acceptance) |
 
 ---
 
@@ -1438,7 +1438,7 @@ flutter build <target> \
 
 ### Mock File
 
-`mock/getToken.http` — REST client test request file.
+`dev-tools/getToken.http` — REST client test request file.
 
 ---
 

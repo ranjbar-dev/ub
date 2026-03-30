@@ -34,12 +34,12 @@ Thumbs.db
 *.aab
 
 # Docker
-Dockerfile*
+docker/
 docker-compose*
 .dockerignore
 
 # Screenshots/docs
-screenShots/
-mock/
+docs/screenshots/
+dev-tools/
 README.md
 AGENTS.md

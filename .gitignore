@@ -1,3 +1,8 @@
+# Generated dumps
+ALL_FILES_CONTENT.txt
+COMPLETE_ALL_FILES.txt
+*_ALL_FILES*.txt
+
 # OS files
 .DS_Store
 Thumbs.db

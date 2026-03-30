@@ -30,7 +30,12 @@ yarn-debug.log*
 
 # Build artifacts
 stats.json
+tsconfig.tsbuildinfo
 *.tgz
+
+# Deprecated linting
+tslint.json
+tslint-imports.json
 
 # IDE
 .idea/

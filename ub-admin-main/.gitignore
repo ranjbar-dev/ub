@@ -1,6 +1,6 @@
 # Don't check auto-generated stuff into git
 coverage
-# build
+build
 node_modules
 node_modules_
 node_modules__
@@ -23,3 +23,10 @@ generated-cra-app
 .cra-template-rb
 template
 ./buildbuild/
+
+# Error logs
+build-error.txt
+build_errors.txt
+
+# npm lock file (using yarn)
+package-lock.json

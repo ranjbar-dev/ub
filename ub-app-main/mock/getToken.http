@@ -1,8 +1,0 @@
-POST https://app.unitedbit.com/auth/login
-
-User-Agent: ubandroid-v1.2.3
-content-type: application/json
-{
-    "email": "mhsnprvr@gmail.com",
-    "password": "aA@4240020522"
-}

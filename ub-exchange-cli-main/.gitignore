@@ -11,6 +11,9 @@ var/logs/*
 
 /vendor
 
+# Runtime artifacts
+supervisord.pid
+
 # Compiled binaries
 *.exe
 *.exe~

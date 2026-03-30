@@ -15,7 +15,7 @@ dev-build:
   variables:
     GIT_STRATEGY: clone
   script:
-    - docker build -t flutter_web_dev_image$CI_COMMIT_SHA -f Dockerfiledev . --rm=false
+    - docker build -t flutter_web_dev_image$CI_COMMIT_SHA -f docker/Dockerfiledev . --rm=false
   tags:
     - dev
   only:
@@ -68,7 +68,7 @@ prod-build:
   variables:
     GIT_STRATEGY: clone
   script:    
-    - docker build -t flutter_web_prod_image$CI_COMMIT_SHA -f Dockerfileprod . --rm=false
+    - docker build -t flutter_web_prod_image$CI_COMMIT_SHA -f docker/Dockerfileprod . --rm=false
   tags:
     - mobile-web
   only:
