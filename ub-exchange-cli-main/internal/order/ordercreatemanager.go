@@ -62,17 +62,17 @@ func (cm *createManager) CreateOrder(data CreateRequiredData) (order *Order, err
 	cm.data = data
 	err = cm.validateRequiredData()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateOrder: validate required data: %w", err)
 	}
 
 	err = cm.setExtraRequiredData()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateOrder: set extra required data: %w", err)
 	}
 
 	isGreater, err := cm.isGreaterThanOrEqualMinimumOrderAmount()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateOrder: check minimum order amount: %w", err)
 	}
 	if !isGreater {
 		return nil, newOrderCreateValidationError("the minimum order amount must be more than " + cm.data.Pair.MinimumOrderAmount.String + " " + cm.data.Pair.BasisCoin.Code)
@@ -80,7 +80,7 @@ func (cm *createManager) CreateOrder(data CreateRequiredData) (order *Order, err
 
 	allows, err := cm.doesUserLevelAllows()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateOrder: check user level: %w", err)
 	}
 	if !allows {
 		return nil, newOrderCreateValidationError("your user level is low to place this order. please verify your identity to boost up your level")
@@ -88,7 +88,7 @@ func (cm *createManager) CreateOrder(data CreateRequiredData) (order *Order, err
 
 	o, err := cm.saveInDb()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateOrder: save order: %w", err)
 	}
 
 	return o, nil
@@ -169,13 +169,13 @@ func (cm *createManager) setExtraRequiredData() error {
 
 	amountDecimal, err := decimal.NewFromString(amount)
 	if err != nil {
-		return err
+		return fmt.Errorf("setExtraRequiredData: parse amount: %w", err)
 	}
 
 	priceDecimal, err := decimal.NewFromString(price)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("setExtraRequiredData: parse price: %w", err)
 	}
 
 	if isOrderMarket {
@@ -208,7 +208,7 @@ func (cm *createManager) isGreaterThanOrEqualMinimumOrderAmount() (bool, error) 
 	minimumOrderAmount := cm.data.Pair.MinimumOrderAmount.String
 	minimumOrderDecimal, err := decimal.NewFromString(minimumOrderAmount)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("isGreaterThanOrEqualMinimumOrderAmount: parse minimum: %w", err)
 	}
 
 	orderType := cm.data.OrderType
@@ -246,7 +246,7 @@ func (cm *createManager) saveInDb() (*Order, error) {
 	err := tx.Error
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: begin tx: %w", err)
 	}
 	coinID := cm.data.Pair.BasisCoin.ID
 	if cm.data.OrderType == TypeSell {
@@ -256,18 +256,18 @@ func (cm *createManager) saveInDb() (*Order, error) {
 	err = cm.userBalanceService.GetBalanceOfUserByCoinUsingTx(tx, cm.data.User.ID, coinID, ba)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: get user balance: %w", err)
 	}
 
 	baAmountDecimal, err := decimal.NewFromString(ba.Amount)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: parse balance amount: %w", err)
 	}
 	baFrozenAmountDecimal, err := decimal.NewFromString(ba.FrozenAmount)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: parse frozen amount: %w", err)
 	}
 	realBalance := baAmountDecimal.Sub(baFrozenAmountDecimal)
 	if cm.data.payedBy.GreaterThan(realBalance) {
@@ -278,7 +278,7 @@ func (cm *createManager) saveInDb() (*Order, error) {
 	uai, err := json.Marshal(cm.data.UserAgentInfo)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: marshal user agent info: %w", err)
 	}
 	extraInfo := &ExtraInfo{
 		UserAgentInfo: sql.NullString{String: string(uai), Valid: true},
@@ -289,7 +289,7 @@ func (cm *createManager) saveInDb() (*Order, error) {
 	err = tx.Omit(clause.Associations).Create(&extraInfo).Error //create orderExtraInfo
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: create extra info: %w", err)
 	}
 
 	price := sql.NullString{String: "", Valid: false}
@@ -342,7 +342,7 @@ func (cm *createManager) saveInDb() (*Order, error) {
 	err = tx.Omit(clause.Associations).Create(o).Error //create order
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: create order: %w", err)
 	}
 
 	//set data for tree model
@@ -351,14 +351,12 @@ func (cm *createManager) saveInDb() (*Order, error) {
 	err = tx.Omit(clause.Associations).Save(o).Error
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: save order path: %w", err)
 	}
-
-	//freeze balance
 	frozenDecimal, err := decimal.NewFromString(ba.FrozenAmount)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: parse frozen amount for freeze: %w", err)
 	}
 	newFrozenAmountDecimal := frozenDecimal.Add(cm.data.payedBy)
 	// Guard: frozen amount must never exceed total balance
@@ -371,13 +369,13 @@ func (cm *createManager) saveInDb() (*Order, error) {
 	err = tx.Omit(clause.Associations).Save(ba).Error
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: freeze balance: %w", err)
 	}
 
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, fmt.Errorf("saveInDb: commit tx: %w", err)
 	}
 	return o, nil
 }
@@ -393,5 +391,5 @@ func NewOrderCreateManager(db *gorm.DB, userBalanceService userbalance.Service, 
 }
 
 func newOrderCreateValidationError(message string) platform.OrderCreateValidationError {
-	return platform.OrderCreateValidationError{Err: fmt.Errorf(message)}
+	return platform.OrderCreateValidationError{Err: fmt.Errorf("%s", message)}
 }

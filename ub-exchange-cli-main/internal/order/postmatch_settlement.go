@@ -27,33 +27,20 @@ func (ps *postOrderMatchingService) doPreMatchingActions(pairName string) {
 
 func (ps *postOrderMatchingService) HandlePostOrderMatching(doneOrders []CallBackOrderData, partial *CallBackOrderData, isFromAdmin bool) MatchingResult {
 	var pairName string
-	var orderIds []int64
+	orderIdSet := make(map[int64]bool, len(doneOrders)+1)
 	for _, doneOrder := range doneOrders {
 		pairName = doneOrder.PairName
-		exists := false
-		for _, orderID := range orderIds {
-			if orderID == doneOrder.ID {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			orderIds = append(orderIds, doneOrder.ID)
-		}
+		orderIdSet[doneOrder.ID] = true
 	}
 
 	if partial != nil {
 		pairName = partial.PairName
-		exists := false
-		for _, orderID := range orderIds {
-			if orderID == partial.ID {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			orderIds = append(orderIds, partial.ID)
-		}
+		orderIdSet[partial.ID] = true
+	}
+
+	orderIds := make([]int64, 0, len(orderIdSet))
+	for id := range orderIdSet {
+		orderIds = append(orderIds, id)
 	}
 
 	ps.doPreMatchingActions(pairName)
@@ -85,36 +72,52 @@ func (ps *postOrderMatchingService) HandlePostOrderMatching(doneOrders []CallBac
 		userIds = append(userIds, o.UserID)
 	}
 	usersData := ps.userService.GetUsersDataForOrderMatching(userIds)
-	var userLevelIds []int64
+	userLevelIdSet := make(map[int64]bool, len(usersData))
 	for _, ud := range usersData {
-		exists := false
-		for _, id := range userLevelIds {
-			if id == ud.UserLevelID {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			userLevelIds = append(userLevelIds, ud.UserLevelID)
-		}
+		userLevelIdSet[ud.UserLevelID] = true
+	}
+	userLevelIds := make([]int64, 0, len(userLevelIdSet))
+	for id := range userLevelIdSet {
+		userLevelIds = append(userLevelIds, id)
 	}
 	userLevels := ps.userLevelService.GetLevelsByIds(userLevelIds)
 
+	// Build lookup maps for O(1) enrichment
+	type userInfo struct {
+		UserEmail          string
+		UserPrivateChannel string
+		UserLevelID        int64
+	}
+	userDataMap := make(map[int]userInfo, len(usersData))
+	for _, ud := range usersData {
+		userDataMap[ud.UserID] = userInfo{
+			UserEmail:          ud.UserEmail,
+			UserPrivateChannel: ud.UserPrivateChannel,
+			UserLevelID:        ud.UserLevelID,
+		}
+	}
+
+	type levelFees struct {
+		MakerFeePercentage float64
+		TakerFeePercentage float64
+	}
+	userLevelMap := make(map[int64]levelFees, len(userLevels))
+	for _, ul := range userLevels {
+		userLevelMap[ul.ID] = levelFees{
+			MakerFeePercentage: ul.MakerFeePercentage,
+			TakerFeePercentage: ul.TakerFeePercentage,
+		}
+	}
+
 	//we complete data for orderItems
 	for i, o := range orderItems {
-		for _, userData := range usersData {
-			if o.UserID == userData.UserID {
-				orderItems[i].UserEmail = userData.UserEmail
-				orderItems[i].UserPrivateChannel = userData.UserPrivateChannel
-				orderItems[i].UserLevelID = userData.UserLevelID
-				for _, ul := range userLevels {
-					if ul.ID == userData.UserLevelID {
-						orderItems[i].MakerFeePercentage = ul.MakerFeePercentage
-						orderItems[i].TakerFeePercentage = ul.TakerFeePercentage
-						break
-					}
-				}
-				break
+		if ud, ok := userDataMap[o.UserID]; ok {
+			orderItems[i].UserEmail = ud.UserEmail
+			orderItems[i].UserPrivateChannel = ud.UserPrivateChannel
+			orderItems[i].UserLevelID = ud.UserLevelID
+			if lf, ok := userLevelMap[ud.UserLevelID]; ok {
+				orderItems[i].MakerFeePercentage = lf.MakerFeePercentage
+				orderItems[i].TakerFeePercentage = lf.TakerFeePercentage
 			}
 		}
 	}
@@ -327,9 +330,8 @@ func (ps *postOrderMatchingService) handleOrderGroup(tx *gorm.DB, group orderGro
 		}
 		err = ps.handleTrade(tx, tt, pair, "", 0)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("handleOrderGroup: handle main trade: %w", err)
 		}
-		//end of create trade
 
 		orders = append(orders, o)
 		ps.addToPushData(group.orderItem, pair.Name)
@@ -358,7 +360,7 @@ func (ps *postOrderMatchingService) handleOrderGroup(tx *gorm.DB, group orderGro
 
 			childOrder, err := ps.createChildOrder(tx, group.orderItem, childTempOrder, parenOrder, pair, StatusFilled)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("handleOrderGroup: create child order: %w", err)
 			}
 
 			//create trade for orders
@@ -378,7 +380,7 @@ func (ps *postOrderMatchingService) handleOrderGroup(tx *gorm.DB, group orderGro
 			}
 			err = ps.handleTrade(tx, tt, pair, "", 0)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("handleOrderGroup: handle child trade: %w", err)
 			}
 
 			orders = append(orders, childOrder)
@@ -425,13 +427,13 @@ func (ps *postOrderMatchingService) handleOrderGroup(tx *gorm.DB, group orderGro
 			userEmail := group.orderItem.UserEmail
 			err := ps.handleTrade(tx, tempTrade, pair, userEmail, userID)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("handleOrderGroup: handle partial trade: %w", err)
 			}
 			ps.addToPushData(group.orderItem, pair.Name)
 		} else {
 			min, max, err := ps.forceTrader.GetMinAndMaxPrice(pair.Name, order.Type, currentMarketPrice)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("handleOrderGroup: get min/max price: %w", err)
 			}
 			quantity := order.DemandedAmount.String
 			if order.Type == TypeSell {
@@ -457,11 +459,14 @@ func (ps *postOrderMatchingService) handleOrderGroup(tx *gorm.DB, group orderGro
 	}
 	err = ps.createTransactions(tx, orders, pair)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("handleOrderGroup: create transactions: %w", err)
 	}
 
 	err = ps.updateUserBalances(tx, group.userBalances, demandedDiffDecimal, payedByDiffDecimal, frozenAmountReductionDecimal, group.orderItem.OrderType, pair)
-	return remainingPartialOrder, err
+	if err != nil {
+		return remainingPartialOrder, fmt.Errorf("handleOrderGroup: update user balances: %w", err)
+	}
+	return remainingPartialOrder, nil
 }
 
 func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTradedOrderData) error {
@@ -470,7 +475,7 @@ func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTrade
 	tx := ps.db.Begin()
 	err := tx.Error
 	if err != nil {
-		return err
+		return fmt.Errorf("HandleExternalTradedOrder: begin tx: %w", err)
 	}
 	orderIds := []int64{data.OrderID}
 	orderItems := ps.orderRepository.GetOrdersDataByIdsWithJoinUsingTx(tx, orderIds)
@@ -483,7 +488,7 @@ func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTrade
 
 	tradePrice, err := ps.priceGenerator.GetPrice(ctx, pair.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("HandleExternalTradedOrder: get price: %w", err)
 	}
 
 	tradeAmount := orderItem.PayedByAmount
@@ -504,7 +509,7 @@ func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTrade
 	order, err := ps.updateMainOrder(tx, orderItem, tempOrder, pair, isMarket)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("HandleExternalTradedOrder: update main order: %w", err)
 	}
 
 	extraInfo := &ExtraInfo{
@@ -517,13 +522,13 @@ func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTrade
 	err = tx.Model(extraInfo).Updates(extraInfo).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("HandleExternalTradedOrder: update extra info: %w", err)
 	}
 	orders := []Order{order}
 	err = ps.createTransactions(tx, orders, pair)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("HandleExternalTradedOrder: create transactions: %w", err)
 	}
 
 	userIds := []int{orderItem.UserID}
@@ -537,7 +542,7 @@ func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTrade
 	err = ps.updateUserBalances(tx, userBalances, demandedDecimal, payedByDecimal, frozenReductionDecimal, orderItem.OrderType, pair)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("HandleExternalTradedOrder: update user balances: %w", err)
 	}
 
 	tempTrade := tempTrade{
@@ -555,7 +560,7 @@ func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTrade
 	err = ps.handleTrade(tx, tempTrade, pair, orderItem.UserEmail, orderItem.UserID)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("HandleExternalTradedOrder: handle trade: %w", err)
 	}
 	err = tx.Commit().Error
 	if err != nil {
@@ -566,5 +571,8 @@ func (ps *postOrderMatchingService) HandleExternalTradedOrder(data ExternalTrade
 			zap.Int64("orderID", data.OrderID),
 		)
 	}
-	return err
+	if err != nil {
+		return fmt.Errorf("HandleExternalTradedOrder: commit tx: %w", err)
+	}
+	return nil
 }

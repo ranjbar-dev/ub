@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"exchange-go/internal/platform"
+	"fmt"
 	"strconv"
 
 	"github.com/go-redis/redis/v8"
@@ -34,20 +35,26 @@ func (rm *redisManager) AddStopOrderToQueue(ctx context.Context, o Order) error 
 	queue := getQueueName(o.Type, o.Pair.Name)
 	stopPointPriceDecimal, err := decimal.NewFromString(o.StopPointPrice.String)
 	if err != nil {
-		return err
+		return fmt.Errorf("AddStopOrderToQueue: parse stop point price: %w", err)
 	}
 	score, _ := stopPointPriceDecimal.Float64()
 	member := strconv.FormatInt(o.ID, 10)
 
 	_, err = rm.rc.ZAdd(ctx, queue, score, member)
-	return err
+	if err != nil {
+		return fmt.Errorf("AddStopOrderToQueue: zadd: %w", err)
+	}
+	return nil
 }
 
 func (rm *redisManager) RemoveStopOrderFromQueue(ctx context.Context, o Order, pairName string) error {
 	queue := getQueueName(o.Type, pairName)
 	member := strconv.FormatInt(o.ID, 10)
 	_, err := rm.rc.ZRem(ctx, queue, member)
-	return err
+	if err != nil {
+		return fmt.Errorf("RemoveStopOrderFromQueue: zrem: %w", err)
+	}
+	return nil
 
 }
 
@@ -76,13 +83,13 @@ func (rm *redisManager) GetStopOrdersFromQueue(ctx context.Context, pairName str
 	}
 	buyOrders, err := rm.rc.ZRangeByScoreWithScores(ctx, buyQueue, params)
 	if err != nil {
-		return res, err
+		return res, fmt.Errorf("GetStopOrdersFromQueue: query buy queue: %w", err)
 	}
 	res = append(res, buyOrders...)
 
 	sellOrders, err := rm.rc.ZRangeByScoreWithScores(ctx, sellQueue, params)
 	if err != nil {
-		return res, err
+		return res, fmt.Errorf("GetStopOrdersFromQueue: query sell queue: %w", err)
 	}
 	res = append(res, sellOrders...)
 
@@ -100,7 +107,7 @@ func (rm *redisManager) Exists(ctx context.Context, o Order) (bool, error) {
 	if err == redis.Nil {
 		return false, nil
 	}
-	return false, err //it means unknown error
+	return false, fmt.Errorf("Exists: zscore: %w", err) //it means unknown error
 }
 
 func getQueueName(orderType string, pairName string) string {

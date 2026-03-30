@@ -2,6 +2,7 @@ package order
 
 import (
 	"database/sql"
+	"fmt"
 
 	"exchange-go/internal/currency"
 	"exchange-go/internal/transaction"
@@ -49,7 +50,7 @@ func (ps *postOrderMatchingService) updateUserBalances(tx *gorm.DB, userBalances
 	}
 	err := tx.Model(newDemandedUb).Updates(newDemandedUb).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("updateUserBalances: update demanded balance: %w", err)
 	}
 	//in case the user of the buy and sell order be the same person
 	//we handle the balance using the pointer, here we update this
@@ -71,14 +72,20 @@ func (ps *postOrderMatchingService) updateUserBalances(tx *gorm.DB, userBalances
 	//pointer so the other balance has the updated data
 	payedByUb.Amount = finalPayedBy
 	payedByUb.FrozenAmount = finalFrozenPayedBy
-	return err
+	if err != nil {
+		return fmt.Errorf("updateUserBalances: update payedBy balance: %w", err)
+	}
+	return nil
 
 }
 
 func (ps *postOrderMatchingService) createTransactions(tx *gorm.DB, orders []Order, pair currency.Pair) error {
+	transactions := make([]*transaction.Transaction, 0, len(orders)*3)
+
 	for _, order := range orders {
 		orderType := order.Type
 		userID := order.UserID
+
 		//create transaction for order demanded
 		demandedCoinID := pair.BasisCoin.ID
 		demandedCoinName := pair.BasisCoin.Code
@@ -87,7 +94,7 @@ func (ps *postOrderMatchingService) createTransactions(tx *gorm.DB, orders []Ord
 			demandedCoinID = pair.DependentCoin.ID
 			demandedCoinName = pair.DependentCoin.Code
 		}
-		demandedTransaction := &transaction.Transaction{
+		transactions = append(transactions, &transaction.Transaction{
 			UserID:    userID,
 			CoinID:    demandedCoinID,
 			OrderID:   sql.NullInt64{Int64: order.ID, Valid: true},
@@ -95,11 +102,7 @@ func (ps *postOrderMatchingService) createTransactions(tx *gorm.DB, orders []Ord
 			Amount:    sql.NullString{String: demandedAmount, Valid: true},
 			CoinName:  demandedCoinName,
 			PaymentID: sql.NullInt64{Int64: 0, Valid: false},
-		}
-		err := tx.Omit(clause.Associations).Create(demandedTransaction).Error
-		if err != nil {
-			return err
-		}
+		})
 
 		//create transaction for order payedBy
 		payedByCoinID := pair.DependentCoin.ID
@@ -109,7 +112,7 @@ func (ps *postOrderMatchingService) createTransactions(tx *gorm.DB, orders []Ord
 			payedByCoinID = pair.BasisCoin.ID
 			payedByCoinName = pair.BasisCoin.Code
 		}
-		payedByTransaction := &transaction.Transaction{
+		transactions = append(transactions, &transaction.Transaction{
 			UserID:    userID,
 			CoinID:    payedByCoinID,
 			OrderID:   sql.NullInt64{Int64: order.ID, Valid: true},
@@ -117,18 +120,14 @@ func (ps *postOrderMatchingService) createTransactions(tx *gorm.DB, orders []Ord
 			Amount:    sql.NullString{String: payedByAmount, Valid: true},
 			CoinName:  payedByCoinName,
 			PaymentID: sql.NullInt64{Int64: 0, Valid: false},
-		}
-		err = tx.Omit(clause.Associations).Create(payedByTransaction).Error
-		if err != nil {
-			return err
-		}
+		})
 
 		//create transaction for order fee
 		feeCoinID := pair.BasisCoin.ID
 		feeCoinName := pair.BasisCoin.Code
 		finalDemandedDecimal, err := decimal.NewFromString(order.FinalDemandedAmount.String)
 		if err != nil {
-			return err
+			return fmt.Errorf("createTransactions: parse FinalDemandedAmount: %w", err)
 		}
 		feePercentageDecimal := decimal.NewFromFloat(order.FeePercentage.Float64)
 		fee := finalDemandedDecimal.Mul(feePercentageDecimal).String()
@@ -141,7 +140,7 @@ func (ps *postOrderMatchingService) createTransactions(tx *gorm.DB, orders []Ord
 		if order.IsMaker.Valid && order.IsMaker.Bool {
 			feeType = transaction.TypeMakerFee
 		}
-		feeTransaction := &transaction.Transaction{
+		transactions = append(transactions, &transaction.Transaction{
 			UserID:    userID,
 			CoinID:    feeCoinID,
 			OrderID:   sql.NullInt64{Int64: order.ID, Valid: true},
@@ -149,15 +148,14 @@ func (ps *postOrderMatchingService) createTransactions(tx *gorm.DB, orders []Ord
 			Amount:    sql.NullString{String: fee, Valid: true},
 			CoinName:  feeCoinName,
 			PaymentID: sql.NullInt64{Int64: 0, Valid: false},
-		}
-		err = tx.Omit(clause.Associations).Create(feeTransaction).Error
-		if err != nil {
-			return err
-		}
-
+		})
 	}
 
-	//for taker
+	if len(transactions) == 0 {
+		return nil
+	}
+	if err := tx.Omit(clause.Associations).CreateInBatches(transactions, 100).Error; err != nil {
+		return fmt.Errorf("createTransactions: batch insert: %w", err)
+	}
 	return nil
-
 }

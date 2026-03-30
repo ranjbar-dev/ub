@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"exchange-go/internal/platform"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -63,15 +64,15 @@ func (b *botAggregationService) AddToList(botAggregationData BotAggregationData)
 	data, err := json.Marshal(botAggregationData)
 	finalData := string(data)
 	if err != nil {
-		return err
+		return fmt.Errorf("AddToList: marshal data: %w", err)
 	}
 	_, err = b.rc.LRem(ctx, key, 0, finalData)
 	if err != nil {
-		return err
+		return fmt.Errorf("AddToList: remove existing entry: %w", err)
 	}
 	_, err = b.rc.LPush(ctx, key, finalData)
 	if err != nil {
-		return err
+		return fmt.Errorf("AddToList: push to list: %w", err)
 	}
 	return nil
 }
@@ -156,7 +157,7 @@ func (b *botAggregationService) DeleteList(pairID int64) error {
 	key := b.getListName(pairID)
 	_, err := b.rc.Del(ctx, key)
 	if err != nil && err != redis.Nil {
-		return err
+		return fmt.Errorf("DeleteList: delete key: %w", err)
 	}
 
 	return nil
@@ -169,7 +170,7 @@ func (b *botAggregationService) GetListForPair(pairID int64) ([]BotAggregationDa
 	key := b.getListName(pairID)
 	externalOrders, err := b.rc.LRange(ctx, key, 0, -1)
 	if err != nil && err != redis.Nil {
-		return result, err
+		return result, fmt.Errorf("GetListForPair: lrange: %w", err)
 	}
 
 	if err == redis.Nil {
@@ -184,7 +185,7 @@ func (b *botAggregationService) GetListForPair(pairID int64) ([]BotAggregationDa
 		botData := &BotAggregationData{}
 		err := json.Unmarshal([]byte(eo), botData)
 		if err != nil && err != redis.Nil {
-			return result, err
+			return result, fmt.Errorf("GetListForPair: unmarshal entry: %w", err)
 		}
 
 		result = append(result, *botData)

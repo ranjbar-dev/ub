@@ -567,13 +567,13 @@ func (s *service) validateIfUserCanWithdraw(u *user.User, uc *user.Config, coin 
 	amountDecimal, _ := decimal.NewFromString(params.amount)
 
 	if amountDecimal.LessThan(minimumWithdrawDecimal) {
-		return fmt.Errorf("minimum withdraw is: " + coin.MinimumWithdraw)
+		return fmt.Errorf("minimum withdraw is: %s", coin.MinimumWithdraw)
 	}
 
 	maximumWithdrawDecimal, _ := decimal.NewFromString(coin.MaximumWithdraw)
 
 	if amountDecimal.GreaterThan(maximumWithdrawDecimal) {
-		return fmt.Errorf("maximum withdraw is: " + coin.MaximumWithdraw)
+		return fmt.Errorf("maximum withdraw is: %s", coin.MaximumWithdraw)
 	}
 
 	//always checking for email code no matter what
@@ -1445,20 +1445,20 @@ func (s *service) handleDepositCallBack(params WalletCallBackParams, coin curren
 	tx := s.db.Begin()
 	err := tx.Error
 	if err != nil {
-		return err
+		return fmt.Errorf("handleDepositCallBack: begin tx: %w", err)
 	}
 	ub := &userbalance.UserBalance{}
 	err = s.userBalanceService.GetUserBalanceByCoinAndAddressUsingTx(tx, coin.ID, params.ToAddress, ub)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleDepositCallBack: get user balance by address: %w", err)
 	}
 	beforeStatus := ""
 	p := &Payment{}
 	err = s.paymentRepository.GetPaymentByCoinIDAndTxIDAndTypeUsingTx(tx, coin.ID, params.TxID, params.Type, p)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleDepositCallBack: get payment by txID: %w", err)
 	}
 	if p.ID > 0 {
 		// this means the payment already exists and we should update it
@@ -1478,24 +1478,24 @@ func (s *service) handleDepositCallBack(params WalletCallBackParams, coin curren
 		err = tx.Omit(clause.Associations).Save(p).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: save payment: %w", err)
 		}
 		amountDecimal, err := decimal.NewFromString(params.Amount)
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: parse deposit amount: %w", err)
 		}
 		balanceAmountDecimal, err := decimal.NewFromString(ub.Amount)
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: parse balance amount: %w", err)
 		}
 		finalBalanceAmountDecimal := balanceAmountDecimal.Add(amountDecimal)
 		ub.Amount = finalBalanceAmountDecimal.StringFixed(8)
 		err = tx.Omit(clause.Associations).Save(ub).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: save user balance: %w", err)
 		}
 		transaction := &transaction.Transaction{
 			UserID:    ub.UserID,
@@ -1509,14 +1509,14 @@ func (s *service) handleDepositCallBack(params WalletCallBackParams, coin curren
 		err = tx.Omit(clause.Associations).Save(transaction).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: save deposit transaction: %w", err)
 		}
 	} else {
 		// this means this is a new created deposit and we should create new one
 		amountDecimal, err := decimal.NewFromString(params.Amount)
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: parse new deposit amount: %w", err)
 		}
 		p = &Payment{
 			UserID:            ub.UserID,
@@ -1533,7 +1533,7 @@ func (s *service) handleDepositCallBack(params WalletCallBackParams, coin curren
 		err = tx.Omit(clause.Associations).Save(p).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: save new payment: %w", err)
 		}
 		extraInfo := &ExtraInfo{
 			PaymentID: p.ID,
@@ -1554,21 +1554,21 @@ func (s *service) handleDepositCallBack(params WalletCallBackParams, coin curren
 		err = tx.Omit(clause.Associations).Save(extraInfo).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleDepositCallBack: save extra info: %w", err)
 		}
 
 		if params.Status == StatusCompleted {
 			balanceAmountDecimal, err := decimal.NewFromString(ub.Amount)
 			if err != nil {
 				tx.Rollback()
-				return err
+				return fmt.Errorf("handleDepositCallBack: parse balance for completed: %w", err)
 			}
 			finalBalanceAmountDecimal := balanceAmountDecimal.Add(amountDecimal)
 			ub.Amount = finalBalanceAmountDecimal.StringFixed(8)
 			err = tx.Omit(clause.Associations).Save(ub).Error
 			if err != nil {
 				tx.Rollback()
-				return err
+				return fmt.Errorf("handleDepositCallBack: update user balance: %w", err)
 			}
 			transaction := &transaction.Transaction{
 				UserID:    ub.UserID,
@@ -1582,14 +1582,14 @@ func (s *service) handleDepositCallBack(params WalletCallBackParams, coin curren
 			err = tx.Omit(clause.Associations).Save(transaction).Error
 			if err != nil {
 				tx.Rollback()
-				return err
+				return fmt.Errorf("handleDepositCallBack: save completed deposit transaction: %w", err)
 			}
 		}
 	}
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleDepositCallBack: commit tx: %w", err)
 	}
 	user := user.User{ID: ub.UserID}
 	if beforeStatus != p.Status {
@@ -1638,13 +1638,13 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 	tx := s.db.Begin()
 	err := tx.Error
 	if err != nil {
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: begin tx: %w", err)
 	}
 	p := &Payment{}
 	err = s.paymentRepository.GetPaymentByCoinIDAndTxIDAndTypeUsingTx(tx, coin.ID, params.TxID, params.Type, p)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: get payment by txID: %w", err)
 	}
 	beforeStatus := p.Status
 	if p.Status == StatusCompleted {
@@ -1664,28 +1664,28 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 	err = tx.Omit(clause.Associations).Save(p).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: save payment: %w", err)
 	}
 	ub := &userbalance.UserBalance{}
 	err = s.userBalanceService.GetBalanceOfUserByCoinUsingTx(tx, p.UserID, coin.ID, ub)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: get user balance: %w", err)
 	}
 	amountDecimal, err := decimal.NewFromString(p.Amount.String)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: parse payment amount: %w", err)
 	}
 	balanceAmountDecimal, err := decimal.NewFromString(ub.Amount)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: parse balance amount: %w", err)
 	}
 	balanceFrozenAmountDecimal, err := decimal.NewFromString(ub.FrozenAmount)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: parse frozen amount: %w", err)
 	}
 
 	if params.Status == StatusCompleted {
@@ -1696,7 +1696,7 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 		err = tx.Omit(clause.Associations).Save(ub).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleWithdrawCallBack: save user balance: %w", err)
 		}
 		withdrawTransaction := &transaction.Transaction{
 			UserID:    ub.UserID,
@@ -1710,13 +1710,13 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 		err = tx.Omit(clause.Associations).Save(withdrawTransaction).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleWithdrawCallBack: save withdraw transaction: %w", err)
 		}
 
 		feeDecimal, err := decimal.NewFromString(p.FeeAmount.String)
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleWithdrawCallBack: parse fee amount: %w", err)
 		}
 		feeTransaction := &transaction.Transaction{
 			UserID:    ub.UserID,
@@ -1730,7 +1730,7 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 		err = tx.Omit(clause.Associations).Save(feeTransaction).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleWithdrawCallBack: save fee transaction: %w", err)
 		}
 
 	} else {
@@ -1740,14 +1740,14 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 		err = tx.Omit(clause.Associations).Save(ub).Error
 		if err != nil {
 			tx.Rollback()
-			return err
+			return fmt.Errorf("handleWithdrawCallBack: unfreeze balance: %w", err)
 		}
 	}
 
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("handleWithdrawCallBack: commit tx: %w", err)
 	}
 	user := user.User{
 		ID: ub.UserID,
@@ -1762,9 +1762,12 @@ func (s *service) handleWithdrawCallBack(params WalletCallBackParams, coin curre
 func (s *service) handleInternalTransferCallBack(internalTransferID, status string) error {
 	id, err := strconv.ParseInt(internalTransferID, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("handleInternalTransferCallBack: parse ID: %w", err)
 	}
-	return s.internalTransferService.UpdateStatus(id, status)
+	if err := s.internalTransferService.UpdateStatus(id, status); err != nil {
+		return fmt.Errorf("handleInternalTransferCallBack: update status: %w", err)
+	}
+	return nil
 }
 
 func (s *service) UpdateWithdraw(u *user.User, params UpdateWithdrawParams) (apiResponse response.APIResponse, statusCode int) {
