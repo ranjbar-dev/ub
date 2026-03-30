@@ -3,7 +3,7 @@ version: 1.1.7+10
 publish_to: none
 description: Unitedbit client cabinet app.
 environment:
-  sdk: ">=2.11.0 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
   url_strategy: 0.2.0
@@ -43,7 +43,7 @@ dependencies:
   basic_utils: ^3.8.1
   uuid: ^3.0.5
   rxdart: ^0.27.2
-  centrifuge: ^0.8.0
+  centrifuge: ^0.9.0
   pretty_dio_logger: ^1.1.1
   logger: 1.1.0
   dio: 4.0.1
@@ -59,7 +59,7 @@ dependencies:
 dependency_overrides:
   meta: "1.7.0"
   url_launcher_web: 2.0.6
-  centrifuge: ^0.8.0
+  centrifuge: ^0.9.0
   ai_barcode_web:
     path: local_packages/ai_barcode_web
 
