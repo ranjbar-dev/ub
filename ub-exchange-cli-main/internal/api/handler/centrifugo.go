@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"exchange-go/internal/api/middleware"
 	"exchange-go/internal/auth"
-	"exchange-go/internal/user"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +13,10 @@ type centrifugoSubscribeRequest struct {
 
 func CentrifugoConnectionToken(s auth.CentrifugoTokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		u := c.MustGet(middleware.UserKey).(*user.User)
+		u, ok := GetAuthUser(c)
+		if !ok {
+			return
+		}
 		resp, statusCode := s.GenerateConnectionToken(u.ID)
 		c.JSON(statusCode, resp)
 	}
@@ -23,7 +24,10 @@ func CentrifugoConnectionToken(s auth.CentrifugoTokenService) gin.HandlerFunc {
 
 func CentrifugoSubscriptionToken(s auth.CentrifugoTokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		u := c.MustGet(middleware.UserKey).(*user.User)
+		u, ok := GetAuthUser(c)
+		if !ok {
+			return
+		}
 		p := centrifugoSubscribeRequest{}
 		if err := c.BindJSON(&p); err != nil {
 			c.JSON(http.StatusUnprocessableEntity, NewErrorResponse("invalid request", nil))

@@ -46,7 +46,7 @@ func ContactUs(s configuration.Service) gin.HandlerFunc {
 
 func Check() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		resp, statusCOde := response.Success("", "OK")
-		c.JSON(statusCOde, resp)
+		resp, statusCode := response.Success("", "OK")
+		c.JSON(statusCode, resp)
 	}
 }

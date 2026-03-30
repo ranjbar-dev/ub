@@ -104,13 +104,5 @@ func DisableSms(s user.Service) gin.HandlerFunc {
 }
 
 func SendVerificationEmail(s user.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		u, ok := GetAuthUser(c)
-		if !ok {
-			return
-		}
-
-		resp, statusCode := s.SendVerificationEmail(u)
-		c.JSON(statusCode, resp)
-	}
+	return AuthCall(s.SendVerificationEmail)
 }

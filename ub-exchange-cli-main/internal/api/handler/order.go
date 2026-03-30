@@ -51,24 +51,7 @@ func CancelOrder(s order.Service) gin.HandlerFunc {
 }
 
 func OpenOrders(s order.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		p := order.GetOpenOrdersParams{}
-		err := c.ShouldBindQuery(&p)
-		if err != nil {
-			errorResponse, statusCode := HandleValidationError(err)
-			c.AbortWithStatusJSON(statusCode, errorResponse)
-			return
-		}
-
-		u, ok := GetAuthUser(c)
-		if !ok {
-			return
-		}
-
-		resp, statusCode := s.GetOpenOrders(u, p)
-		c.JSON(statusCode, resp)
-	}
-
+	return AuthBindQueryAndCall(s.GetOpenOrders)
 }
 
 func OrdersHistory(s order.Service) gin.HandlerFunc {
@@ -155,22 +138,5 @@ func FullTradesHistory(s order.Service) gin.HandlerFunc {
 }
 
 func GetOrderDetail(s order.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		p := order.GetOrderDetailParams{}
-		err := c.ShouldBindQuery(&p)
-		if err != nil {
-			errorResponse, statusCode := HandleValidationError(err)
-			c.AbortWithStatusJSON(statusCode, errorResponse)
-			return
-		}
-
-		u, ok := GetAuthUser(c)
-		if !ok {
-			return
-		}
-
-		resp, statusCode := s.GetOrderDetail(u, p)
-		c.JSON(statusCode, resp)
-	}
-
+	return AuthBindQueryAndCall(s.GetOrderDetail)
 }

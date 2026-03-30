@@ -5,7 +5,6 @@ import (
 	"exchange-go/internal/externalexchange"
 	"exchange-go/internal/order"
 	"exchange-go/internal/platform"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -19,7 +18,7 @@ type retrieveExternalOrdersToRedisCmd struct {
 }
 
 func (cmd *retrieveExternalOrdersToRedisCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of retrieve external orders command")
+	cmd.logger.Info("start of retrieve external orders command")
 
 	pairsLastTradeIds := cmd.externalExchangeOrderService.GetExternalExchangeOrdersLastTradeIds()
 
@@ -84,7 +83,7 @@ func (cmd *retrieveExternalOrdersToRedisCmd) Run(ctx context.Context, flags []st
 
 	}
 
-	fmt.Println("end of retrieve external orders command")
+	cmd.logger.Info("end of retrieve external orders command")
 }
 
 func NewRetrieveExternalOrdersToRedisCmd(externalExchangeOrderService externalexchange.OrderService,

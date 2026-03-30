@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 
 	"exchange-go/internal/currency"
 	"exchange-go/internal/platform"
@@ -42,6 +43,7 @@ func (ps *postOrderMatchingService) HandlePostOrderMatching(doneOrders []CallBac
 	for id := range orderIdSet {
 		orderIds = append(orderIds, id)
 	}
+	sort.Slice(orderIds, func(i, j int) bool { return orderIds[i] < orderIds[j] })
 
 	ps.doPreMatchingActions(pairName)
 
@@ -80,6 +82,7 @@ func (ps *postOrderMatchingService) HandlePostOrderMatching(doneOrders []CallBac
 	for id := range userLevelIdSet {
 		userLevelIds = append(userLevelIds, id)
 	}
+	sort.Slice(userLevelIds, func(i, j int) bool { return userLevelIds[i] < userLevelIds[j] })
 	userLevels := ps.userLevelService.GetLevelsByIds(userLevelIds)
 
 	// Build lookup maps for O(1) enrichment
@@ -242,8 +245,12 @@ func (ps *postOrderMatchingService) HandlePostOrderMatching(doneOrders []CallBac
 	copy(localTrades, ps.tradesData)
 	localPush := make([]orderPushPayload, len(ps.pushData))
 	copy(localPush, ps.pushData)
-	go ps.tradeEventsHandler.HandleTradesCreation(localTrades, pair)
-	go ps.pushDataToUsers(localPush)
+	platform.SafeGo(ps.logger, "order.HandleTradesCreation", func() {
+		ps.tradeEventsHandler.HandleTradesCreation(localTrades, pair)
+	})
+	platform.SafeGo(ps.logger, "order.pushDataToUsers", func() {
+		ps.pushDataToUsers(localPush)
+	})
 	for _, doneOrder := range doneOrders {
 		removingDoneOrderIds = append(removingDoneOrderIds, doneOrder.ID)
 	}

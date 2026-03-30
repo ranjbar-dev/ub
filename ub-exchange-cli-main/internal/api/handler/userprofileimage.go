@@ -32,20 +32,5 @@ func MultipleUpload(s user.Service) gin.HandlerFunc {
 }
 
 func DeleteProfileImage(s user.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		p := user.DeleteImageParams{}
-		err := c.ShouldBindJSON(&p)
-		if err != nil {
-			errorResponse, statusCode := HandleValidationError(err)
-			c.AbortWithStatusJSON(statusCode, errorResponse)
-			return
-		}
-		u, ok := GetAuthUser(c)
-		if !ok {
-			return
-		}
-
-		resp, statusCode := s.DeleteImage(u, p)
-		c.JSON(statusCode, resp)
-	}
+	return AuthBindAndCall(s.DeleteImage)
 }

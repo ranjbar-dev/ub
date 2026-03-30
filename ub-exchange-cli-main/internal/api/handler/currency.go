@@ -40,14 +40,7 @@ func AddOrRemoveFavoritePair(s currency.Service) gin.HandlerFunc {
 }
 
 func GetFavoritePairs(s currency.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		u, ok := GetAuthUser(c)
-		if !ok {
-			return
-		}
-		resp, statusCode := s.GetFavoritePairs(u)
-		c.JSON(statusCode, resp)
-	}
+	return AuthCall(s.GetFavoritePairs)
 }
 
 

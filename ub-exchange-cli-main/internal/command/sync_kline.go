@@ -6,7 +6,6 @@ import (
 	"exchange-go/internal/currency"
 	"exchange-go/internal/externalexchange"
 	"exchange-go/internal/platform"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -34,13 +33,10 @@ type neededParams struct {
 }
 
 func (cmd *syncKlineCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of sync kline command")
+	cmd.logger.Info("start of sync kline command")
 	shouldConsiderFlags, err := cmd.setNeededData(flags)
 	if err != nil {
-		fmt.Println("parameters are not correct: " + err.Error())
-		cmd.logger.Warn("parameters are not correct",
-			zap.Error(err),
-		)
+		cmd.logger.Error2("parameters are not correct", err)
 		return
 	}
 
@@ -66,7 +62,7 @@ func (cmd *syncKlineCmd) Run(ctx context.Context, flags []string) {
 			return
 		}
 		if klineSync == nil {
-			fmt.Println("there is an active klineSync or all of them are done")
+			cmd.logger.Info("there is an active klineSync or all of them are done")
 			return
 		}
 	}
@@ -131,7 +127,7 @@ func (cmd *syncKlineCmd) Run(ctx context.Context, flags []string) {
 			return
 		}
 	}
-	fmt.Println("end of sync kline command")
+	cmd.logger.Info("end of sync kline command")
 }
 
 func NewSyncKlineCmd(currencyService currency.Service, klineService currency.KlineService,

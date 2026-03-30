@@ -5,7 +5,6 @@ import (
 	"exchange-go/internal/order"
 	"exchange-go/internal/platform"
 	"flag"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -20,7 +19,7 @@ type retrieveOrdersToRedisCmd struct {
 }
 
 func (cmd *retrieveOrdersToRedisCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of retrieve open orders command")
+	cmd.logger.Info("start of retrieve open orders command")
 	cmd.setNeededData(flags)
 	orders := cmd.orderRepository.GetOpenOrders("")
 	for _, o := range orders {
@@ -61,7 +60,7 @@ func (cmd *retrieveOrdersToRedisCmd) Run(ctx context.Context, flags []string) {
 
 	}
 
-	fmt.Println("end of retrieve open orders command")
+	cmd.logger.Info("end of retrieve open orders command")
 }
 
 func (cmd *retrieveOrdersToRedisCmd) setNeededData(flags []string) {

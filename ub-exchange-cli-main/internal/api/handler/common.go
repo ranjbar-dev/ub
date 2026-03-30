@@ -56,6 +56,24 @@ func AuthCall[R any](fn func(*user.User) (R, int)) gin.HandlerFunc {
 	}
 }
 
+// AuthBindQueryAndCall handles authenticated endpoints that bind query string parameters.
+func AuthBindQueryAndCall[P any, R any](fn func(*user.User, P) (R, int)) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var p P
+		if err := c.ShouldBindQuery(&p); err != nil {
+			errorResponse, statusCode := HandleValidationError(err)
+			c.AbortWithStatusJSON(statusCode, errorResponse)
+			return
+		}
+		u, ok := GetAuthUser(c)
+		if !ok {
+			return
+		}
+		resp, statusCode := fn(u, p)
+		c.JSON(statusCode, resp)
+	}
+}
+
 const (
 	// HeaderUserAgent is the standard User-Agent HTTP header name.
 	HeaderUserAgent = "User-Agent"

@@ -7,7 +7,6 @@ import (
 	"exchange-go/internal/externalexchange"
 	"exchange-go/internal/payment"
 	"exchange-go/internal/platform"
-	"fmt"
 
 	"go.uber.org/zap"
 )
@@ -23,7 +22,7 @@ type checkWithdrawalsCmd struct {
 }
 
 func (cmd *checkWithdrawalsCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of check withdrawals command")
+	cmd.logger.Info("start of check withdrawals command")
 
 	withdrawals := cmd.paymentService.GetInProgressWithdrawalsInExternalExchange()
 	if len(withdrawals) > 0 {
@@ -65,7 +64,7 @@ func (cmd *checkWithdrawalsCmd) Run(ctx context.Context, flags []string) {
 
 	internalTransfers := cmd.internalTransferService.GetFromExternalInProgressTransfers()
 	if len(internalTransfers) < 1 {
-		fmt.Println("end of check withdrawals command")
+		cmd.logger.Info("end of check withdrawals command")
 		return
 	}
 
@@ -118,7 +117,7 @@ func (cmd *checkWithdrawalsCmd) Run(ctx context.Context, flags []string) {
 		}
 	}
 
-	fmt.Println("end of check withdrawals command")
+	cmd.logger.Info("end of check withdrawals command")
 }
 
 func (cmd *checkWithdrawalsCmd) getIDFromMetadataForInternalTransfer(metadata string) (id string, err error) {

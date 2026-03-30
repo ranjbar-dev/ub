@@ -7,7 +7,6 @@ import (
 	"exchange-go/internal/currency"
 	"exchange-go/internal/externalexchange"
 	"exchange-go/internal/platform"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -23,7 +22,7 @@ type updateOrdersInExternalExchangeCmd struct {
 }
 
 func (cmd *updateOrdersInExternalExchangeCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of update orders in external exchange command")
+	cmd.logger.Info("start of update orders in external exchange command")
 	pairs := cmd.currencyService.GetActivePairCurrenciesList()
 	for _, pair := range pairs {
 		//fetching orders
@@ -137,7 +136,7 @@ func (cmd *updateOrdersInExternalExchangeCmd) Run(ctx context.Context, flags []s
 
 	}
 
-	fmt.Println("end of update orders in external exchange command")
+	cmd.logger.Info("end of update orders in external exchange command")
 }
 
 func NewUpdateOrdersInExternalExchangeCmd(currencyService currency.Service,

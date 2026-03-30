@@ -10,6 +10,11 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const (
+	defaultPageSize = 50
+	MaxPageSize     = 100
+)
+
 type orderRepository struct {
 	db *gorm.DB
 }
@@ -69,7 +74,7 @@ func (or *orderRepository) GetOrdersAncestors(ancestorsIds []int64) []order.Orde
 }
 
 func (or *orderRepository) GetLeafOrders(filters order.HistoryFilters) []order.HistoryNeededField {
-	pageSize := 50
+	pageSize := defaultPageSize
 	var results []order.HistoryNeededField
 	subQuery := or.db.Table("orders as o2").Select("DISTINCT(o2.parent_id)").Where("o2.parent_id IS NOT NULL AND o2.parent_id <= o.id")
 	mainQuery := or.db.Table("orders as o").
@@ -84,8 +89,11 @@ func (or *orderRepository) GetLeafOrders(filters order.HistoryFilters) []order.H
 			mainQuery.Where("o.id < ?", filters.LastID)
 		}
 
-		if filters.PageSize != 0 {
+		if filters.PageSize > 0 {
 			pageSize = filters.PageSize
+			if pageSize > MaxPageSize {
+				pageSize = MaxPageSize
+			}
 		}
 		mainQuery.Limit(pageSize)
 	}
@@ -157,7 +165,7 @@ func (or *orderRepository) preparePairName(pairName string) string {
 }
 
 func (or *orderRepository) GetUserTradedOrders(filters order.TradeHistoryFilters) []order.Order {
-	pageSize := 50
+	pageSize := defaultPageSize
 	var orders []order.Order
 	q := or.db.Joins("Pair").
 		Where("orders.status =?", order.StatusFilled).
@@ -201,8 +209,11 @@ func (or *orderRepository) GetUserTradedOrders(filters order.TradeHistoryFilters
 			q.Where("orders.id < ?", filters.LastID)
 		}
 
-		if filters.PageSize != 0 {
+		if filters.PageSize > 0 {
 			pageSize = filters.PageSize
+			if pageSize > MaxPageSize {
+				pageSize = MaxPageSize
+			}
 		}
 
 		q.Limit(pageSize)

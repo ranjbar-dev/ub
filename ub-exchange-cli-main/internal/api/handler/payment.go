@@ -7,45 +7,11 @@ import (
 )
 
 func GetPayments(s payment.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		p := payment.GetPaymentsParams{}
-		err := c.ShouldBindQuery(&p)
-		if err != nil {
-			errorResponse, statusCode := HandleValidationError(err)
-			c.AbortWithStatusJSON(statusCode, errorResponse)
-			return
-		}
-
-		u, ok := GetAuthUser(c)
-		if !ok {
-			return
-		}
-
-		resp, statusCode := s.GetPayments(u, p)
-		c.JSON(statusCode, resp)
-	}
-
+	return AuthBindQueryAndCall(s.GetPayments)
 }
 
 func GetPaymentDetail(s payment.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		p := payment.GetPaymentDetailParams{}
-		err := c.ShouldBindQuery(&p)
-		if err != nil {
-			errorResponse, statusCode := HandleValidationError(err)
-			c.AbortWithStatusJSON(statusCode, errorResponse)
-			return
-		}
-
-		u, ok := GetAuthUser(c)
-		if !ok {
-			return
-		}
-
-		resp, statusCode := s.Detail(u, p)
-		c.JSON(statusCode, resp)
-	}
-
+	return AuthBindQueryAndCall(s.Detail)
 }
 
 func PreWithdraw(s payment.Service) gin.HandlerFunc {

@@ -25,7 +25,10 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
+	"gorm.io/gorm"
 )
 
 const (
@@ -50,6 +53,8 @@ type Services struct {
 	CentrifugoTokenService     auth.CentrifugoTokenService
 	UserService                user.Service
 	OrderBookService           orderbook.Service
+	DB                         *gorm.DB
+	RedisClient                platform.RedisClient
 }
 
 // HTTPServer manages the public and admin HTTP API servers for the exchange platform.
@@ -105,6 +110,9 @@ func NewHTTPServer(services Services, logger platform.Logger) HTTPServer {
 	adminRouter := gin.New()
 
 	apiRouter.Use(globalRecover(logger, services.Configs))
+	apiRouter.Use(middleware.RateLimiter(rate.Limit(10), 20))
+	apiRouter.Use(middleware.BodyLimit(1 << 20))
+	apiRouter.Use(middleware.Metrics())
 
 	adminRouter.Use(globalRecover(logger, services.Configs))
 	env := services.Configs.GetEnv()
@@ -144,6 +152,10 @@ func NewHTTPServer(services Services, logger platform.Logger) HTTPServer {
 
 func (s *httpServer) registerRoutes() {
 	r := s.engine
+	r.GET("/health", handler.HealthCheck())
+	r.GET("/ready", handler.ReadinessCheck(s.services.DB, s.services.RedisClient))
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 	if s.services.Configs.GetEnv() == platform.EnvProd {
 		r.Use(cors.New(cors.Config{
 			AllowOrigins:     []string{"https://unitedbit.com", "https://www.unitedbit.com", "https://admin.unitedbit.com", "https://app.unitedbit.com", "https://m.unitedbit.com", "https://dev-m.unitedbit.com"},
@@ -210,7 +222,6 @@ func globalRecover(logger platform.Logger, configs platform.Configs) gin.Handler
 			message := http.StatusText(http.StatusInternalServerError)
 			if rec := recover(); rec != nil {
 				if configs.GetEnv() != platform.EnvProd {
-					fmt.Println("rec  ==========>", rec)
 				}
 				// that recovery also handle XHR's
 				// you need handle it

@@ -4,7 +4,6 @@ import (
 	"context"
 	"exchange-go/internal/currency"
 	"exchange-go/internal/platform"
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -17,7 +16,7 @@ type generateKlineSyncCmd struct {
 }
 
 func (cmd *generateKlineSyncCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of generate kline sync command")
+	cmd.logger.Info("start of generate kline sync command")
 	now := time.Now()
 	endTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
@@ -51,7 +50,7 @@ func (cmd *generateKlineSyncCmd) Run(ctx context.Context, flags []string) {
 
 	}
 
-	fmt.Println("end of generate kline sync command")
+	cmd.logger.Info("end of generate kline sync command")
 }
 
 func NewGenerateKlineSyncCmd(currencyService currency.Service, klineService currency.KlineService, logger platform.Logger) ConsoleCommand {

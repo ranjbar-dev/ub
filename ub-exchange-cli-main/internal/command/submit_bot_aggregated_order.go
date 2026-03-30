@@ -7,7 +7,6 @@ import (
 	"exchange-go/internal/livedata"
 	"exchange-go/internal/order"
 	"exchange-go/internal/platform"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -25,7 +24,7 @@ type submitBotAggregatedOrderCmd struct {
 }
 
 func (cmd *submitBotAggregatedOrderCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of submit bot orders command")
+	cmd.logger.Info("start of submit bot orders command")
 	pairs := cmd.currencyService.GetActivePairCurrenciesList()
 	for _, pair := range pairs {
 		if pair.AggregationStatus == currency.AggregationStatusPause || pair.AggregationStatus == currency.AggregationStatusStop {
@@ -121,7 +120,7 @@ func (cmd *submitBotAggregatedOrderCmd) Run(ctx context.Context, flags []string)
 
 	}
 
-	fmt.Println("end of submit bot orders command")
+	cmd.logger.Info("end of submit bot orders command")
 }
 
 func (cmd *submitBotAggregatedOrderCmd) shouldSendToExternalExchange(pair currency.Pair) (bool, error) {

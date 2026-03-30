@@ -7,7 +7,6 @@ import (
 	"exchange-go/internal/order"
 	"exchange-go/internal/platform"
 	"exchange-go/internal/user"
-	"fmt"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -33,7 +32,7 @@ type setUserLevelCmd struct {
 }
 
 func (cmd *setUserLevelCmd) Run(ctx context.Context, flags []string) {
-	fmt.Println("start of set user level command")
+	cmd.logger.Info("start of set user level command")
 	err := cmd.setNeededData(flags)
 	if err != nil {
 		cmd.logger.Error2("error setting needed  data", err,
@@ -72,7 +71,7 @@ func (cmd *setUserLevelCmd) Run(ctx context.Context, flags []string) {
 		page++
 	}
 
-	fmt.Println("end  of set user level command")
+	cmd.logger.Info("end of set user level command")
 }
 
 func (cmd *setUserLevelCmd) getAmountDecimalBasedOnBtc(ctx context.Context, t order.Trade) decimal.Decimal {
