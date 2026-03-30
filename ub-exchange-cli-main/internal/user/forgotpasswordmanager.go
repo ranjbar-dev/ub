@@ -38,6 +38,7 @@ type forgotPasswordManager struct {
 	redisClient          platform.RedisClient
 	communicationService communication.Service
 	configs              platform.Configs
+	logger               platform.Logger
 }
 
 func (s *forgotPasswordManager) GenerateForgotPasswordAndSendEmail(u User, device string, ip string) error {
@@ -96,7 +97,9 @@ func (s *forgotPasswordManager) GenerateForgotPasswordAndSendEmail(u User, devic
 		CurrentDevice: device,
 		RequestDate:   time.Now().Format("2006-01-02 15:04:05"),
 	}
-	go s.communicationService.SendUserForgotPasswordEmail(cu, params)
+	platform.SafeGo(s.logger, "user.SendUserForgotPasswordEmail", func() {
+		s.communicationService.SendUserForgotPasswordEmail(cu, params)
+	})
 	return nil
 }
 
@@ -158,11 +161,12 @@ func (s *forgotPasswordManager) getForgotPasswordKey(userID int) string {
 }
 
 func NewForgotPasswordManager(redisClient platform.RedisClient, communicationService communication.Service,
-	configs platform.Configs) ForgotPasswordManager {
+	configs platform.Configs, logger platform.Logger) ForgotPasswordManager {
 	return &forgotPasswordManager{
 		redisClient:          redisClient,
 		communicationService: communicationService,
 		configs:              configs,
+		logger:               logger,
 	}
 
 }

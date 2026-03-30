@@ -47,7 +47,8 @@ func TestPhoneConfirmationManager_IsAllowedToSendSms(t *testing.T) {
 	redisClient.On("HGetAll", mock.Anything, "phone-confirmation:3").Once().Return(data, nil)
 
 	communicationService := new(mocks.CommunicationService)
-	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService)
+	logger := new(mocks.Logger)
+	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService, logger)
 	u1 := user.User{
 		ID: 1,
 	}
@@ -82,7 +83,8 @@ func TestPhoneConfirmationManager_GeneratePhoneConfirmationCodeAndSendSms(t *tes
 
 	communicationService := new(mocks.CommunicationService)
 	communicationService.On("SendUserPhoneConfirmationSms", mock.Anything, mock.Anything).Once().Return()
-	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService)
+	logger := new(mocks.Logger)
+	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService, logger)
 	u := user.User{
 		ID: 1,
 	}
@@ -135,7 +137,8 @@ func TestPhoneConfirmationManager_IsCodeCorrect(t *testing.T) {
 	redisClient.On("HGetAll", mock.Anything, "phone-confirmation:4").Once().Return(data4, nil)
 
 	communicationService := new(mocks.CommunicationService)
-	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService)
+	logger := new(mocks.Logger)
+	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService, logger)
 	u := user.User{
 		ID: 1,
 	}
@@ -171,7 +174,8 @@ func TestPhoneConfirmationManager_DeleteKey(t *testing.T) {
 	redisClient.On("Del", mock.Anything, "phone-confirmation:1").Once().Return(int64(1), nil)
 
 	communicationService := new(mocks.CommunicationService)
-	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService)
+	logger := new(mocks.Logger)
+	phoneConfirmationManager := user.NewPhoneConfirmationManager(redisClient, communicationService, logger)
 	u := user.User{
 		ID: 1,
 	}

@@ -30,7 +30,8 @@ func TestForgotPasswordManager_GenerateForgotPasswordAndSendEmail(t *testing.T) 
 
 	configs := new(mocks.Configs)
 	configs.On("GetDomain").Once().Return("localhost")
-	forgotPasswordManager := user.NewForgotPasswordManager(redisClient, communicationService, configs)
+	logger := new(mocks.Logger)
+	forgotPasswordManager := user.NewForgotPasswordManager(redisClient, communicationService, configs, logger)
 	u := user.User{
 		ID: 1,
 	}
@@ -54,7 +55,8 @@ func TestForgotPasswordManager_IsCodeCorrect(t *testing.T) {
 
 	configs := new(mocks.Configs)
 
-	forgotPasswordManager := user.NewForgotPasswordManager(redisClient, communicationService, configs)
+	logger := new(mocks.Logger)
+	forgotPasswordManager := user.NewForgotPasswordManager(redisClient, communicationService, configs, logger)
 	u := user.User{
 		ID: 1,
 	}
@@ -71,7 +73,8 @@ func TestForgotPasswordManager_DeleteKey(t *testing.T) {
 
 	configs := new(mocks.Configs)
 
-	forgotPasswordManager := user.NewForgotPasswordManager(redisClient, communicationService, configs)
+	logger := new(mocks.Logger)
+	forgotPasswordManager := user.NewForgotPasswordManager(redisClient, communicationService, configs, logger)
 	u := user.User{
 		ID: 1,
 	}

@@ -35,6 +35,7 @@ type PhoneConfirmationManager interface {
 type phoneConfirmationManager struct {
 	redisClient          platform.RedisClient
 	communicationService communication.Service
+	logger               platform.Logger
 }
 
 func (s *phoneConfirmationManager) IsAllowedToSendSms(u User) bool {
@@ -102,7 +103,9 @@ func (s *phoneConfirmationManager) GeneratePhoneConfirmationCodeAndSendSms(u Use
 		Email: "",
 		Phone: phone,
 	}
-	go s.communicationService.SendUserPhoneConfirmationSms(cu, codeString)
+	platform.SafeGo(s.logger, "user.SendUserPhoneConfirmationSms", func() {
+		s.communicationService.SendUserPhoneConfirmationSms(cu, codeString)
+	})
 	return nil
 }
 
@@ -139,9 +142,10 @@ func (s *phoneConfirmationManager) DeleteKey(u User) error {
 	return err
 }
 
-func NewPhoneConfirmationManager(redisClient platform.RedisClient, communicationService communication.Service) PhoneConfirmationManager {
+func NewPhoneConfirmationManager(redisClient platform.RedisClient, communicationService communication.Service, logger platform.Logger) PhoneConfirmationManager {
 	return &phoneConfirmationManager{
 		redisClient:          redisClient,
 		communicationService: communicationService,
+		logger:               logger,
 	}
 }

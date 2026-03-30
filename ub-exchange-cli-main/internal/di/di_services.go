@@ -160,7 +160,8 @@ func addPhoneConfirmationManager() {
 		Build: func(ctn di.Container) (interface{}, error) {
 			redisClient := ctn.Get(RedisClient).(platform.RedisClient)
 			communicationSvc := ctn.Get(communicationService).(communication.Service)
-			return user.NewPhoneConfirmationManager(redisClient, communicationSvc), nil
+			logger := ctn.Get(LoggerService).(platform.Logger)
+			return user.NewPhoneConfirmationManager(redisClient, communicationSvc, logger), nil
 		},
 	})
 }
@@ -244,10 +245,12 @@ func addForgotPasswordManager() {
 			redisClient := ctn.Get(RedisClient).(platform.RedisClient)
 			communicationSvc := ctn.Get(communicationService).(communication.Service)
 			configService := ctn.Get(ConfigService).(platform.Configs)
+			logger := ctn.Get(LoggerService).(platform.Logger)
 			srv := user.NewForgotPasswordManager(
 				redisClient,
 				communicationSvc,
 				configService,
+				logger,
 			)
 			return srv, nil
 		},

@@ -796,7 +796,9 @@ func (s *service) ChangePassword(u *User, params ChangePasswordParams) (apiRespo
 		Email: u.Email,
 		Phone: "",
 	}
-	go s.communicationService.SendPasswordChangedEmail(cu, emailParams)
+	platform.SafeGo(s.logger, "user.SendPasswordChangedEmail", func() {
+		s.communicationService.SendPasswordChangedEmail(cu, emailParams)
+	})
 	res := make(map[string]string, 0)
 	res["token"] = token
 	return response.Success(res, "")
@@ -925,7 +927,7 @@ func (s *service) EnableSms(u *User, params EnableSmsParams) (apiResponse respon
 		return response.Error("something went wrong", http.StatusUnprocessableEntity, nil)
 	}
 
-	go func() {
+	platform.SafeGo(s.logger, "user.DeletePhoneConfirmationKey", func() {
 		err := s.phoneConfirmationManager.DeleteKey(*u)
 		if err != nil {
 			s.logger.Warn("can not delete phone confirmation from redis",
@@ -935,9 +937,11 @@ func (s *service) EnableSms(u *User, params EnableSmsParams) (apiResponse respon
 				zap.Int("userID", u.ID),
 			)
 		}
-	}()
+	})
 
-	go s.calculateKyc(u, &userProfile)
+	platform.SafeGo(s.logger, "user.calculateKyc", func() {
+		s.calculateKyc(u, &userProfile)
+	})
 
 	return response.Success(make(map[string]bool, 0), "")
 }
@@ -990,7 +994,7 @@ func (s *service) DisableSms(u *User, params DisableSmsParams) (apiResponse resp
 		return response.Error("something went wrong", http.StatusUnprocessableEntity, nil)
 	}
 
-	go func() {
+	platform.SafeGo(s.logger, "user.DeletePhoneConfirmationKey", func() {
 		err := s.phoneConfirmationManager.DeleteKey(*u)
 		if err != nil {
 			s.logger.Warn("can not delete phone confirmation from redis",
@@ -1000,9 +1004,11 @@ func (s *service) DisableSms(u *User, params DisableSmsParams) (apiResponse resp
 				zap.Int("userID", u.ID),
 			)
 		}
-	}()
+	})
 
-	go s.calculateKyc(u, nil)
+	platform.SafeGo(s.logger, "user.calculateKyc", func() {
+		s.calculateKyc(u, nil)
+	})
 
 	return response.Success(nil, "")
 }
@@ -1044,7 +1050,9 @@ func (s *service) SendVerificationEmail(u *User) (apiResponse response.APIRespon
 		Email: u.Email,
 		Phone: "",
 	}
-	go s.communicationService.SendVerificationEmailToUser(cu, link)
+	platform.SafeGo(s.logger, "user.SendVerificationEmailToUser", func() {
+		s.communicationService.SendVerificationEmailToUser(cu, link)
+	})
 
 	return response.Success(nil, "")
 }
