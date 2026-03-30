@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
 )
@@ -29,8 +30,11 @@ type centrifugoClient struct {
 }
 
 func NewCentrifugoClient(configs Configs, logger Logger) CentrifugoClient {
+	// Expect centrifugo.api_url to include /api (e.g. http://centrifugo:8000/api),
+	// matching the phpcent convention used by ub-server-main.
+	baseURL := strings.TrimRight(configs.GetString("centrifugo.api_url"), "/")
 	return &centrifugoClient{
-		baseURL: configs.GetString("centrifugo.api_url"),
+		baseURL: baseURL,
 		apiKey:  configs.GetString("centrifugo.api_key"),
 		client:  &http.Client{},
 		logger:  logger,
@@ -46,7 +50,7 @@ func (c *centrifugoClient) Publish(channel string, data interface{}) error {
 		"channel": channel,
 		"data":    data,
 	}
-	return c.doRequest("/api/publish", payload)
+	return c.doRequest("/publish", payload)
 }
 
 func (c *centrifugoClient) Broadcast(channels []string, data interface{}) error {
@@ -57,7 +61,7 @@ func (c *centrifugoClient) Broadcast(channels []string, data interface{}) error 
 		"channels": channels,
 		"data":     data,
 	}
-	return c.doRequest("/api/broadcast", payload)
+	return c.doRequest("/broadcast", payload)
 }
 
 func (c *centrifugoClient) doRequest(path string, payload interface{}) error {

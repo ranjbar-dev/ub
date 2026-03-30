@@ -27,7 +27,7 @@ sentry:
   debug: false
 
 centrifugo:
-  api_url: "http://centrifugo:8000"
+  api_url: "http://centrifugo:8000/api"
   api_key: "your-api-key"
   token_hmac_secret: "your-secret-key"
 
